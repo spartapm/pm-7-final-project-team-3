@@ -126,7 +126,7 @@ export default function HomePage() {
             </div>
 
             <div className="section-title">
-              <span>MY 결제일{upcoming.length ? <span className="count-badge">{upcoming.length}</span> : null}</span>
+              <span>MY 결제일{upcoming.length ? <span className="count-badge quiet">{upcoming.length}</span> : null}</span>
               <button className="linkish" type="button" onClick={() => router.push("/subscriptions")}>더보기 ›</button>
             </div>
             <div className="card">

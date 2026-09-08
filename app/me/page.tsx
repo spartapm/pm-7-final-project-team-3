@@ -25,14 +25,14 @@ export default function MePage() {
           <div className="menu-group">
             <div className="k">계정</div>
             <div className="menu">
-              <button type="button" className="off" onClick={() => showToast("프로필 수정은 이후 버전에 열려요.", "info")}>프로필 수정 <span>›</span></button>
+              <button type="button" className="off" onClick={() => showToast("프로필 수정은 이후 버전에 열려요.", "info")}>프로필 수정 <span className="soon">준비 중</span></button>
               <button type="button" onClick={() => router.push("/me/alerts")}>알림 설정 <span>›</span></button>
             </div>
           </div>
           <div className="menu-group">
             <div className="k">데이터</div>
             <div className="menu">
-              <button type="button" className="off" onClick={() => showToast("마이데이터 연동은 MVP 범위 밖입니다.", "info")}>서비스 연동 <span>›</span></button>
+              <button type="button" className="off" onClick={() => showToast("마이데이터 연동은 MVP 범위 밖입니다.", "info")}>서비스 연동 <span className="soon">준비 중</span></button>
             </div>
           </div>
           <div className="menu-group">

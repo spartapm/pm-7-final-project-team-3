@@ -58,9 +58,10 @@ export default function SubListPage() {
   return (
     <Gate>
       <PhoneShell>
-        <div className="topbar left">
+        <div className="topbar">
           <Back href="/home" />
           <h1>내 구독</h1>
+          <span style={{ width: 40 }} />
         </div>
         <div className="scroll tabbed flush-x">
           <div className="sub-hero">

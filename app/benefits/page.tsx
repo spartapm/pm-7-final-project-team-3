@@ -81,7 +81,7 @@ export default function BenefitsPage() {
                   <div style={{ fontWeight: 800, margin: "4px 0" }}>{b.title}</div>
                   <div className="muted">{b.body}</div>
                   {b.expires ? <div className="muted" style={{ marginTop: 6 }}>{daysUntil(b.expires) >= 0 ? `${daysUntil(b.expires)}일 뒤 만료` : "만료됨"}</div> : null}
-                  <div className="muted" style={{ textAlign: "right", marginTop: 8 }}>자세히 보기 ›</div>
+                  <div className="linkish" style={{ textAlign: "right", marginTop: 8 }}>자세히 보기 ›</div>
                 </span>
               </button>
             );

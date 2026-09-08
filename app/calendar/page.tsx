@@ -78,7 +78,7 @@ function Inner() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <h1>{monthLabel(cursor)}</h1>
               <button
-                className="sort-btn"
+                className="cal-share"
                 type="button"
                 onClick={async () => {
                   const lines = [`틈 캘린더 · ${monthLabel(cursor)}`, `전체 ${monthCount}개 · 오늘 ${todayCount}개`];
