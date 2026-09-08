@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
-import { won } from "@/lib/format";
+import { cycleEvery, won } from "@/lib/format";
 
 export default function InspectPage() {
   const router = useRouter();
@@ -21,10 +21,7 @@ export default function InspectPage() {
   const rerun = () => {
     setWaiting(true);
     setFail(false);
-    setTimeout(() => {
-      setWaiting(false);
-      if (Math.random() < 0.08) setFail(true);
-    }, 1400);
+    setTimeout(() => setWaiting(false), 1400);
   };
 
   if (waiting) {
@@ -60,7 +57,7 @@ export default function InspectPage() {
   return (
     <Gate>
       <PhoneShell>
-        <div className="topbar"><Back href="/benefits" /><h1>AI 구독 점검</h1><span style={{ width: 36 }} /></div>
+        <div className="topbar"><Back /><h1>AI 구독 점검</h1><span style={{ width: 36 }} /></div>
         <div className="scroll tabbed">
           <div className="insp-hero">
             <i className="mark" aria-hidden />
@@ -79,7 +76,7 @@ export default function InspectPage() {
                 <Brand name={s.name} color={s.color} logo={s.logo} />
                 <span className="grow">
                   <div style={{ fontWeight: 800 }}>{s.name}</div>
-                  <div className="muted">월 정기 결제{s.unused ? " · 미사용 의심" : ""}</div>
+                  <div className="muted">{cycleEvery(s.cycle)} 정기 결제{s.unused ? " · 미사용 의심" : ""}</div>
                 </span>
                 <span className="price">{won(monthlyAmount(s.amount, s.cycle))}</span>
               </button>

@@ -48,7 +48,10 @@ function Inner() {
     <Gate>
       <PhoneShell>
         <div className="topbar">
-          <Back />
+          <Back onClick={() => {
+            if (phase === "pick" && files.length > 0) setPhase("leave");
+            else router.back();
+          }} />
           <h1>이미지로 추가</h1>
           <span style={{ width: 36 }} />
         </div>

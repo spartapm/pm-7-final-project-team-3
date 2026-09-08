@@ -68,6 +68,20 @@ export function daysUntil(s: string) {
   return Math.round((a.getTime() - b.getTime()) / 86400000);
 }
 
+export function dueLabel(s: string) {
+  const n = daysUntil(s);
+  if (n === 0) return "오늘";
+  if (n > 0) return `${n}일 후`;
+  return `${-n}일 지남`;
+}
+
+export function dueBadge(s: string) {
+  const n = daysUntil(s);
+  if (n === 0) return "오늘";
+  if (n > 0) return `D-${n}`;
+  return `D+${-n}`;
+}
+
 export function relativeTime(at: number) {
   const mins = Math.round((Date.now() - at) / 60000);
   if (mins < 60) return `${Math.max(1, mins)}분 전`;
@@ -82,6 +96,12 @@ export function cycleLabel(c: string) {
   if (c === "yearly") return "연";
   if (c === "weekly") return "주";
   return "월";
+}
+
+export function cycleEvery(c: string) {
+  if (c === "yearly") return "매년";
+  if (c === "weekly") return "매주";
+  return "매월";
 }
 
 export function thisWeek(from = new Date()) {

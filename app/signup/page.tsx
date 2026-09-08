@@ -55,7 +55,7 @@ export default function SignupPage() {
         {eErr ? <div className="err-msg">{eErr}</div> : null}
         <div className={`field inbox ${pErr ? "err" : ""}`}>
           <label>비밀번호</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8자 이상 입력" />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="10자 이상 조합" maxLength={20} />
         </div>
         {pErr ? <div className="err-msg">{pErr}</div> : null}
         <label className="check">

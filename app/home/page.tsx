@@ -66,6 +66,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   if (promo === 0) setInvite(true);
+                  else if (promo === 1) router.push("/subscriptions");
                   else if (promo === 2) router.push("/add/image");
                   else if (promo === 3) router.push("/benefits");
                   else if (promo === 4) router.push("/calendar");
@@ -120,7 +121,7 @@ export default function HomePage() {
             </div>
 
             <div className="section-title">
-              <span>MY 결제일{unread ? <span className="count-badge">{unread}</span> : null}</span>
+              <span>MY 결제일{upcoming.length ? <span className="count-badge">{upcoming.length}</span> : null}</span>
               <button className="linkish" type="button" onClick={() => router.push("/subscriptions")}>더보기 ›</button>
             </div>
             <div className="card">

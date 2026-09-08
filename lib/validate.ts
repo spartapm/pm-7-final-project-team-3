@@ -30,8 +30,5 @@ export function passwordError(v: string, opts?: { min?: number; max?: number }) 
 }
 
 export function signupPasswordError(v: string) {
-  if (!v || v.length < 8) return "8자 이상, 영문·숫자를 조합해주세요.";
-  if (HANGUL.test(v)) return "8자 이상, 영문·숫자를 조합해주세요.";
-  if (!/[A-Za-z]/.test(v) || !/[0-9]/.test(v)) return "8자 이상, 영문·숫자를 조합해주세요.";
-  return "";
+  return passwordError(v);
 }

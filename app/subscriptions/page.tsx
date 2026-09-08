@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { CATEGORIES, isBundleLike } from "@/lib/catalog";
-import { dateLabel, daysUntil, won } from "@/lib/format";
+import { BENEFITS, CATEGORIES, benefitStatus, isBundleLike } from "@/lib/catalog";
+import { cycleEvery, dateLabel, dueBadge, dueLabel, won } from "@/lib/format";
 import { monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import type { Category } from "@/lib/types";
@@ -48,6 +48,7 @@ export default function SubListPage() {
       return statusRank(a) - statusRank(b);
     });
   const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
+  const benefitCheck = BENEFITS.filter((b) => benefitStatus(b, live) !== "owned").length;
   const cats = useMemo(
     () => [{ id: "all" as const, label: "전체" }, ...CATEGORIES.filter((c, i, a) => a.findIndex((x) => x.label === c.label) === i)],
     [],
@@ -75,14 +76,14 @@ export default function SubListPage() {
                 <div className="card tight">
                   <div className="muted">다음 결제</div>
                   <div className="sum-row">
-                    <span className="sum-num">{next ? (daysUntil(next.nextPay) === 0 ? "오늘" : `${daysUntil(next.nextPay)}일 후`) : "없음"}</span>
+                    <span className="sum-num">{next ? dueLabel(next.nextPay) : "없음"}</span>
                     <span className="sum-link">{next ? next.name : ""}</span>
                   </div>
                 </div>
                 <button className="card tight" type="button" onClick={() => router.push("/benefits")} style={{ textAlign: "left" }}>
                   <div className="muted">확인할 혜택</div>
                   <div className="sum-row">
-                    <span className="sum-num" style={{ color: "#2576f2" }}>2개</span>
+                    <span className="sum-num" style={{ color: "#2576f2" }}>{benefitCheck}개</span>
                     <span className="sum-link">확인하기</span>
                   </div>
                 </button>
@@ -104,7 +105,7 @@ export default function SubListPage() {
             {list.length === 0 ? (
               <div className="empty">등록된 구독이 없어요. 오른쪽 아래 + 로 추가해 보세요.</div>
             ) : list.map((s) => {
-              const dday = s.paused || s.status === "paused" ? null : daysUntil(s.nextPay);
+              const overdue = s.paused || s.status === "paused" ? null : dueBadge(s.nextPay);
               return (
                 <button key={s.id} className="sub-item" type="button" onClick={() => router.push(`/subscriptions/${s.id}`)}>
                   <Brand name={s.name} color={s.color} logo={s.logo} />
@@ -113,7 +114,7 @@ export default function SubListPage() {
                       {s.name}
                       {isBundleLike(s) ? <span className="bundle-tag">결합 상품</span> : null}
                     </div>
-                    <div className="muted">{dateLabel(s.nextPay)} · 매월</div>
+                    <div className="muted">{dateLabel(s.nextPay)} · {cycleEvery(s.cycle)}</div>
                   </span>
                   <span className="sub-item-right">
                     <span className="price">{won(s.amount)}</span>
@@ -121,8 +122,8 @@ export default function SubListPage() {
                       <span className="d-badge pause">일시정지</span>
                     ) : s.status === "trial" ? (
                       <span className="d-badge trial">무료체험</span>
-                    ) : dday != null ? (
-                      <span className="d-badge">{dday === 0 ? "오늘" : `D-${dday}`}</span>
+                    ) : overdue ? (
+                      <span className="d-badge">{overdue}</span>
                     ) : null}
                   </span>
                   <span className="chev">›</span>

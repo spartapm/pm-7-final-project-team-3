@@ -48,15 +48,26 @@ function Inner() {
       const amount = raw.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/)?.[1]?.replace(/,/g, "") ?? "17000";
       const name = /유튜브|youtube/i.test(raw) ? "YouTube Premium" : /스포티|spotify/i.test(raw) ? "Spotify" : "Netflix";
       setDraft({ ...emptyDraft(), name, amount, fromAi: true, plan: "" });
-      if (kind === "event") router.push("/events/new");
-      else router.push("/add/confirm");
+      if (kind === "event") {
+        sessionStorage.setItem("teum:ai-event", JSON.stringify({ title: name, date: new Date().toISOString().slice(0, 10) }));
+        router.push("/events/new");
+      } else {
+        router.push("/add/confirm");
+      }
     }, 1400);
   };
 
   return (
     <Gate>
       <PhoneShell>
-        <div className="topbar"><Back /><h1>음성으로 추가</h1><span style={{ width: 36 }} /></div>
+        <div className="topbar">
+          <Back onClick={() => {
+            if (phase === "listen") setPhase("exit");
+            else router.back();
+          }} />
+          <h1>음성으로 추가</h1>
+          <span style={{ width: 36 }} />
+        </div>
         {phase === "perm" ? (
           <div className="scroll">
             <h2 style={{ fontSize: 20, fontWeight: 800 }}>마이크 권한이 필요해요</h2>
