@@ -4,7 +4,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Back, Gate, Modal, PhoneShell } from "@/components/ui";
-import { dateLabel } from "@/lib/format";
+import { dateLabel, timeLabel } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
 export default function EventDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +30,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         <div className="scroll">
           <div className="card">
             <h2 style={{ margin: "0 0 8px" }}>{ev.title}</h2>
-            <p className="muted">{dateLabel(ev.date)} · {ev.allDay ? "하루 종일" : `${ev.start} ~ ${ev.end}`}</p>
+            <p className="muted">{dateLabel(ev.date)} · {ev.allDay ? "하루 종일" : `${timeLabel(ev.start)} ~ ${timeLabel(ev.end)}`}</p>
             {ev.memo ? <p style={{ marginTop: 12 }}>{ev.memo}</p> : null}
           </div>
           <div style={{ height: 16 }} />

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
-import { CATEGORIES, SERVICES } from "@/lib/catalog";
+import { categorySelectOptions, SERVICES } from "@/lib/catalog";
 import { nextPayDate, uid } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { BillingCycle, Category, DraftSub, SubStatus, Subscription } from "@/lib/types";
@@ -95,7 +95,7 @@ export function SubForm({ existingId }: { existingId: string | null }) {
           <div className="field">
             <label>카테고리</label>
             <select value={local.category} onChange={(e) => setLocal((p) => ({ ...p, category: e.target.value as Category }))}>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {categorySelectOptions(local.category).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
           <div className="field">

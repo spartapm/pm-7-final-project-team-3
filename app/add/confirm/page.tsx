@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
-import { CATEGORIES } from "@/lib/catalog";
+import { categorySelectOptions } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 
 export default function AddConfirm() {
@@ -19,7 +19,7 @@ export default function AddConfirm() {
           <div className="field">
             <label>카테고리</label>
             <select value={draft.category} onChange={(e) => setDraft({ category: e.target.value as typeof draft.category })}>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {categorySelectOptions(draft.category).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
           <div className="field"><label>결제 금액</label><input value={draft.amount} onChange={(e) => setDraft({ amount: e.target.value })} /></div>

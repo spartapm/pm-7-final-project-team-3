@@ -15,7 +15,7 @@ export default function NewPwPage() {
   return (
     <PhoneShell>
       <div className="auth">
-        <div className="topbar"><Back /></div>
+        <div className="topbar"><Back href="/forgot/verify" /></div>
         <h1 style={{ fontSize: 24, fontWeight: 800 }}>새 비밀번호 설정</h1>
         <p className="muted" style={{ margin: "8px 0 20px" }}>10자 이상 영문 대·소문자, 숫자, 특수문자를 조합해 주세요.</p>
         <div className={`field inbox ${err ? "err" : ""}`}>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Back, PhoneShell } from "@/components/ui";
+import { Back, BounceIfAuthed, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { emailError, signupPasswordError } from "@/lib/validate";
 
@@ -43,6 +43,7 @@ export default function SignupPage() {
   return (
     <PhoneShell>
       <div className="auth">
+        <BounceIfAuthed />
         <div className="topbar">
           <Back href="/login" />
         </div>

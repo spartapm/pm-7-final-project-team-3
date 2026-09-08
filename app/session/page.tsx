@@ -1,10 +1,16 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneShell } from "@/components/ui";
+import { useStore } from "@/lib/store";
 
 export default function SessionPage() {
   const router = useRouter();
+  const { hydrated, loggedIn } = useStore();
+  useEffect(() => {
+    if (hydrated && loggedIn) router.replace("/home");
+  }, [hydrated, loggedIn, router]);
   return (
     <PhoneShell>
       <div className="wait">

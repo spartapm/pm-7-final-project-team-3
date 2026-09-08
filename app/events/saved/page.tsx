@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PhoneShell } from "@/components/ui";
+import { Gate, PhoneShell } from "@/components/ui";
 
 export default function EventSaved() {
   const router = useRouter();
   return (
+    <Gate>
     <PhoneShell>
       <div className="done-screen">
         <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
@@ -15,5 +16,6 @@ export default function EventSaved() {
         <button className="btn primary" type="button" onClick={() => router.replace("/calendar")}>캘린더에서 보기</button>
       </div>
     </PhoneShell>
+    </Gate>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo, PhoneShell } from "@/components/ui";
+import { BounceIfAuthed, Logo, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { emailError, passwordError } from "@/lib/validate";
 
@@ -40,6 +40,7 @@ export default function LoginPage() {
 
   return (
     <PhoneShell>
+      <BounceIfAuthed />
       <div className="auth">
         <div className="brand-block">
           <Logo large />

@@ -31,6 +31,22 @@ export function nextPayDate(payDay: number, from = new Date()) {
   return ymd(d);
 }
 
+export function ensureFuturePay(nextPay: string, payDay: number, cycle: string) {
+  if (!nextPay) return nextPayDate(payDay);
+  if (daysUntil(nextPay) >= 0) return nextPay;
+  if (cycle === "weekly") {
+    const d = parseYmd(nextPay);
+    while (daysUntil(ymd(d)) < 0) d.setDate(d.getDate() + 7);
+    return ymd(d);
+  }
+  if (cycle === "yearly") {
+    const d = parseYmd(nextPay);
+    while (daysUntil(ymd(d)) < 0) d.setFullYear(d.getFullYear() + 1);
+    return ymd(d);
+  }
+  return nextPayDate(payDay);
+}
+
 export function won(n: number) {
   return `${n.toLocaleString("ko-KR")}원`;
 }

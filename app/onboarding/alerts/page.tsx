@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 
 export default function OnboardAlerts() {
   const router = useRouter();
-  const { setOnboarded, setAlerts } = useStore();
+  const { setOnboarded, setAlerts, hydrated, loggedIn, onboarded } = useStore();
   const [pay, setPay] = useState(true);
   const [marketing, setMarketing] = useState(true);
+
+  useEffect(() => {
+    if (hydrated && loggedIn && onboarded) router.replace("/home");
+  }, [hydrated, loggedIn, onboarded, router]);
   return (
     <PhoneShell>
       <div className="auth">

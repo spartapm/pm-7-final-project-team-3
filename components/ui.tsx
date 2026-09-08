@@ -16,6 +16,16 @@ export function PhoneShell({ children }: { children: ReactNode }) {
   );
 }
 
+export function BounceIfAuthed() {
+  const { hydrated, loggedIn, onboarded } = useStore();
+  const router = useRouter();
+  useEffect(() => {
+    if (!hydrated || !loggedIn) return;
+    router.replace(onboarded ? "/home" : "/onboarding/alerts");
+  }, [hydrated, loggedIn, onboarded, router]);
+  return null;
+}
+
 export function Gate({ children }: { children: ReactNode }) {
   const { hydrated, loggedIn, onboarded } = useStore();
   const router = useRouter();
@@ -78,7 +88,9 @@ export function TabBar() {
   return (
     <nav className="tabbar">
       {tabs.map((t) => {
-        const on = path === t.href || path.startsWith(t.href + "/");
+        const on = t.href === "/home"
+          ? path === "/home" || path.startsWith("/subscriptions")
+          : path === t.href || path.startsWith(t.href + "/");
         const Icon = t.icon;
         return (
           <Link key={t.href} href={t.href} className={on ? "on" : ""}>

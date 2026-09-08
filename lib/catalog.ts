@@ -14,6 +14,16 @@ export const CATEGORIES: { id: Category; label: string }[] = [
   { id: "other", label: "기타" },
 ];
 
+export const CATEGORY_OPTIONS = CATEGORIES.filter((c, i, a) => a.findIndex((x) => x.label === c.label) === i);
+
+export function categorySelectOptions(current?: Category) {
+  if (current && !CATEGORY_OPTIONS.some((c) => c.id === current)) {
+    const hit = CATEGORIES.find((c) => c.id === current);
+    if (hit) return [...CATEGORY_OPTIONS, hit];
+  }
+  return CATEGORY_OPTIONS;
+}
+
 export const SERVICES: { name: string; category: Category; amount: number; color: string; logo: string }[] = [
   { name: "Netflix", category: "ott", amount: 17000, color: "#E50914", logo: "N" },
   { name: "YouTube Premium", category: "ott", amount: 14900, color: "#FF0000", logo: "▶" },

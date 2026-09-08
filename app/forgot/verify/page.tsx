@@ -36,7 +36,7 @@ export default function VerifyPage() {
   return (
     <PhoneShell>
       <div className="auth">
-        <div className="topbar"><Back /></div>
+        <div className="topbar"><Back href="/forgot" /></div>
         <h1 style={{ fontSize: 24, fontWeight: 800 }}>인증 코드 확인</h1>
         <p className="muted" style={{ margin: "8px 0 8px", lineHeight: 1.5 }}>이메일로 보낸 6자리 코드를 입력해 주세요.</p>
         <div className="otp">

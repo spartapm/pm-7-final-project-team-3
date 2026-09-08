@@ -21,7 +21,7 @@ import {
   signupCloud,
   type CloudStatus,
 } from "./cloud";
-import { nextPayDate, uid } from "./format";
+import { ensureFuturePay, nextPayDate, uid } from "./format";
 import type {
   AlertPrefs,
   AppState,
@@ -62,7 +62,34 @@ function empty(): AppState {
 }
 
 function withNotices(s: AppState): AppState {
-  return { ...s, notices: mergePayNotices(s.subscriptions, s.alerts, s.notices) };
+  const subscriptions = s.subscriptions.map((sub) => {
+    const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle);
+    return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
+  });
+  return { ...s, subscriptions, notices: mergePayNotices(subscriptions, s.alerts, s.notices) };
+}
+
+function fillDemoGaps(
+  remote: { subscriptions: AppState["subscriptions"]; events: AppState["events"]; notices: AppState["notices"] },
+  local: Pick<AppState, "subscriptions" | "events" | "notices">,
+  demo: boolean,
+) {
+  const subscriptions = remote.subscriptions.length > 0
+    ? remote.subscriptions
+    : demo
+      ? (local.subscriptions.length ? local.subscriptions : seedSubscriptions())
+      : remote.subscriptions;
+  const events = remote.events.length > 0
+    ? remote.events
+    : demo
+      ? (local.events.length ? local.events : seedEvents())
+      : remote.events;
+  const notices = remote.notices.length > 0
+    ? remote.notices
+    : demo
+      ? (local.notices.length ? local.notices : seedNotices(subscriptions))
+      : remote.notices;
+  return { subscriptions, events, notices };
 }
 
 function load(): AppState {
@@ -196,16 +223,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (res.status !== "ok" || !res.data) return;
     if (mutGen.current !== genAtPull) return;
     const remote = res.data;
-    const hasRemote = remote.subscriptions.length > 0 || remote.events.length > 0 || remote.notices.length > 0;
+    const demo = stateRef.current.email === DEMO_EMAIL;
     setState((s) => {
+      const filled = fillDemoGaps(remote, s, demo);
       const next = {
         ...s,
         onboarded: remote.onboarded || s.onboarded,
         marketingAccepted: remote.marketing || s.marketingAccepted,
         alerts: remote.alerts ?? s.alerts,
-        subscriptions: hasRemote ? remote.subscriptions : s.subscriptions,
-        events: hasRemote ? remote.events : s.events,
-        notices: hasRemote ? remote.notices : s.notices,
+        ...filled,
       };
       return withNotices(next);
     });
@@ -296,16 +322,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const pulled = await pullAccount(accountId, next.alerts);
       if (pulled.status === "ok" && pulled.data) {
         const remote = pulled.data;
-        const hasRemote = remote.subscriptions.length > 0 || remote.events.length > 0;
+        const filled = fillDemoGaps(remote, next, demo);
         next = {
           ...next,
           onboarded: remote.onboarded || next.onboarded,
           marketingAccepted: remote.marketing || next.marketingAccepted,
           alerts: remote.alerts ?? next.alerts,
-          subscriptions: hasRemote ? remote.subscriptions : demo ? seedSubscriptions() : [],
-          events: hasRemote ? remote.events : demo ? seedEvents() : [],
-          notices: hasRemote ? remote.notices : demo ? seedNotices(seedSubscriptions()) : [],
-          seeded: demo || hasRemote,
+          ...filled,
+          seeded: demo || filled.subscriptions.length > 0,
         };
       } else if (demo) {
         const subs = seedSubscriptions();
