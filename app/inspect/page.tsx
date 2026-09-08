@@ -77,7 +77,10 @@ export default function InspectPage() {
                 <Brand name={s.name} color={s.color} logo={s.logo} />
                 <span className="grow">
                   <div style={{ fontWeight: 800 }}>{s.name}</div>
-                  <div className="muted">{cycleEvery(s.cycle)} 정기 결제{s.unused ? " · 미사용 의심" : ""}</div>
+                  <div className="muted">
+                    {s.status === "trial" ? "무료체험" : `${cycleEvery(s.cycle)} 정기 결제`}
+                    {s.unused ? " · 미사용 의심" : ""}
+                  </div>
                 </span>
                 <span className="price">{won(monthlyAmount(s.amount, s.cycle))}</span>
               </button>

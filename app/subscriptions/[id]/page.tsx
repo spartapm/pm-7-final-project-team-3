@@ -44,6 +44,14 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
             </div>
             <span className={`sub-badge ${badgeCls}`}>{statusLabel}</span>
           </div>
+          {sub.unused && !paused ? (
+            <div className="warn-banner">
+              최근 이용이 보이지 않아 새는 구독으로 표시했어요. 계속 쓸지 점검 화면에서 확인해 보세요.
+              <div>
+                <button type="button" onClick={() => router.push("/inspect")}>구독 점검하기 ›</button>
+              </div>
+            </div>
+          ) : null}
           {isBundleLike(sub) ? (
             <div className="warn-banner">
               이 구독은 통신사·멤버십 결합에 포함될 수 있어요. 따로 결제 중인지 혜택 탭에서 확인해 보세요.
