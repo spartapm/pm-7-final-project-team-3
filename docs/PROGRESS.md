@@ -6,7 +6,7 @@
 
 | 명세 | 화면 | 라우트 | 상태 |
 | --- | --- | --- | --- |
-| SP-AU-Login | 로그인 | `/login` | ✅ 이메일·비번 검증, 소셜 1차 제외 토스트, 종료 확인 카피 |
+| SP-AU-Login | 로그인 | `/login` | ✅ 이메일·비번 검증, 소셜 1차 제외 토스트. 웹 첫 진입이라 앱 종료 화살표는 빼 둠 |
 | SP-AU-SignUp | 회원가입 | `/signup` | ✅ 약관 필수/선택, 이메일 검증 |
 | SP-AU-Terms | 약관 상세 | `/signup/terms` | ✅ |
 | SP-AU-SignUpCp | 가입 완료 | `/signup/done` | ✅ |

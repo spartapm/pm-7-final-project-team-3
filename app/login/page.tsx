@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Back, Logo, Modal, PhoneShell } from "@/components/ui";
+import { Logo, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { emailError, passwordError } from "@/lib/validate";
 
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [eErr, setEErr] = useState("");
   const [pErr, setPErr] = useState("");
-  const [exit, setExit] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -42,9 +41,6 @@ export default function LoginPage() {
   return (
     <PhoneShell>
       <div className="auth">
-        <div className="topbar">
-          <Back onClick={() => setExit(true)} />
-        </div>
         <div className="brand-block">
           <Logo large />
           <div className="slogan">구독도 일정도, 빈틈없이</div>
@@ -88,16 +84,6 @@ export default function LoginPage() {
           계정이 없으신가요?  <Link href="/signup">회원가입</Link>
         </div>
       </div>
-      {exit ? (
-        <Modal
-          title="종료하시겠어요?"
-          body="앱을 종료하면 로그인 화면을 다시 보게 됩니다."
-          cancel="취소"
-          confirm="종료"
-          onCancel={() => setExit(false)}
-          onConfirm={() => setExit(false)}
-        />
-      ) : null}
     </PhoneShell>
   );
 }

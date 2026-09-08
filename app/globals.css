@@ -411,14 +411,14 @@ img { display: block; max-width: 100%; }
   padding: 8px 24px 28px; overflow: auto; background: #f7f8fa;
 }
 .auth .brand-block {
-  text-align: center; padding: 12px 0 28px;
+  text-align: center; padding: 40px 0 28px;
   display: flex; flex-direction: column; align-items: center;
 }
 .auth .slogan { color: #4b4e58; font-size: 14px; margin-top: 8px; }
 .auth-foot { margin-top: auto; padding-top: 28px; text-align: center; font-size: 13px; color: #4b4e58; }
 .auth-foot a { color: var(--text); font-weight: 700; }
-.auth .btn { height: 56px; border-radius: 18px; }
-.auth .btn.social { height: 48px; font-size: 15px; }
+.auth .btn { height: 52px; border-radius: 16px; font-size: 16px; }
+.auth .btn.social { height: 52px; font-size: 16px; }
 .auth .or {
   display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 16px 0;
 }
