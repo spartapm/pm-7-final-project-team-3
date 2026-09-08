@@ -1,10 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneShell } from "@/components/ui";
+import { useStore } from "@/lib/store";
 
 export default function SignupDone() {
   const router = useRouter();
+  const { hydrated, loggedIn, onboarded } = useStore();
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!loggedIn) router.replace("/login");
+    else if (onboarded) router.replace("/home");
+  }, [hydrated, loggedIn, onboarded, router]);
   return (
     <PhoneShell>
       <div className="done-screen">

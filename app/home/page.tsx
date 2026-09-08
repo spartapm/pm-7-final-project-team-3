@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 
 export default function HomePage() {
   const router = useRouter();
-  const { hydrated, subscriptions, notices, markNotice, markAllNotices, accountId, showToast } = useStore();
+  const { hydrated, subscriptions, events, notices, markNotice, markAllNotices, accountId, showToast } = useStore();
   const [promo, setPromo] = useState(0);
   const [day, setDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
@@ -39,8 +39,13 @@ export default function HomePage() {
         map.set(s.trialEnds, t);
       }
     }
+    for (const e of events) {
+      const arr = map.get(e.date) ?? [];
+      arr.push("#ff7aa2");
+      map.set(e.date, arr);
+    }
     return map;
-  }, [live]);
+  }, [live, events]);
 
   if (!hydrated) return <PhoneShell><div className="scroll" /></PhoneShell>;
 

@@ -90,7 +90,9 @@ export function TabBar() {
       {tabs.map((t) => {
         const on = t.href === "/home"
           ? path === "/home" || path.startsWith("/subscriptions")
-          : path === t.href || path.startsWith(t.href + "/");
+          : t.href === "/benefits"
+            ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
+            : path === t.href || path.startsWith(t.href + "/");
         const Icon = t.icon;
         return (
           <Link key={t.href} href={t.href} className={on ? "on" : ""}>

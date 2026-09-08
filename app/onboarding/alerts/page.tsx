@@ -12,7 +12,9 @@ export default function OnboardAlerts() {
   const [marketing, setMarketing] = useState(true);
 
   useEffect(() => {
-    if (hydrated && loggedIn && onboarded) router.replace("/home");
+    if (!hydrated) return;
+    if (!loggedIn) router.replace("/login");
+    else if (onboarded) router.replace("/home");
   }, [hydrated, loggedIn, onboarded, router]);
   return (
     <PhoneShell>

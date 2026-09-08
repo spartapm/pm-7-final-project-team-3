@@ -16,7 +16,8 @@ export default function InspectPage() {
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
   const leak = leaksOf(live);
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
-  const shown = open ? live : live.slice(0, 3);
+  const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
+  const shown = open ? ranked : ranked.slice(0, 3);
 
   const rerun = () => {
     setWaiting(true);
