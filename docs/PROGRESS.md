@@ -14,10 +14,10 @@
 | SP-AU-Verify | 인증코드 | `/forgot/verify` | ✅ 6칸·포커스 강조·재전송 1분·인증하기 |
 | SP-AU-NewPW | 새 비밀번호 | `/forgot/new` | ✅ 확인 필드, 불일치 문구, 「비밀번호 변경」 |
 | SP-AU-PWCp | 재설정 완료 | `/forgot/done` | ✅ 조아틈끼, 로그인 하러 가기 |
-| SP-OnBdAgree | 알림 사전안내 | `/onboarding/alerts` | ✅ |
+| SP-OnBdAgree | 알림 사전안내 | `/home` 첫 진입 팝업 | ✅ 알림틈끼, 마케팅 광고 알림 수신 동의, 거부/받기, 시각 토스트 |
 | SP-HM-Dashbd | 홈 대시보드 | `/home` | ✅ 알림 9+, 슬라이드 배너 4장 3초, 주간 캘린더 색, 0원/누수 카피, 이번 주 MY 결제일 2개, FAB +→X |
 | SP-HM-Reminder | 알림 사이드시트 | 홈 시트 | ✅ 확인 / 모두 읽음 |
-| SP-Coldhome | 홈 0건 | `/home` (신규 가입) | ✅ 0원, 빈 결제, 빈 안내바 |
+| SP-Coldhome | 홈 0건 | `/home` (신규 가입) | ✅ 0원, `아직 등록된 구독이 없어요`, `예정된 결제가 없어요` |
 | SP-SB-List | 내 구독 | `/subscriptions` | ✅ 요약 카드, 카테고리 칩, 정렬(결제일/금액/최신/상태), empty |
 | SP-ColdSub | 구독 목록 empty | 위 empty | ✅ |
 | SP-SB-Detail | 구독 상세 | `/subscriptions/[id]` | ✅ 상태 드롭다운, 결합 문구, 결제수단, 틈이 확인했어요, 삭제 모달(놀란틈끼) |
@@ -25,23 +25,31 @@
 | SP-SB-EditCp | 저장 완료 | `/subscriptions/saved` | ✅ 조아틈끼, 요약 카드, 상세로 이동 |
 | SP-CAL-Calendar | 캘린더 | `/calendar` | ✅ 구독/일상/전체 필터, 월 이동, 도트, 선택일 목록, 공유 |
 | SP-CAL-Fab | FAB 펼침 | 공통 FAB | ✅ 구독·일상 탭 + 이미지/음성/직접 |
-| SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ |
+| SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ 필수*·알림 5종·메모 50자. ❌ 소형 캘린더/TimePicker는 네이티브 입력 |
 | SP-CAL-Detail | 일정 상세 | `/events/[id]` | ✅ 수정·삭제(놀란틈끼, 복구 불가 카피) |
 | SP-CAL-ScheduleCp | 일정 저장 완료 | `/events/saved` | ✅ 조아틈끼 |
 | SP-BNF-Main | 혜택 | `/benefits` | ✅ 0건「빈틈이 없어요!」, 점검받기, 카테고리 4종, empty 카드틈끼 |
 | SP-BNF-Detail | 혜택 상세 | `/benefits/[id]` | ✅ 공식 서비스 이동 |
 | SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기 로딩틈끼·닫기, 실패 우는틈끼·다시 시도/혜택 홈 |
-| SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 권한·다중 선택·분석 중·실패 |
-| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ 말씀해주세요, 탭하여 녹음 시작, 권한 팝업(권한틈끼2), 장치없음 토스트 |
-| SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ 확정 전 미반영 |
+| SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 등록 전·최대 3장·분석하기·대기/실패. 웹 권한 팝업 없음(명세 예외) |
+| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ idle + 듣기(중단/59초) + 저장 + 종료 확인 + 대기/실패 |
+| SP-ADD-Result | 분석 결과 목록 | 없음 | ❌ 추출 항목 선택 화면 없음. 분석 후 바로 Check/일상 폼 |
+| SP-ADD-ResultExitConf | 결과 이탈 확인 | 없음 | ❌ Result가 없어서 같이 없음 |
+| SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ SubForm 자동입력, 요금 불일치 경고, 저장 전 미반영 |
 | SP-MY-Main | 마이 | `/me` | ✅ 셀카틈끼, MVP 토스트 원문, 계정 탈퇴 #FF0008 |
 | SP-MY-Reminder | 알림 설정 | `/me/alerts` | ✅ 결제/가격/캘린더/마케팅 수신동의 + 즉시 반영 |
 | SP-My-Logout | 로그아웃 확인 | 모달 | ✅ 「로그아웃 하시겠어요?」 |
 | SP-My-DelAccount | 탈퇴 안내 | `/me/withdraw` | ✅ 5조 안내, 사유 6종, 기타 입력, 완료 시트 |
 | SP-ServALL | 전역 실패 | `/error` | ✅ |
-| SP-ScienceOver | 세션 만료 | `/session` | ✅ 30일 세션 후 `/session`으로 보냄 |
+| SP-ScienceOver | 세션 만료 | `/session` | ✅ 놀란틈끼, `로그인이 만료됐어요`, `다시 로그인` |
 
 클라우드: 계정·구독·일정·알림을 Supabase에 동기화. 결제 예정 알림은 구독·알림 설정에서 동적으로 생성. 지난 결제일은 다음 주기로 넘김.
+
+## 아직 덜 맞은 것
+
+- `SP-ADD-Result` / `SP-ADD-ResultExitConf`: 분석 후 항목 선택·이탈 확인 화면이 없음.
+- 일상 일시: 명세의 딤드 소형 캘린더 + TimePicker 순차 호출 대신 네이티브 date/time.
+- 9/8 초록 박스: 가입완료 로고 삭제, 구독 폼 무료체험·결제수단·작성중단 팝업까지는 반영. 캔버스 전체 초록 박스를 다 훑진 않음.
 
 ## 의도적으로 뺀 것
 

@@ -2,12 +2,16 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Back, Gate, Modal, PhoneShell } from "@/components/ui";
+import { Back, Gate, PhoneShell } from "@/components/ui";
 import { VoiceWave } from "@/components/VoiceWave";
 import { emptyDraft } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 
-type Phase = "idle" | "listen" | "wait" | "fail" | "exit";
+type Phase = "idle" | "listen" | "save" | "wait" | "fail" | "exit";
+
+function clockOf(sec: number) {
+  return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+}
 
 function Inner() {
   const router = useRouter();
@@ -19,6 +23,15 @@ function Inner() {
   const [sec, setSec] = useState(0);
   const recRef = useRef<{ stop: () => void } | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
+  const stopMic = () => {
+    recRef.current?.stop();
+    recRef.current = null;
+    stream?.getTracks().forEach((t) => t.stop());
+    setStream(null);
+  };
 
   useEffect(() => () => {
     recRef.current?.stop();
@@ -27,11 +40,32 @@ function Inner() {
 
   useEffect(() => {
     if (phase !== "listen") return;
-    const t = window.setInterval(() => setSec((n) => n + 1), 1000);
+    const t = window.setInterval(() => {
+      setSec((n) => {
+        if (n + 1 >= 59) {
+          window.setTimeout(() => toSave(), 0);
+          return 59;
+        }
+        return n + 1;
+      });
+    }, 1000);
     return () => window.clearInterval(t);
   }, [phase]);
 
-  const clock = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  useEffect(() => {
+    const freeze = () => {
+      if (phaseRef.current === "listen") toSave();
+    };
+    const onVis = () => {
+      if (document.hidden) freeze();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", freeze);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", freeze);
+    };
+  }, []);
 
   const beginListen = (mic: MediaStream) => {
     setStream(mic);
@@ -47,7 +81,10 @@ function Inner() {
         for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
         setText(t);
       };
-      rec.onerror = () => setPhase("fail");
+      rec.onerror = () => {
+        stopMic();
+        setPhase("fail");
+      };
       recRef.current = rec;
       rec.start();
     }
@@ -86,15 +123,32 @@ function Inner() {
     }
   };
 
-  const save = () => {
+  const toSave = () => {
     recRef.current?.stop();
+    recRef.current = null;
     stream?.getTracks().forEach((t) => t.stop());
     setStream(null);
+    setPhase("save");
+  };
+
+  const retrySpeak = () => {
+    setText("");
+    setSec(0);
+    void start();
+  };
+
+  const analyze = () => {
+    if (!text.trim()) return;
+    stopMic();
     setPhase("wait");
-    setTimeout(() => {
-      const raw = text || "넷플릭스 만 칠천원 매달 27일";
+    window.setTimeout(() => {
+      const raw = text.trim();
+      if (!raw) {
+        setPhase("fail");
+        return;
+      }
       const amount = raw.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/)?.[1]?.replace(/,/g, "") ?? "17000";
-      const name = /유튜브|youtube/i.test(raw) ? "YouTube Premium" : /스포티|spotify/i.test(raw) ? "Spotify" : "Netflix";
+      const name = /유튜브|youtube/i.test(raw) ? "YouTube Premium" : /스포티|spotify/i.test(raw) ? "Spotify" : /넷플릭|netflix/i.test(raw) ? "Netflix" : raw.slice(0, 30);
       setDraft({ ...emptyDraft(), name, amount, fromAi: true, plan: "" });
       if (kind === "event") {
         sessionStorage.setItem("teum:ai-event", JSON.stringify({ title: name, date: new Date().toISOString().slice(0, 10) }));
@@ -105,18 +159,27 @@ function Inner() {
     }, 1400);
   };
 
+  const recording = phase === "listen" || phase === "save" || phase === "exit";
+  const clock = clockOf(sec);
+
   return (
     <Gate>
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => {
-            if (phase === "listen") setPhase("exit");
-            else router.back();
+            if (phase === "listen" || phase === "save") {
+              recRef.current?.stop();
+              setPhase("exit");
+            } else if (phase === "wait") {
+              setPhase("save");
+            } else {
+              router.back();
+            }
           }} />
           <h1>음성으로 등록</h1>
           <span style={{ width: 36 }} />
         </div>
-        {phase === "idle" || phase === "listen" || phase === "exit" ? (
+        {phase === "idle" || recording ? (
           <div className="scroll voice-idle">
             <h2>말씀해주세요</h2>
             <p className="muted">
@@ -126,14 +189,42 @@ function Inner() {
             </p>
             <span className="voice-pill">음성 입력</span>
             <img className="teumki-illust" src="/teumki/mic.png" alt="" />
-            {phase === "listen" ? <VoiceWave stream={stream} active /> : <img className="voice-idle-wave" src="/voice/wave-idle.png" alt="" />}
-            <p className="voice-status">{phase === "listen" ? `듣고 있어요 · ${clock}` : "녹음 대기 · 00:00"}</p>
-            {phase === "listen" ? (
+            {phase === "listen" || phase === "exit" ? (
+              <VoiceWave stream={stream} active={phase === "listen"} />
+            ) : (
+              <img className="voice-idle-wave" src={phase === "save" ? "/voice/wave-idle.png" : "/voice/wave-idle.png"} alt="" />
+            )}
+            <p className="voice-status">
+              {phase === "save" ? `다 들었어요 · ${clock}` : phase === "listen" || phase === "exit" ? `듣고 있어요 · ${clock}` : "녹음 대기 · 00:00"}
+            </p>
+            {phase === "listen" || phase === "save" || phase === "exit" ? (
               <>
-                <p>{text || "듣고 있어요…"}</p>
-                <button className="btn primary" type="button" onClick={save}>저장</button>
-                <div style={{ height: 8 }} />
-                <button className="btn ghost" type="button" onClick={() => setPhase("exit")}>종료</button>
+                <div className="voice-card">
+                  <div className="voice-card-top">
+                    <span>{phase === "save" ? "AI 인식" : "인식"}</span>
+                    {phase === "save" ? <span className="voice-pencil" aria-hidden>✎</span> : null}
+                  </div>
+                  {phase === "save" ? (
+                    <textarea value={text} onChange={(e) => setText(e.target.value)} />
+                  ) : (
+                    <p>{text || "듣고 있어요…"}</p>
+                  )}
+                </div>
+                <div className="voice-duo">
+                  {phase === "save" ? (
+                    <button className="btn ghost" type="button" onClick={retrySpeak}>다시 말하기</button>
+                  ) : (
+                    <button className="btn ghost" type="button" onClick={toSave}>중단</button>
+                  )}
+                  <button
+                    className="btn primary"
+                    type="button"
+                    disabled={phase !== "save" || !text.trim()}
+                    onClick={analyze}
+                  >
+                    저장
+                  </button>
+                </div>
               </>
             ) : (
               <button className="btn primary" type="button" onClick={start}>탭하여 녹음 시작하기</button>
@@ -142,28 +233,35 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => setPhase("save")}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />
-            <h2>음성을 정리하고 있어요</h2>
-            <p className="muted">확인 화면에서 수정한 뒤에만 등록돼요.</p>
+            <h2>데이터를 생성하고 있어요</h2>
+            <p className="muted">잠시만 기다리시면 제가 적어드릴께요.</p>
+            <p className="inspect-note">ⓘ 이미지 인식이 제대로 안되었을 경우 직접 수정 진행하셔야 합니다.</p>
           </div>
         ) : null}
         {phase === "fail" ? (
           <div className="wait">
             <img className="teumki-illust" src="/teumki/sad.png" alt="" />
-            <h2>음성을 인식하지 못했어요</h2>
-            <p className="muted">조용한 곳에서 다시 말하거나 직접 입력해 주세요.</p>
-            <button className="btn primary" type="button" onClick={() => setPhase("idle")}>다시 시도</button>
+            <h2>음성으로 등록하지 못했어요</h2>
+            <p className="muted">일시적인 오류로 분석이 중단됐어요.<br />잠시 후 다시 등록해 주세요.</p>
+            <button className="btn primary" type="button" onClick={() => { setText(""); setSec(0); setPhase("idle"); }}>다시 시도하기</button>
           </div>
         ) : null}
         {phase === "exit" ? (
-          <Modal
-            title="음성 등록을 종료할까요?"
-            body="지금까지 들은 내용은 저장되지 않아요."
-            confirm="종료"
-            danger
-            onCancel={() => setPhase("listen")}
-            onConfirm={() => router.back()}
-          />
+          <div className="modal-back" onClick={() => setPhase("listen")}>
+            <div className="modal voice-perm" onClick={(e) => e.stopPropagation()}>
+              <img className="modal-mascot" src="/teumki/curious.png" alt="" />
+              <h3>음성 분석을 그만할까요?</h3>
+              <p>분석 중인 내용은 저장되지 않아요.</p>
+              <div className="modal-actions">
+                <button className="btn cancel" type="button" onClick={() => { stopMic(); router.back(); }}>분석 그만하기</button>
+                <button className="btn primary" type="button" onClick={() => setPhase("listen")}>계속 진행하기</button>
+              </div>
+            </div>
+          </div>
         ) : null}
         {perm ? (
           <div className="modal-back" onClick={() => setPerm(false)}>

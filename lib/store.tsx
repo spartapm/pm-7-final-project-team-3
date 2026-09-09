@@ -423,7 +423,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...s,
       onboarded: true,
       marketingAccepted: marketing,
-      alerts: { ...s.alerts, marketing },
+      alerts: { ...s.alerts, marketing, benefit: marketing },
     }));
   }, []);
 

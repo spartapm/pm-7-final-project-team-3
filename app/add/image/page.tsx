@@ -2,32 +2,46 @@
 
 import { Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Back, Gate, Modal, PhoneShell } from "@/components/ui";
+import { Back, Gate, PhoneShell } from "@/components/ui";
 import { emptyDraft } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 
-type Phase = "perm" | "pick" | "wait" | "fail" | "leave";
+type Phase = "pick" | "wait" | "fail";
+const MAX = 3;
+
+function isPngJpg(file: File) {
+  const t = file.type.toLowerCase();
+  if (t === "image/png" || t === "image/jpeg" || t === "image/jpg") return true;
+  return /\.(png|jpe?g)$/i.test(file.name);
+}
 
 function Inner() {
   const router = useRouter();
   const kind = useSearchParams().get("kind") === "event" ? "event" : "subscription";
   const { setDraft, showToast } = useStore();
-  const [phase, setPhase] = useState<Phase>("perm");
+  const [phase, setPhase] = useState<Phase>("pick");
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const pickFiles = (list: FileList | File[] | null) => {
+    const incoming = Array.from(list ?? []);
+    if (incoming.some((f) => !isPngJpg(f))) {
+      showToast("⚠️  PNG 또는 JPG 형식의 이미지만 올릴 수 있어요.", "err");
+      return;
+    }
+    if (files.length >= MAX || files.length + incoming.length > MAX) {
+      showToast("⚠️  이미지는 최대 3장까지 올릴 수 있어요.", "err");
+      return;
+    }
+    const next = incoming.slice(0, MAX - files.length).map((file) => ({ url: URL.createObjectURL(file), name: file.name }));
+    setFiles((xs) => [...xs, ...next]);
+  };
+
   const analyze = async () => {
-    if (files.length === 0) {
-      showToast("이미지를 한 장 이상 선택해 주세요.", "err");
-      return;
-    }
-    if (files.length > 6) {
-      setPhase("fail");
-      return;
-    }
+    if (files.length === 0) return;
     setPhase("wait");
     try {
-      const images = await Promise.all(files.slice(0, 4).map(async (f) => {
+      const images = await Promise.all(files.slice(0, MAX).map(async (f) => {
         const blob = await fetch(f.url).then((r) => r.blob());
         const buf = await blob.arrayBuffer();
         const bytes = new Uint8Array(buf);
@@ -48,7 +62,7 @@ function Inner() {
       const d = json.data;
       if (kind === "event") {
         sessionStorage.setItem("teum:ai-event", JSON.stringify({
-          title: d.title || d.name || "새 일정",
+          title: d.title || d.name || "",
           date: d.date || new Date().toISOString().slice(0, 10),
         }));
         router.push("/events/new");
@@ -56,9 +70,9 @@ function Inner() {
       }
       setDraft({
         ...emptyDraft(),
-        name: d.name || "Netflix",
+        name: d.name || "",
         plan: d.plan || "",
-        amount: String(d.amount || "17000").replace(/[^\d]/g, ""),
+        amount: String(d.amount || "").replace(/[^\d]/g, ""),
         category: "ott",
         fromAi: true,
       });
@@ -73,75 +87,66 @@ function Inner() {
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => {
-            if (phase === "pick" && files.length > 0) setPhase("leave");
-            else router.back();
+            setFiles([]);
+            router.back();
           }} />
           <h1>이미지로 추가</h1>
           <span style={{ width: 36 }} />
         </div>
-        {phase === "perm" ? (
-          <div className="scroll" style={{ textAlign: "center" }}>
-            <img className="teumki-illust" src="/teumki/perm2.png" alt="" />
-            <h2 style={{ fontSize: 20, fontWeight: 800 }}>사진 접근 권한이 필요해요</h2>
-            <p className="muted" style={{ lineHeight: 1.55 }}>결제 내역 스크린샷에서 구독 후보를 찾으려면 사진 보관함에 접근해야 해요. 선택한 이미지는 기기에만 쓰입니다.</p>
-            <div style={{ height: 16 }} />
-            <button className="btn primary" type="button" onClick={() => setPhase("pick")}>허용</button>
-            <div style={{ height: 8 }} />
-            <button className="btn ghost" type="button" onClick={() => router.back()}>나중에</button>
-          </div>
-        ) : null}
         {phase === "pick" ? (
           <div className="scroll">
-            <p className="muted">{files.length}장 선택됨 · 필요 없는 이미지는 삭제할 수 있어요</p>
-            <div className="thumb-grid" style={{ margin: "12px 0" }}>
-              {files.map((f, i) => (
-                <div key={i} className="thumb">
-                  <img src={f.url} alt="" />
-                  <button className="x" type="button" onClick={() => setFiles((xs) => xs.filter((_, j) => j !== i))}>✕</button>
-                </div>
-              ))}
-              <button className="thumb" type="button" onClick={() => inputRef.current?.click()} style={{ display: "grid", placeItems: "center", color: "var(--muted)", fontSize: 28 }}>+</button>
-            </div>
+            <h2 className="add-title">추가 할 이미지를 올려주세요</h2>
+            <p className="muted">여러 장 올려도 구독 및 일정을 함께 찾을 수 있어요.</p>
+            <button className="upload-area" type="button" onClick={() => inputRef.current?.click()}>
+              <span className="upload-plus">↑</span>
+              <strong>이미지 추가하기</strong>
+              <em>최대 3장 · PNG/JPG</em>
+            </button>
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg"
               multiple
               hidden
               onChange={(e) => {
-                const next = Array.from(e.target.files ?? []).map((file) => ({ url: URL.createObjectURL(file), name: file.name }));
-                setFiles((xs) => [...xs, ...next].slice(0, 8));
+                pickFiles(e.target.files);
+                e.target.value = "";
               }}
             />
-            <button className="btn primary" type="button" onClick={analyze}>분석하기</button>
+            {files.length > 0 ? (
+              <>
+                <p className="upload-count">{files.length}장 선택됨 · 필요 없는 이미지는 삭제할 수 있어요</p>
+                <div className="thumb-grid" style={{ margin: "12px 0" }}>
+                  {files.map((f, i) => (
+                    <div key={i} className="thumb">
+                      <img src={f.url} alt="" />
+                      <button className="x" type="button" onClick={() => setFiles((xs) => xs.filter((_, j) => j !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            <button className="btn primary" type="button" disabled={files.length === 0} onClick={() => void analyze()}>이미지 분석하기</button>
           </div>
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => setPhase("pick")}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />
-            <h2>이미지를 읽고 있어요</h2>
-            <p className="muted">서비스명, 금액, 결제 주기를 찾는 중이에요. 확인 전까지는 목록에 넣지 않아요.</p>
+            <h2>이미지를 스캔하고 있어요</h2>
+            <p className="muted">잠시만 기다리시면 제가 적어드릴게요.</p>
+            <p className="inspect-note">ⓘ 이미지 인식이 제대로 안되었을 경우 직접 수정 진행하셔야 합니다.</p>
           </div>
         ) : null}
         {phase === "fail" ? (
           <div className="wait">
             <img className="teumki-illust" src="/teumki/sad.png" alt="" />
-            <h2>이미지에서 구독을 찾지 못했어요</h2>
-            <p className="muted">더 선명한 결제 내역 화면으로 다시 시도하거나, 직접 입력해 주세요.</p>
-            <button className="btn primary" type="button" onClick={() => setPhase("pick")}>다시 시도</button>
-            <div style={{ height: 8 }} />
-            <button className="btn ghost" type="button" onClick={() => router.push(kind === "event" ? "/events/new" : "/subscriptions/new")}>직접 입력</button>
+            <h2>이미지를 스캔하지 못했어요</h2>
+            <p className="muted">일시적인 오류로 분석이 중단됐어요.<br />잠시 후 다시 등록해 주세요.</p>
+            <button className="btn primary" type="button" onClick={() => setPhase("pick")}>다시 시도하기</button>
           </div>
-        ) : null}
-        {phase === "leave" ? (
-          <Modal
-            title="추출 결과를 버릴까요?"
-            body="지금 나가면 선택한 이미지와 분석 초안이 삭제돼요."
-            confirm="나가기"
-            danger
-            onCancel={() => setPhase("pick")}
-            onConfirm={() => router.back()}
-          />
         ) : null}
       </PhoneShell>
     </Gate>

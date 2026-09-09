@@ -40,7 +40,7 @@ export function BounceIfAuthed() {
   const router = useRouter();
   useEffect(() => {
     if (!hydrated || !loggedIn) return;
-    router.replace(onboarded ? "/home" : "/onboarding/alerts");
+    router.replace("/home");
   }, [hydrated, loggedIn, onboarded, router]);
   return null;
 }
@@ -56,7 +56,7 @@ export function Gate({ children }: { children: ReactNode }) {
       router.replace(expired ? "/session" : "/login");
       return;
     }
-    if (!onboarded && !path.startsWith("/onboarding")) router.replace("/onboarding/alerts");
+    if (!onboarded && !path.startsWith("/onboarding") && path !== "/home") router.replace("/home");
   }, [hydrated, loggedIn, onboarded, path, router]);
   if (!hydrated) return <PhoneShell><div className="scroll" /></PhoneShell>;
   if (!loggedIn) return <PhoneShell><div className="scroll" /></PhoneShell>;

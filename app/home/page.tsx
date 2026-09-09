@@ -10,12 +10,19 @@ import { useStore } from "@/lib/store";
 
 export default function HomePage() {
   const router = useRouter();
-  const { hydrated, subscriptions, events, notices, markNotice, markAllNotices, accountId, showToast } = useStore();
+  const { hydrated, subscriptions, events, notices, markNotice, markAllNotices, accountId, showToast, onboarded, setOnboarded } = useStore();
   const [promo, setPromo] = useState(0);
   const [day, setDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
   const [invite, setInvite] = useState(false);
   const inviteCode = `TEUM-${(accountId || "guest").replace(/[^a-z0-9]/gi, "").slice(-6).toUpperCase() || "FRIEND"}`;
+
+  const decideMarketing = (ok: boolean) => {
+    const now = new Date();
+    const stamp = `${now.getMonth() + 1}월 ${now.getDate()}일 ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    setOnboarded(ok);
+    showToast(`⚠️  ${stamp} 기준으로 마케팅 알림 수신 ${ok ? "승인" : "거부"} 처리되었습니다.`);
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -114,7 +121,12 @@ export default function HomePage() {
             <div className="overview">
               <div className="k">이번 달 구독비</div>
               <div className="amt">{won(monthPay)}</div>
-              {leak.count > 0 ? (
+              {live.length === 0 ? (
+                <button className="ok-leak" type="button" onClick={() => router.push("/subscriptions/new")}>
+                  아직 등록된 구독이 없어요
+                  <span className="cta">등록하기 ›</span>
+                </button>
+              ) : leak.count > 0 ? (
                 <button className="leak" type="button" onClick={() => router.push("/inspect")}>
                   <span>●</span>
                   새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약
@@ -134,7 +146,7 @@ export default function HomePage() {
             </div>
             <div className="card">
               {upcoming.length === 0 ? (
-                <div className="empty" style={{ background: "transparent", padding: 12 }}>예정 없음</div>
+                <div className="empty" style={{ background: "transparent", padding: 12 }}>예정된 결제가 없어요</div>
               ) : upcoming.map((s) => (
                 <button key={s.id} className="row" type="button" onClick={() => router.push(`/subscriptions/${s.id}`)} style={{ width: "100%", textAlign: "left" }}>
                   <Brand name={s.name} color={s.color} logo={s.logo} />
@@ -191,6 +203,19 @@ export default function HomePage() {
               ) : null}
             </div>
           </>
+        ) : null}
+        {!onboarded ? (
+          <div className="modal-back">
+            <div className="modal voice-perm" onClick={(e) => e.stopPropagation()}>
+              <img className="modal-mascot" src="/teumki/alert.png" alt="" />
+              <h3>마케팅 광고 알림 수신 동의</h3>
+              <p>더 많은 혜택 이벤트 정보 알려드려요.<br />허용 여부는 설정에서 언제든 바꿀 수 있어요</p>
+              <div className="modal-actions">
+                <button className="btn cancel" type="button" onClick={() => decideMarketing(false)}>알림 거부</button>
+                <button className="btn primary" type="button" onClick={() => decideMarketing(true)}>알림 받기</button>
+              </div>
+            </div>
+          </div>
         ) : null}
         {invite ? (
           <>

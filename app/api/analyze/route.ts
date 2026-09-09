@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 
 const MODEL = "gemini-2.0-flash";
 
+function geminiKeys() {
+  return [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_4,
+    process.env.GEMINI_API_KEY_5,
+  ].filter((k): k is string => Boolean(k?.trim()));
+}
+
 export async function POST(req: Request) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
+  const keys = geminiKeys();
+  if (keys.length === 0) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
   const body = await req.json() as { images?: { mime: string; data: string }[]; kind?: string };
   const images = body.images ?? [];
   if (images.length === 0) return NextResponse.json({ ok: false, error: "no-image" }, { status: 400 });
@@ -18,12 +28,17 @@ export async function POST(req: Request) {
     parts.push({ inline_data: { mime_type: img.mime || "image/jpeg", data: img.data } });
   }
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts }] }),
-  });
-  if (!res.ok) {
+  let res: Response | null = null;
+  for (const key of keys) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts }] }),
+    });
+    if (res.ok) break;
+    if (res.status !== 429 && res.status !== 403) break;
+  }
+  if (!res || !res.ok) {
     return NextResponse.json({ ok: false, error: "gemini" }, { status: 502 });
   }
   const json = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };

@@ -56,6 +56,7 @@ export type LifeEvent = {
   allDay: boolean;
   memo: string;
   createdAt: number;
+  alertMin?: number;
 };
 
 export type Notice = {
