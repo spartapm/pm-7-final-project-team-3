@@ -1,12 +1,12 @@
 # 틈(TEUM) 화면 인벤토리
 
-피그마 파일 [틈 TEUM](https://www.figma.com/design/G5i65LGv2ljKhvm8xN2cGU) `최종 기능명세서` + PRD 6장 In-scope 기준.
+피그마 [상세 기능명세 `1:228`](https://www.figma.com/design/G5i65LGv2ljKhvm8xN2cGU?node-id=1-228) + PRD 6장 In-scope 기준.
 
 ## 라우트
 
 | 명세 | 화면 | 라우트 | 상태 |
 | --- | --- | --- | --- |
-| SP-AU-Login | 로그인 | `/login` | ✅ 이메일·비번 검증, 소셜 1차 제외 토스트. 웹 첫 진입이라 앱 종료 화살표는 빼 둠 |
+| SP-AU-Login | 로그인 | `/login` | ✅ 종료 화살표+모달, 포커스 힌트, 이메일·비번 검증, 소셜 1차 제외 토스트 |
 | SP-AU-SignUp | 회원가입 | `/signup` | ✅ 약관 필수/선택, 이메일 검증 |
 | SP-AU-Terms | 약관 상세 | `/signup/terms` | ✅ |
 | SP-AU-SignUpCp | 가입 완료 | `/signup/done` | ✅ |
@@ -48,5 +48,4 @@
 - 카카오·구글 OAuth: 명세 「1차 개발 범위에서 제외」. 버튼은 두고 토스트만.
 - 마이데이터/실제 해지 대행/카드번호 입력: PRD Out-of-scope.
 - 외부 캘린더 .ics import/export: PRD Out-of-scope.
-- 웹 브라우저 프레임(데스크톱 크롬 목업): 다른 조와 같이 390px 폰 셸로 구현.
-- 로그인 앱 종료 화살표: 웹 첫 화면이라 제외.
+- 웹 브라우저 `SP-ServPG`: PC(720px+)에서 390×844 프레임·배경·슬로건 로고·틈끼. 모바일에선 프레임 숨김.

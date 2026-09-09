@@ -6,11 +6,30 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 720px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   return (
-    <div className="shell">
-      <div className="shell-body">
-        {children}
-        <ToastHost />
+    <div className={desktop ? "stage desktop" : "stage mobile"}>
+      {desktop ? (
+        <>
+          <img className="stage-bg" src="/web/web-background.png" alt="" />
+          <img className="stage-logo" src="/brand/logo-slogan.png" alt="" />
+          <img className="stage-mascot" src="/brand/teumki-side.png" alt="" />
+        </>
+      ) : null}
+      <div className="phone">
+        <div className="shell">
+          <div className="shell-body">
+            {children}
+            <ToastHost />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -226,10 +245,23 @@ export function Modal({
   );
 }
 
+const BRAND_SRC: Record<string, string> = {
+  Netflix: "/icons/brands/netflix.png",
+  "YouTube Premium": "/icons/brands/youtube.png",
+  ChatGPT: "/icons/brands/chatgpt.png",
+  Spotify: "/icons/brands/spotify.png",
+  "Canva Pro": "/icons/brands/canva.png",
+  "네이버플러스": "/icons/brands/naver.png",
+  "쿠팡와우": "/icons/brands/coupang.png",
+  "배민클럽": "/icons/brands/baemin.png",
+  "iCloud+": "/icons/brands/icloud.png",
+};
+
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
+  const src = BRAND_SRC[name];
   return (
-    <span className="brand" style={{ background: color }} aria-hidden>
-      {logo || name.slice(0, 1)}
+    <span className="brand" style={src ? undefined : { background: color }} aria-hidden>
+      {src ? <img src={src} alt="" /> : (logo || name.slice(0, 1))}
     </span>
   );
 }

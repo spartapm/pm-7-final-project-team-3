@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Back, BounceIfAuthed, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
-import { emailError, signupPasswordError } from "@/lib/validate";
+import { PASSWORD_HINT, emailError, signupPasswordError } from "@/lib/validate";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [marketing, setMarketing] = useState(false);
   const [eErr, setEErr] = useState("");
   const [pErr, setPErr] = useState("");
+  const [pwFocus, setPwFocus] = useState(false);
 
   const [busy, setBusy] = useState(false);
 
@@ -56,9 +57,9 @@ export default function SignupPage() {
         {eErr ? <div className="err-msg">{eErr}</div> : null}
         <div className={`field inbox ${pErr ? "err" : ""}`}>
           <label>비밀번호</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="10자 이상 조합" maxLength={20} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPwFocus(true)} onBlur={() => setPwFocus(false)} placeholder="10자 이상 조합" autoCapitalize="none" maxLength={20} />
         </div>
-        {pErr ? <div className="err-msg">{pErr}</div> : null}
+        {pErr ? <div className="err-msg">{pErr}</div> : pwFocus ? <div className="field-hint">{PASSWORD_HINT}</div> : null}
         <label className="check">
           <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} />
           <span>[필수] 서비스 이용약관 동의 <Link className="linkish" href="/signup/terms?doc=terms">보기</Link></span>

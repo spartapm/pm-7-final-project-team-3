@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BounceIfAuthed, Logo, PhoneShell } from "@/components/ui";
+import { Back, BounceIfAuthed, Logo, Modal, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
-import { emailError, passwordError } from "@/lib/validate";
+import { PASSWORD_HINT, emailError, passwordError } from "@/lib/validate";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,7 +14,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [eErr, setEErr] = useState("");
   const [pErr, setPErr] = useState("");
+  const [pwFocus, setPwFocus] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exit, setExit] = useState(false);
 
   const submit = async () => {
     const ee = emailError(email);
@@ -30,7 +32,7 @@ export default function LoginPage() {
       return;
     }
     if (!res.ok) {
-      showToast(res.error ?? "로그인에 실패했습니다.", "err");
+      showToast(res.error ?? "가입되지 않았거나, 이메일 또는 비밀번호가 일치하지 않습니다.", "err");
       return;
     }
     router.replace("/home");
@@ -42,7 +44,10 @@ export default function LoginPage() {
     <PhoneShell>
       <BounceIfAuthed />
       <div className="auth">
-        <div className="brand-block">
+        <div className="topbar">
+          <Back onClick={() => setExit(true)} />
+        </div>
+        <div className="brand-block" style={{ paddingTop: 8 }}>
           <Logo large />
           <div className="slogan">구독도 일정도, 빈틈없이</div>
         </div>
@@ -54,6 +59,9 @@ export default function LoginPage() {
             placeholder="example@email.com"
             inputMode="email"
             autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            lang="en"
             maxLength={30}
           />
         </div>
@@ -64,11 +72,17 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={() => setPwFocus(true)}
+            onBlur={() => setPwFocus(false)}
             placeholder="비밀번호 입력"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            lang="en"
             maxLength={20}
           />
         </div>
-        {pErr ? <div className="err-msg">{pErr}</div> : null}
+        {pErr ? <div className="err-msg">{pErr}</div> : pwFocus ? <div className="field-hint">{PASSWORD_HINT}</div> : null}
         <Link className="forgot-link" href="/forgot">비밀번호를 잊으셨나요?</Link>
         <button className="btn primary" type="button" onClick={submit} disabled={busy}>{busy ? "로그인 중…" : "로그인"}</button>
         <div className="or">또는</div>
@@ -85,6 +99,20 @@ export default function LoginPage() {
           계정이 없으신가요?  <Link href="/signup">회원가입</Link>
         </div>
       </div>
+      {exit ? (
+        <Modal
+          title="종료하시겠어요?"
+          body="틈을 닫으면 로그인 화면이 끝납니다."
+          cancel="취소"
+          confirm="종료"
+          onCancel={() => setExit(false)}
+          onConfirm={() => {
+            setExit(false);
+            window.close();
+            showToast("브라우저에서 탭을 닫아 주세요.");
+          }}
+        />
+      ) : null}
     </PhoneShell>
   );
 }
