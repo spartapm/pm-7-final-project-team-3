@@ -238,7 +238,7 @@ export function Modal({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         {mascot ? <img className="modal-mascot" src={mascot} alt="" /> : null}
         <h3>{title}</h3>
-        <p>{body}</p>
+        {body ? <p>{body}</p> : null}
         <div className="modal-actions">
           <button className="btn cancel" type="button" onClick={onCancel}>{cancel}</button>
           <button className={`btn ${danger ? "danger" : "primary"}`} type="button" onClick={onConfirm}>{confirm}</button>

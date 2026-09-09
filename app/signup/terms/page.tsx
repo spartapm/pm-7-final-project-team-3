@@ -14,19 +14,21 @@ const DOCS: Record<string, { title: string; body: string }> = {
 
 function Inner() {
   const router = useRouter();
-  const doc = useSearchParams().get("doc") ?? "terms";
+  const params = useSearchParams();
+  const doc = params.get("doc") ?? "terms";
+  const back = params.get("from") === "me" ? "/me" : "/signup";
   const item = DOCS[doc] ?? DOCS.terms;
   return (
     <PhoneShell>
       <div className="topbar">
-        <Back href="/signup" />
+        <Back href={back} />
         <h1>{item.title}</h1>
         <span style={{ width: 36 }} />
       </div>
       <div className="scroll">
         <div className="legal">{item.body}</div>
         <p className="legal-brand">TRI:ON · 틈</p>
-        <button className="btn primary" type="button" onClick={() => router.push("/signup")}>확인</button>
+        <button className="btn primary" type="button" onClick={() => router.push(back)}>확인</button>
       </div>
     </PhoneShell>
   );

@@ -607,6 +607,7 @@ img { display: block; max-width: 100%; }
 .wait { text-align: center; padding: 80px 24px; }
 .wait h2 { margin: 0 0 8px; font-size: 20px; font-weight: 800; }
 .wait .btn { margin-top: 8px; }
+.inspect-note { margin-top: 20px; font-size: 12px; color: #7f8594; line-height: 1.45; }
 .spinner {
   width: 36px; height: 36px; border: 3px solid #dbe7f8; border-top-color: var(--blue);
   border-radius: 50%; margin: 0 auto 16px; animation: spin 0.8s linear infinite;
@@ -738,3 +739,51 @@ img { display: block; max-width: 100%; }
 .done-screen p { color: var(--muted); margin: 0; }
 .email-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
 .home-body .overview + .section-title { margin-top: 26px; }
+
+.me-avatar { width: 56px; height: 56px; border-radius: 28px; object-fit: cover; background: #eaf3ff; }
+.menu button.danger-txt { color: #ff0008; }
+.menu button.danger-txt span { color: #ff0008; }
+
+.withdraw-note { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.withdraw-note p { margin: 0; font-size: 13px; color: #999ea6; line-height: 1.5; }
+.withdraw-note .must {
+  flex: none; background: #e9f2ff; color: #296bf0; font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 99px;
+}
+.withdraw-card {
+  background: #fff; border: 1px solid #d8dae0; border-radius: 16px; padding: 18px 16px;
+}
+.withdraw-card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
+.withdraw-card p { margin: 0; font-size: 13px; color: #4b4e58; line-height: 1.55; }
+.withdraw-card hr { border: 0; border-top: 1px solid #e8ebf0; margin: 14px 0; }
+.withdraw-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.reason-title { margin: 8px 0 16px; font-size: 18px; font-weight: 800; text-align: center; }
+.reason-done { color: #4b4e58; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 8px 20px; }
+.reason {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 16px; border-radius: 16px; background: #f7f7fa; margin-bottom: 8px;
+  text-align: left; font-weight: 600; border: 1.5px solid transparent;
+}
+.reason.on { background: #edf5ff; border-color: #3082f5; }
+.reason-dot {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid #ccd1db; position: relative;
+}
+.reason.on .reason-dot { border-color: #3082f5; }
+.reason.on .reason-dot::after {
+  content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #3082f5;
+}
+.reason-input {
+  width: 100%; min-height: 52px; border: 1.5px solid #3082f5; border-radius: 16px;
+  padding: 14px 16px; font: inherit; resize: none; margin: 4px 0 8px;
+}
+
+.alert-sec { font-size: 13px; font-weight: 800; color: #16171b; margin: 18px 4px 8px; }
+.alert-card { background: #fff; border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.alert-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; padding: 16px 18px; text-align: left; border-top: 1px solid #f1f2f5;
+}
+.alert-row:first-child { border-top: 0; }
+.alert-row b { display: block; font-size: 15px; font-weight: 600; }
+.alert-row .sub { display: block; margin-top: 2px; font-size: 12px; color: #4b4e58; font-weight: 400; }

@@ -29,10 +29,17 @@ export default function InspectPage() {
     return (
       <Gate>
         <PhoneShell>
+          <div className="topbar">
+            <button className="icon-btn" type="button" aria-label="닫기" onClick={() => { setWaiting(false); router.push("/benefits"); }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+            <span style={{ flex: 1 }} />
+          </div>
           <div className="wait">
-            <div className="spinner" />
-            <h2>구독을 점검하고 있어요</h2>
-            <p className="muted">결합 혜택과 중복 결제를 대조하는 중이에요.</p>
+            <img className="teumki-illust" src="/teumki/loading.png" alt="" />
+            <h2>구독 사이 새는 틈을 찾고 있어요</h2>
+            <p className="muted">등록한 구독의 요금과 혜택을<br />하나씩 비교하고 있어요.</p>
+            <p className="inspect-note">ⓘ 분석 결과는 등록된 정보와 공개된 요금제를 기준으로 계산한 예상치예요.</p>
           </div>
         </PhoneShell>
       </Gate>
@@ -44,11 +51,12 @@ export default function InspectPage() {
       <Gate>
         <PhoneShell>
           <div className="wait">
-            <h2>점검을 완료하지 못했어요</h2>
-            <p className="muted">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
-            <button className="btn primary" type="button" onClick={rerun}>다시 점검하기</button>
+            <img className="teumki-illust" src="/teumki/sad.png" alt="" />
+            <h2>구독 점검을 완료하지 못했어요</h2>
+            <p className="muted">일시적인 오류로 분석이 중단됐어요.<br />잠시 후 다시 점검해 주세요.</p>
+            <button className="btn primary" type="button" onClick={rerun}>다시 시도하기</button>
             <div style={{ height: 8 }} />
-            <button className="btn ghost" type="button" onClick={() => router.push("/error")}>오류 화면 보기</button>
+            <button className="btn ghost" type="button" onClick={() => router.push("/benefits")}>혜택 홈으로 돌아가기</button>
           </div>
         </PhoneShell>
       </Gate>

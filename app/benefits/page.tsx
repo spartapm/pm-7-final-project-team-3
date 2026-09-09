@@ -16,12 +16,7 @@ const KIND_FILTERS: { id: "all" | BenefitKind; label: string }[] = [
   { id: "card", label: "카드 혜택" },
 ];
 
-const STATE_FILTERS: { id: "all" | "owned" | "available" | "expiring"; label: string }[] = [
-  { id: "all", label: "모든 상태" },
-  { id: "owned", label: "보유 혜택" },
-  { id: "available", label: "사용 가능" },
-  { id: "expiring", label: "만료 예정" },
-];
+const KIND_ORDER: Record<BenefitKind, number> = { carrier: 0, commerce: 1, card: 2 };
 
 const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg: string }> = {
   owned: { label: "보유 중", bg: "#2576f2" },
@@ -33,14 +28,13 @@ export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
-  const [state, setState] = useState<(typeof STATE_FILTERS)[number]["id"]>("all");
   const leak = leaksOf(subscriptions);
-  const list = BENEFITS.filter((b) => {
-    if (kind !== "all" && b.kind !== kind) return false;
-    const st = benefitStatus(b, subscriptions);
-    if (state !== "all" && st !== state) return false;
-    return true;
-  });
+  const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
+  const list = BENEFITS
+    .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
+    .filter((b) => kind === "all" || b.kind === kind)
+    .slice()
+    .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
   return (
     <Gate>
       <PhoneShell>
@@ -48,27 +42,30 @@ export default function BenefitsPage() {
         <div className="scroll tabbed">
           <div className="hero-dark">
             <div className="pillars" aria-hidden><i /><i /><i /></div>
-            <h2>{leak.count > 0 ? `새는 구독 ${leak.count}개를 찾았어요` : "지금 혜택을 점검해 보세요"}</h2>
-            <p>
-              {leak.count > 0
-                ? `지금 새는 구독료를 잠그면 매달 최대 ${won(Math.max(leak.save, 9900))}까지 절약할 수 있어요`
-                : "통신사 결합과 멤버십에 이미 들어 있는 혜택이 있는지 확인해 보세요."}
-            </p>
-            <button className="btn" type="button" onClick={() => router.push("/inspect")}>구독 점검하기</button>
+            {leak.count > 0 ? (
+              <>
+                <h2>새는 구독 {leak.count}개를 찾았어요</h2>
+                <p>지금 새는 구독비를 잠그면 매달 최대 {won(Math.max(leak.save, 9900))}까지 절약할 수 있어요</p>
+              </>
+            ) : (
+              <>
+                <h2>빈틈이 없어요!</h2>
+                <p>구독을 잘 관리하고 계시네요</p>
+              </>
+            )}
+            <button className="btn" type="button" onClick={() => router.push("/inspect")}>구독 점검받기</button>
           </div>
           <div className="chip-row" style={{ margin: "14px 0 8px" }}>
             {KIND_FILTERS.map((f) => (
               <button key={f.id} className={`chip outline ${kind === f.id ? "on" : ""}`} type="button" onClick={() => setKind(f.id)}>{f.label}</button>
             ))}
           </div>
-          <div className="chip-row" style={{ marginBottom: 8 }}>
-            {STATE_FILTERS.map((f) => (
-              <button key={f.id} className={`chip sm outline ${state === f.id ? "on" : ""}`} type="button" onClick={() => setState(f.id)}>{f.label}</button>
-            ))}
-          </div>
           <div className="section-title" style={{ marginTop: 4 }}>인기 구독 혜택</div>
           {list.length === 0 ? (
-            <div className="empty">이 조건에 맞는 혜택이 없어요.</div>
+            <div className="empty">
+              <img className="teumki-illust" src="/teumki/card.png" alt="" />
+              <p>{kindLabel}으로 받을 수 있는 등록된 구독이 없어요.</p>
+            </div>
           ) : list.map((b) => {
             const st = benefitStatus(b, subscriptions);
             const tag = STATE_TAG[st];

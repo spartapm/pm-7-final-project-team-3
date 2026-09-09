@@ -28,16 +28,16 @@
 | SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ |
 | SP-CAL-Detail | 일정 상세 | `/events/[id]` | ✅ 수정·삭제(놀란틈끼, 복구 불가 카피) |
 | SP-CAL-ScheduleCp | 일정 저장 완료 | `/events/saved` | ✅ 조아틈끼 |
-| SP-BNF-Main | 혜택 | `/benefits` | ✅ 점검 배너, 필터, 카드, 자세히 보기 |
+| SP-BNF-Main | 혜택 | `/benefits` | ✅ 0건「빈틈이 없어요!」, 점검받기, 카테고리 4종, empty 카드틈끼 |
 | SP-BNF-Detail | 혜택 상세 | `/benefits/[id]` | ✅ 공식 서비스 이동 |
-| SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기/실패/결과, 결합 추천은 추천만 |
+| SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기 로딩틈끼·닫기, 실패 우는틈끼·다시 시도/혜택 홈 |
 | SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 권한·다중 선택·분석 중·실패 |
 | SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ 권한·대기·듣기·저장·실패·종료 확인 |
 | SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ 확정 전 미반영 |
-| SP-MY-Main | 마이 | `/me` | ✅ 프로필 수정·연동은 비활성(범위) |
-| SP-MY-Reminder | 알림 설정 | `/me/alerts` | ✅ |
-| SP-My-Logout | 로그아웃 확인 | 모달 | ✅ |
-| SP-My-DelAccount | 탈퇴 안내 | 모달 | ✅ |
+| SP-MY-Main | 마이 | `/me` | ✅ 셀카틈끼, MVP 토스트 원문, 계정 탈퇴 #FF0008 |
+| SP-MY-Reminder | 알림 설정 | `/me/alerts` | ✅ 결제/가격/캘린더/마케팅 수신동의 + 즉시 반영 |
+| SP-My-Logout | 로그아웃 확인 | 모달 | ✅ 「로그아웃 하시겠어요?」 |
+| SP-My-DelAccount | 탈퇴 안내 | `/me/withdraw` | ✅ 5조 안내, 사유 6종, 기타 입력, 완료 시트 |
 | SP-ServALL | 전역 실패 | `/error` | ✅ |
 | SP-ScienceOver | 세션 만료 | `/session` | ✅ 30일 세션 후 `/session`으로 보냄 |
 

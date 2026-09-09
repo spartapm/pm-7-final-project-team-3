@@ -46,7 +46,7 @@ export default function OnboardAlerts() {
           className="btn primary"
           type="button"
           onClick={() => {
-            setAlerts({ pay, renew: pay, trial: pay, marketing });
+            setAlerts({ pay, renew: pay, trial: pay, marketing, benefit: marketing, calendar: true });
             setOnboarded(marketing);
             router.replace("/home");
           }}

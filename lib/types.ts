@@ -105,6 +105,7 @@ export type AlertPrefs = {
   trial: boolean;
   benefit: boolean;
   marketing: boolean;
+  calendar: boolean;
 };
 
 export type AppState = {

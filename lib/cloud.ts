@@ -90,6 +90,7 @@ function alertsOf(raw: unknown, fallback: AlertPrefs): AlertPrefs {
     trial: a.trial !== false,
     benefit: a.benefit !== false,
     marketing: Boolean(a.marketing),
+    calendar: a.calendar !== false,
   };
 }
 

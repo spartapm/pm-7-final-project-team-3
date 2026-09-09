@@ -40,7 +40,7 @@ const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 type UserRec = { email: string; password: string };
 
 function defaultAlerts(): AlertPrefs {
-  return { pay: true, renew: true, trial: true, benefit: true, marketing: false };
+  return { pay: true, renew: true, trial: true, benefit: true, marketing: false, calendar: true };
 }
 
 function empty(): AppState {
@@ -66,7 +66,7 @@ function withNotices(s: AppState): AppState {
     const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle);
     return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
   });
-  return { ...s, subscriptions, notices: mergePayNotices(subscriptions, s.alerts, s.notices) };
+  return { ...s, subscriptions, notices: mergePayNotices(subscriptions, s.alerts, s.notices, s.events) };
 }
 
 function fillDemoGaps(

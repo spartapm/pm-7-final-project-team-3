@@ -1,5 +1,5 @@
 import type { AlertPrefs, Benefit, Category, DraftSub, LifeEvent, Notice, Subscription } from "./types";
-import { daysUntil, nextPayDate } from "./format";
+import { daysUntil, dateLabel, nextPayDate } from "./format";
 
 export const CATEGORIES: { id: Category; label: string }[] = [
   { id: "ai", label: "생성형 AI" },
@@ -368,19 +368,34 @@ function payLabel(iso: string) {
   return `${Number(m)}월 ${Number(d)}일`;
 }
 
-export function mergePayNotices(subs: Subscription[], alerts: AlertPrefs, existing: Notice[]): Notice[] {
+function noticeClock(t: string) {
+  const [hStr, mStr] = t.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr ?? 0);
+  const ap = h < 12 ? "오전" : "오후";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return m ? `${ap} ${h12}시 ${m}분` : `${ap} ${h12}시`;
+}
+
+export function mergePayNotices(
+  subs: Subscription[],
+  alerts: AlertPrefs,
+  existing: Notice[],
+  events: LifeEvent[] = [],
+): Notice[] {
   const generated: Notice[] = [];
+  const payOn = alerts.pay || alerts.trial;
   for (const s of subs) {
     if (s.status === "ended" || s.paused) continue;
     const days = daysUntil(s.nextPay);
-    if (alerts.trial && s.status === "trial" && s.trialEnds) {
+    if (payOn && s.status === "trial" && s.trialEnds) {
       const td = daysUntil(s.trialEnds);
-      if (td >= 0 && td <= s.alertDays) {
+      if (td >= 0 && td <= Math.max(s.alertDays, 3)) {
         generated.push({
           id: `trial_${s.id}_${s.trialEnds}`,
-          title: `${s.name} 무료체험 종료 예정`,
+          title: `${s.name} 자동결제 예정`,
           body: `${payLabel(s.trialEnds)} 무료체험이 끝나고 유료로 전환돼요.`,
-          at: Date.now() - Math.max(0, s.alertDays - td) * 3600000,
+          at: Date.now() - Math.max(0, 3 - td) * 3600000,
           read: false,
           href: `/subscriptions/${s.id}`,
           icon: "trial",
@@ -388,27 +403,47 @@ export function mergePayNotices(subs: Subscription[], alerts: AlertPrefs, existi
         });
       }
     }
-    if (alerts.pay && days >= 0 && days <= s.alertDays && s.status !== "trial") {
+    if (payOn && days >= 0 && days <= Math.max(s.alertDays, 3) && s.status !== "trial") {
       generated.push({
         id: `pay_${s.id}_${s.nextPay}`,
         title: `${s.name} 자동결제 예정`,
         body: `${payLabel(s.nextPay)}에 ${s.amount.toLocaleString("ko-KR")}원이 결제될 예정이에요.`,
-        at: Date.now() - Math.max(0, s.alertDays - days) * 3600000,
+        at: Date.now() - Math.max(0, 3 - days) * 3600000,
         read: false,
         href: `/subscriptions/${s.id}`,
         icon: "pay",
         brand: s.name,
       });
-    } else if (alerts.renew && s.autoRenew && days >= 0 && days <= s.alertDays && s.status !== "trial") {
+    }
+    const official = SERVICES.find((x) => x.name === s.name);
+    if (alerts.renew && official && official.amount !== s.amount && days >= 0 && days <= 3) {
       generated.push({
-        id: `renew_${s.id}_${s.nextPay}`,
-        title: `${s.name} 자동 갱신 예정`,
-        body: `${payLabel(s.nextPay)}에 구독이 자동으로 갱신돼요.`,
-        at: Date.now() - Math.max(0, s.alertDays - days) * 1800000,
+        id: `price_${s.id}_${s.nextPay}_${official.amount}`,
+        title: `${s.name} 가격변동 예정`,
+        body: `${payLabel(s.nextPay)}에 ${official.amount.toLocaleString("ko-KR")}원으로 갱신돼요.`,
+        at: Date.now() - Math.max(0, 3 - days) * 1800000,
         read: false,
         href: `/subscriptions/${s.id}`,
         icon: "price",
         brand: s.name,
+      });
+    }
+  }
+  if (alerts.calendar) {
+    for (const ev of events) {
+      const days = daysUntil(ev.date);
+      if (days < 0 || days > 3) continue;
+      generated.push({
+        id: `cal_${ev.id}_${ev.date}`,
+        title: `${ev.title} 일정 예정`,
+        body: ev.allDay
+          ? `${dateLabel(ev.date)}에 일정이 있어요.`
+          : `${dateLabel(ev.date)} ${noticeClock(ev.start)}에 일정이 있어요.`,
+        at: Date.now() - Math.max(0, 3 - days) * 2400000,
+        read: false,
+        href: `/events/${ev.id}`,
+        icon: "pay",
+        brand: ev.title,
       });
     }
   }
@@ -417,7 +452,7 @@ export function mergePayNotices(subs: Subscription[], alerts: AlertPrefs, existi
     const old = prev.get(n.id);
     return old ? { ...n, read: old.read, at: old.at } : n;
   });
-  const kept = existing.filter((n) => !n.id.startsWith("pay_") && !n.id.startsWith("trial_") && !n.id.startsWith("renew_"));
+  const kept = existing.filter((n) => !/^(pay_|trial_|renew_|price_|cal_)/.test(n.id));
   return [...mergedGen, ...kept].sort((a, b) => b.at - a.at);
 }
 
