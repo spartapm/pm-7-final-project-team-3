@@ -567,7 +567,18 @@ img { display: block; max-width: 100%; }
 .otp.err input { border-color: #ff0000; }
 .done-mascot { width: 160px; height: 160px; object-fit: contain; margin: 0 auto 16px; }
 .voice-wave-wrap { width: 100%; display: flex; justify-content: center; margin: 12px 0 20px; }
-.voice-wave { width: 100%; max-width: 320px; height: 120px; display: block; }
+.voice-wave { width: 100%; max-width: 320px; height: 120px; display: block; margin: 0 auto; }
+.voice-idle { text-align: left; }
+.voice-idle h2 { margin: 8px 0 6px; font-size: 24px; font-weight: 800; }
+.voice-idle .teumki-illust { display: block; }
+.voice-pill {
+  display: inline-flex; margin: 12px 0 8px; padding: 6px 12px; border-radius: 99px;
+  background: #eaf3ff; color: #2f80ed; font-size: 12px; font-weight: 700;
+}
+.voice-idle-wave { width: 70%; display: block; margin: 0 auto 8px; }
+.voice-status { text-align: center; font-weight: 800; margin: 8px 0 16px; }
+.voice-perm h3 { margin-top: 4px; }
+.voice-perm .modal-actions { grid-template-columns: 1fr 1fr; }
 .teumki-illust { width: 180px; height: 180px; object-fit: contain; margin: 12px auto 16px; }
 
 .notice-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f3f8; position: relative; align-items: flex-start; }

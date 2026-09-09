@@ -32,7 +32,7 @@
 | SP-BNF-Detail | 혜택 상세 | `/benefits/[id]` | ✅ 공식 서비스 이동 |
 | SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기 로딩틈끼·닫기, 실패 우는틈끼·다시 시도/혜택 홈 |
 | SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 권한·다중 선택·분석 중·실패 |
-| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ 권한·대기·듣기·저장·실패·종료 확인 |
+| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ 말씀해주세요, 탭하여 녹음 시작, 권한 팝업(권한틈끼2), 장치없음 토스트 |
 | SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ 확정 전 미반영 |
 | SP-MY-Main | 마이 | `/me` | ✅ 셀카틈끼, MVP 토스트 원문, 계정 탈퇴 #FF0008 |
 | SP-MY-Reminder | 알림 설정 | `/me/alerts` | ✅ 결제/가격/캘린더/마케팅 수신동의 + 즉시 반영 |
