@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 export default function EventDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { events, removeEvent, showToast } = useStore();
+  const { events, removeEvent } = useStore();
   const ev = events.find((e) => e.id === id);
   const [del, setDel] = useState(false);
   if (!ev) {
@@ -40,15 +40,15 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         </div>
         {del ? (
           <Modal
-            title="일정을 삭제할까요?"
-            body="삭제하면 캘린더에서 사라집니다."
+            title="이 일정을 삭제하시겠어요?"
+            body="삭제하면 복구할 수 없어요"
             confirm="삭제"
             danger
+            mascot="/teumki/shock.png"
             onCancel={() => setDel(false)}
             onConfirm={() => {
               removeEvent(ev.id);
-              showToast("일정이 삭제되었습니다.");
-              router.replace("/calendar");
+              router.replace(`/calendar?date=${ev.date}`);
             }}
           />
         ) : null}

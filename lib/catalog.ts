@@ -2,14 +2,20 @@ import type { AlertPrefs, Benefit, Category, DraftSub, LifeEvent, Notice, Subscr
 import { daysUntil, nextPayDate } from "./format";
 
 export const CATEGORIES: { id: Category; label: string }[] = [
+  { id: "ai", label: "생성형 AI" },
   { id: "ott", label: "OTT·영상" },
   { id: "music", label: "음악·오디오" },
-  { id: "ai", label: "업무·생산성" },
-  { id: "shopping", label: "쇼핑·멤버십" },
-  { id: "delivery", label: "배달·생활" },
-  { id: "membership", label: "쇼핑·멤버십" },
-  { id: "productivity", label: "업무·생산성" },
   { id: "design", label: "디자인·콘텐츠 제작" },
+  { id: "productivity", label: "업무·생산성" },
+  { id: "webtoon", label: "콘텐츠·웹툰·전자책" },
+  { id: "edu", label: "교육·학습" },
+  { id: "shopping", label: "쇼핑·멤버십" },
+  { id: "membership", label: "쇼핑·멤버십" },
+  { id: "delivery", label: "배달·생활" },
+  { id: "game", label: "게임" },
+  { id: "sns", label: "SNS·커뮤니케이션" },
+  { id: "sports", label: "스포츠·운동" },
+  { id: "mobility", label: "자동차·모빌리티" },
   { id: "cloud", label: "클라우드·보안" },
   { id: "other", label: "기타" },
 ];
@@ -127,7 +133,33 @@ export function emptyDraft(kind: "subscription" | "event" = "subscription"): Dra
     trialEnds: "",
     alertDays: 3,
     fromAi: false,
+    payMethod: "",
+    trialDays: "",
   };
+}
+
+const SERVICE_ALIASES: Record<string, string[]> = {
+  Netflix: ["넷플", "넷플릭스", "net", "netflix"],
+  "YouTube Premium": ["유튜브", "유튭", "youtube", "yt"],
+  "Disney+": ["디즈니", "disney"],
+  티빙: ["tving", "티빙"],
+  ChatGPT: ["챗지피티", "챗gpt", "chatgpt", "gpt"],
+  Spotify: ["스포티", "스포티파이", "spotify"],
+  멜론: ["melon", "멜론"],
+  네이버플러스: ["네이버", "naver"],
+  쿠팡와우: ["쿠팡", "coupang", "와우"],
+  배민클럽: ["배민", "baemin"],
+  "Canva Pro": ["캔바", "canva"],
+  "iCloud+": ["아이클라우드", "icloud"],
+};
+
+export function searchServices(q: string) {
+  const n = q.trim().toLowerCase();
+  if (n.length < 1) return [];
+  return SERVICES.filter((s) => {
+    if (s.name.toLowerCase().includes(n)) return true;
+    return (SERVICE_ALIASES[s.name] ?? []).some((a) => a.toLowerCase().includes(n) || n.includes(a.toLowerCase()));
+  }).slice(0, 8);
 }
 
 export function seedSubscriptions(): Subscription[] {

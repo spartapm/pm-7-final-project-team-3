@@ -222,6 +222,7 @@ export function Modal({
   onCancel,
   onConfirm,
   danger,
+  mascot,
 }: {
   title: string;
   body: string;
@@ -230,10 +231,12 @@ export function Modal({
   onCancel: () => void;
   onConfirm: () => void;
   danger?: boolean;
+  mascot?: string;
 }) {
   return (
-    <div className="modal-back">
-      <div className="modal">
+    <div className="modal-back" onClick={onCancel}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        {mascot ? <img className="modal-mascot" src={mascot} alt="" /> : null}
         <h3>{title}</h3>
         <p>{body}</p>
         <div className="modal-actions">

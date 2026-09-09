@@ -47,8 +47,9 @@ export default function MePage() {
         {out ? (
           <Modal
             title="로그아웃 하시겠어요?"
-            body="다시 로그인하면 같은 기기에서 구독 기록을 이어서 볼 수 있어요."
+            body="다시 로그인하면 구독 기록을 이어서 볼 수 있어요."
             confirm="로그아웃"
+            mascot="/teumki/sad.png"
             onCancel={() => setOut(false)}
             onConfirm={() => { logout(); router.replace("/login"); }}
           />
@@ -59,6 +60,7 @@ export default function MePage() {
             body="계정과 구독·일정·알림 기록이 즉시 삭제됩니다. 실제 구독 해지는 각 서비스에서 직접 해야 해요."
             confirm="탈퇴"
             danger
+            mascot="/teumki/shock.png"
             onCancel={() => setDel(false)}
             onConfirm={() => { withdraw(); showToast("탈퇴가 완료되었습니다."); router.replace("/login"); }}
           />

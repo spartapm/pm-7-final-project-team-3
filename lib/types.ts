@@ -10,6 +10,12 @@ export type Category =
   | "productivity"
   | "design"
   | "cloud"
+  | "webtoon"
+  | "edu"
+  | "game"
+  | "sns"
+  | "sports"
+  | "mobility"
   | "other";
 
 export type BillingCycle = "monthly" | "yearly" | "weekly";
@@ -37,6 +43,8 @@ export type Subscription = {
   paused: boolean;
   alertDays: number;
   createdAt: number;
+  payMethod?: string;
+  parentId?: string;
 };
 
 export type LifeEvent = {
@@ -87,6 +95,8 @@ export type DraftSub = {
   trialEnds: string;
   alertDays: number;
   fromAi: boolean;
+  payMethod: string;
+  trialDays: string;
 };
 
 export type AlertPrefs = {

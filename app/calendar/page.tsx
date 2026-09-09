@@ -136,7 +136,7 @@ function Inner() {
               <span className="pill">{selected.length}개 일정</span>
             </h3>
             {selected.length === 0 ? (
-              <div className="empty" style={{ marginTop: 12, background: "transparent" }}>{sel === ymd(now) ? "오늘 일정이 없어요" : "이 날 일정이 없어요"}</div>
+              <div className="empty" style={{ marginTop: 12, background: "transparent" }}>오늘 일정이 없어요</div>
             ) : selected.map((it, i) => (
               <button key={i} className="row" type="button" onClick={() => router.push(it.href)} style={{ width: "100%", textAlign: "left" }}>
                 <i className="dot" style={{ background: it.color }} />

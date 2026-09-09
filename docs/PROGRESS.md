@@ -20,14 +20,14 @@
 | SP-Coldhome | 홈 0건 | `/home` (신규 가입) | ✅ 0원, 빈 결제, 빈 안내바 |
 | SP-SB-List | 내 구독 | `/subscriptions` | ✅ 요약 카드, 카테고리 칩, 정렬(결제일/금액/최신/상태), empty |
 | SP-ColdSub | 구독 목록 empty | 위 empty | ✅ |
-| SP-SB-Detail | 구독 상세 | `/subscriptions/[id]` | ✅ 수정·삭제·일시정지·이용 중/일시정지 뱃지·결합 유의사항 |
-| SP-SB-Edit | 등록/수정 | `/subscriptions/new`, `.../edit` | ✅ AI 초안 배너 |
-| SP-SB-EditCp | 저장 완료 | `/subscriptions/saved` | ✅ |
+| SP-SB-Detail | 구독 상세 | `/subscriptions/[id]` | ✅ 상태 드롭다운, 결합 문구, 결제수단, 틈이 확인했어요, 삭제 모달(놀란틈끼) |
+| SP-SB-Edit | 등록/수정 | `/subscriptions/new`, `.../edit` | ✅ 필수*, 자동완성, 첫 결제일, 무료체험 토글, 알림 스위치, 저장 비활성 |
+| SP-SB-EditCp | 저장 완료 | `/subscriptions/saved` | ✅ 조아틈끼, 요약 카드, 상세로 이동 |
 | SP-CAL-Calendar | 캘린더 | `/calendar` | ✅ 구독/일상/전체 필터, 월 이동, 도트, 선택일 목록, 공유 |
 | SP-CAL-Fab | FAB 펼침 | 공통 FAB | ✅ 구독·일상 탭 + 이미지/음성/직접 |
 | SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ |
-| SP-CAL-Detail | 일정 상세 | `/events/[id]` | ✅ 수정·삭제 확인 |
-| SP-CAL-ScheduleCp | 일정 저장 완료 | `/events/saved` | ✅ |
+| SP-CAL-Detail | 일정 상세 | `/events/[id]` | ✅ 수정·삭제(놀란틈끼, 복구 불가 카피) |
+| SP-CAL-ScheduleCp | 일정 저장 완료 | `/events/saved` | ✅ 조아틈끼 |
 | SP-BNF-Main | 혜택 | `/benefits` | ✅ 점검 배너, 필터, 카드, 자세히 보기 |
 | SP-BNF-Detail | 혜택 상세 | `/benefits/[id]` | ✅ 공식 서비스 이동 |
 | SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기/실패/결과, 결합 추천은 추천만 |
