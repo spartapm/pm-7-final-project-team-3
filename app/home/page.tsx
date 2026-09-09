@@ -162,7 +162,13 @@ export default function HomePage() {
                 <h2>알림</h2>
                 <button className="icon-btn round" type="button" onClick={() => setSheet(false)} aria-label="닫기">✕</button>
               </div>
-              {notices.length === 0 ? <div className="empty">새 알림이 없어요</div> : notices.map((n) => (
+              {notices.filter((n) => !n.read).length === 0 ? (
+                <div className="empty" style={{ textAlign: "center", padding: 24 }}>
+                  <img className="teumki-illust" src="/teumki/alert.png" alt="" />
+                  <h3 style={{ margin: "0 0 6px" }}>새로운 알림이 없어요</h3>
+                  <p className="muted">모든 알림을 확인했어요</p>
+                </div>
+              ) : notices.filter((n) => !n.read).map((n) => (
                 <div key={n.id} className={`notice-item ${n.read ? "" : "unread"}`}>
                   <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : (n.brand ?? "틈").slice(0, 1)} />
                   <div className="grow">
@@ -180,8 +186,8 @@ export default function HomePage() {
                   }}>확인</button>
                 </div>
               ))}
-              {notices.length > 0 ? (
-                <button className="btn primary" type="button" onClick={() => { markAllNotices(); setSheet(false); }}>모두 읽음</button>
+              {notices.some((n) => !n.read) ? (
+                <button className="btn primary" type="button" onClick={() => markAllNotices()}>일괄 삭제</button>
               ) : null}
             </div>
           </>

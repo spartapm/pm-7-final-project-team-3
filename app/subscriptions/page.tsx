@@ -49,10 +49,10 @@ export default function SubListPage() {
     });
   const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
   const benefitCheck = BENEFITS.filter((b) => benefitStatus(b, live) !== "owned").length;
-  const cats = useMemo(
-    () => [{ id: "all" as const, label: "전체" }, ...CATEGORIES.filter((c, i, a) => a.findIndex((x) => x.label === c.label) === i)],
-    [],
-  );
+  const cats = useMemo(() => {
+    const used = new Set(live.map((s) => s.category));
+    return [{ id: "all" as const, label: "전체" }, ...CATEGORIES.filter((c) => used.has(c.id))];
+  }, [live]);
   const sortLabel = SORTS.find((s) => s.id === sort)?.label ?? "결제일 순";
 
   return (
@@ -104,7 +104,7 @@ export default function SubListPage() {
               ) : null}
             </div>
             {list.length === 0 ? (
-              <div className="empty">등록된 구독이 없어요. 오른쪽 아래 + 로 추가해 보세요.</div>
+              <div className="empty">등록된 구독이 없어요.</div>
             ) : list.map((s) => {
               const overdue = s.paused || s.status === "paused" ? null : dueBadge(s.nextPay);
               return (
