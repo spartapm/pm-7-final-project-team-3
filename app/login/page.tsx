@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Back, BounceIfAuthed, Logo, Modal, PhoneShell } from "@/components/ui";
+import { Back, BounceIfAuthed, Modal, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PASSWORD_HINT, emailError, passwordError } from "@/lib/validate";
 
@@ -48,8 +48,7 @@ export default function LoginPage() {
           <Back onClick={() => setExit(true)} />
         </div>
         <div className="brand-block" style={{ paddingTop: 8 }}>
-          <Logo large />
-          <div className="slogan">구독도 일정도, 빈틈없이</div>
+          <img className="login-logo" src="/brand/logo-slogan.png" alt="틈 — 구독도 일정도, 빈틈없이" />
         </div>
         <div className={`field inbox ${eErr ? "err" : ""}`}>
           <label>이메일</label>

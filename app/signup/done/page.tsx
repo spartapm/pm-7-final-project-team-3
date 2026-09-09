@@ -1,27 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneShell } from "@/components/ui";
-import { useStore } from "@/lib/store";
 
 export default function SignupDone() {
   const router = useRouter();
-  const { hydrated, loggedIn, onboarded } = useStore();
-  useEffect(() => {
-    if (!hydrated) return;
-    if (!loggedIn) router.replace("/login");
-    else if (onboarded) router.replace("/home");
-  }, [hydrated, loggedIn, onboarded, router]);
   return (
     <PhoneShell>
       <div className="done-screen">
-        <div className="check-mark">✓</div>
-        <h1>가입이 완료됐어요</h1>
-        <p>결제 전에 구독을 확인하고 관리할 수 있어요.</p>
+        <img className="done-mascot" src="/teumki/joa.png" alt="" />
+        <h1>가입이 완료되었습니다.</h1>
+        <p>지금 바로 새는 구독비를 확인하러 가볼까요?</p>
         <div style={{ height: 24 }} />
-        <button className="btn primary" type="button" onClick={() => router.replace("/onboarding/alerts")}>
-          시작하기
+        <button className="btn primary" type="button" onClick={() => router.replace("/login")}>
+          로그인 하러 가기
         </button>
       </div>
     </PhoneShell>

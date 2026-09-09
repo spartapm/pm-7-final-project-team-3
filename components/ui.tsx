@@ -174,12 +174,12 @@ export function Fab({ children }: { children?: ReactNode }) {
             <button className={tab === "subscription" ? "on" : ""} type="button" onClick={() => setTab("subscription")}>구독</button>
             <button className={tab === "event" ? "on" : ""} type="button" onClick={() => setTab("event")}>일상</button>
           </div>
-          <button className="fab-row" type="button" onClick={() => go(`/add/image?kind=${tab}`)}>
+          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 이미지입니다" : "일상 관련 이미지입니다"); go(`/add/image?kind=${tab}`); }}>
             <span className="ico-sq" style={{ background: "#7c6fef" }}>🖼</span>
             이미지로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
-          <button className="fab-row" type="button" onClick={() => go(`/add/voice?kind=${tab}`)}>
+          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 음성입니다" : "일상 관련 음성입니다"); go(`/add/voice?kind=${tab}`); }}>
             <span className="ico-sq" style={{ background: "#f0a202" }}>🎙</span>
             음성으로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
@@ -248,12 +248,15 @@ export function Modal({
 const BRAND_SRC: Record<string, string> = {
   Netflix: "/icons/brands/netflix.png",
   "YouTube Premium": "/icons/brands/youtube.png",
+  "Disney+": "/icons/brands/disney.png",
+  티빙: "/icons/brands/tving.png",
   ChatGPT: "/icons/brands/chatgpt.png",
   Spotify: "/icons/brands/spotify.png",
+  멜론: "/icons/brands/melon.png",
   "Canva Pro": "/icons/brands/canva.png",
-  "네이버플러스": "/icons/brands/naver.png",
-  "쿠팡와우": "/icons/brands/coupang.png",
-  "배민클럽": "/icons/brands/baemin.png",
+  네이버플러스: "/icons/brands/naver.png",
+  쿠팡와우: "/icons/brands/coupang.png",
+  배민클럽: "/icons/brands/baemin.png",
   "iCloud+": "/icons/brands/icloud.png",
 };
 
@@ -261,7 +264,7 @@ export function Brand({ name, color, logo }: { name: string; color: string; logo
   const src = BRAND_SRC[name];
   return (
     <span className="brand" style={src ? undefined : { background: color }} aria-hidden>
-      {src ? <img src={src} alt="" /> : (logo || name.slice(0, 1))}
+      {src ? <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : (logo || name.slice(0, 1))}
     </span>
   );
 }

@@ -8,7 +8,7 @@ export default function PwDone() {
   return (
     <PhoneShell>
       <div className="done-screen">
-        <div className="check-mark">✓</div>
+        <img className="done-mascot" src="/teumki/joa.png" alt="" />
         <h1>비밀번호가 재설정됐어요</h1>
         <p>새 비밀번호로 로그인해 주세요.</p>
         <div style={{ height: 24 }} />

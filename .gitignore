@@ -8,3 +8,5 @@ out
 !.env.example
 .vercel
 public/figma
+assets/*Gemini*
+assets/*API*

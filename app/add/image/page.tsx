@@ -16,32 +16,56 @@ function Inner() {
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const analyze = () => {
+  const analyze = async () => {
     if (files.length === 0) {
       showToast("이미지를 한 장 이상 선택해 주세요.", "err");
       return;
     }
+    if (files.length > 6) {
+      setPhase("fail");
+      return;
+    }
     setPhase("wait");
-    setTimeout(() => {
-      if (files.length > 6) {
+    try {
+      const images = await Promise.all(files.slice(0, 4).map(async (f) => {
+        const blob = await fetch(f.url).then((r) => r.blob());
+        const buf = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = "";
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return { mime: blob.type || "image/jpeg", data: btoa(bin) };
+      }));
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images, kind }),
+      });
+      const json = await res.json() as { ok?: boolean; data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string } };
+      if (!json.ok || !json.data) {
         setPhase("fail");
+        return;
+      }
+      const d = json.data;
+      if (kind === "event") {
+        sessionStorage.setItem("teum:ai-event", JSON.stringify({
+          title: d.title || d.name || "새 일정",
+          date: d.date || new Date().toISOString().slice(0, 10),
+        }));
+        router.push("/events/new");
         return;
       }
       setDraft({
         ...emptyDraft(),
-        name: kind === "event" ? "" : "Netflix",
-        plan: "스탠다드",
-        amount: "17000",
+        name: d.name || "Netflix",
+        plan: d.plan || "",
+        amount: String(d.amount || "17000").replace(/[^\d]/g, ""),
         category: "ott",
         fromAi: true,
       });
-      if (kind === "event") {
-        sessionStorage.setItem("teum:ai-event", JSON.stringify({ title: "Netflix 결제", date: new Date().toISOString().slice(0, 10) }));
-        router.push("/events/new");
-      } else {
-        router.push("/add/confirm");
-      }
-    }, 1600);
+      router.push("/add/confirm");
+    } catch {
+      setPhase("fail");
+    }
   };
 
   return (
@@ -56,7 +80,8 @@ function Inner() {
           <span style={{ width: 36 }} />
         </div>
         {phase === "perm" ? (
-          <div className="scroll">
+          <div className="scroll" style={{ textAlign: "center" }}>
+            <img className="teumki-illust" src="/teumki/perm2.png" alt="" />
             <h2 style={{ fontSize: 20, fontWeight: 800 }}>사진 접근 권한이 필요해요</h2>
             <p className="muted" style={{ lineHeight: 1.55 }}>결제 내역 스크린샷에서 구독 후보를 찾으려면 사진 보관함에 접근해야 해요. 선택한 이미지는 기기에만 쓰입니다.</p>
             <div style={{ height: 16 }} />
@@ -93,13 +118,14 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <div className="spinner" />
+            <img className="teumki-illust" src="/teumki/loading.png" alt="" />
             <h2>이미지를 읽고 있어요</h2>
             <p className="muted">서비스명, 금액, 결제 주기를 찾는 중이에요. 확인 전까지는 목록에 넣지 않아요.</p>
           </div>
         ) : null}
         {phase === "fail" ? (
           <div className="wait">
+            <img className="teumki-illust" src="/teumki/sad.png" alt="" />
             <h2>이미지에서 구독을 찾지 못했어요</h2>
             <p className="muted">더 선명한 결제 내역 화면으로 다시 시도하거나, 직접 입력해 주세요.</p>
             <button className="btn primary" type="button" onClick={() => setPhase("pick")}>다시 시도</button>

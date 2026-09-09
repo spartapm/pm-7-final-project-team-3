@@ -105,36 +105,10 @@ export const BENEFITS: Benefit[] = [
 ];
 
 export const PROMOS = [
-  {
-    kicker: "NEW",
-    title: "친구 초대하고\n커피 쿠폰 받으세요!",
-    sub: "친구 초대 시 스타벅스 아메리카노 쿠폰 증정",
-  },
-  {
-    kicker: "TIP",
-    title: "결제 전에 한 번만\n확인하면 새는 돈을 잠가요",
-    sub: "다가오는 결제·갱신을 홈에서 먼저 살펴보세요",
-  },
-  {
-    kicker: "AI",
-    title: "결제 내역 사진만 올리면\n구독이 알아서 채워져요",
-    sub: "AI 후보는 확인한 뒤에만 목록에 반영됩니다",
-  },
-  {
-    kicker: "혜택",
-    title: "통신사 결합에 이미\n들어 있는 OTT가 있어요",
-    sub: "중복 결제 중인 구독을 혜택 탭에서 점검하세요",
-  },
-  {
-    kicker: "캘린더",
-    title: "구독 일정과 약속을\n한 달 보기에서 같이 봐요",
-    sub: "필터로 구독·일상·전체를 나눠 볼 수 있어요",
-  },
-  {
-    kicker: "알림",
-    title: "무료체험이 끝나기 전에\n미리 알려 드릴게요",
-    sub: "마이페이지에서 결제·갱신·체험 알림을 켜세요",
-  },
+  { image: "/banners/slide-1.png", href: "invite" as const },
+  { image: "/banners/slide-2.png", href: "/subscriptions" as const },
+  { image: "/banners/slide-3.png", href: "/add/image" as const },
+  { image: "/banners/slide-4.png", href: "/benefits" as const },
 ];
 
 export function emptyDraft(kind: "subscription" | "event" = "subscription"): DraftSub {
@@ -415,7 +389,27 @@ export function mergePayNotices(subs: Subscription[], alerts: AlertPrefs, existi
   return [...mergedGen, ...kept].sort((a, b) => b.at - a.at);
 }
 
-export const TERMS = `틈(TEUM) 서비스 이용약관
+export const AGE = `만 14세 이상 확인
+
+회원가입 필수 확인
+
+틈은 만 14세 이상만 가입할 수 있습니다. 만 14세 미만은 서비스를 이용할 수 없습니다.
+
+시행일 2026.09.01`;
+
+export const MARKETING = `혜택·이벤트 정보 수신
+
+동의하지 않아도 틈의 핵심 기능 이용 가능
+
+마케팅 정보 수신에 동의하시면 혜택·이벤트·점검 안내를 이메일 또는 앱 알림으로 받을 수 있습니다. 동의하지 않아도 구독·일정·혜택 확인은 그대로 이용할 수 있습니다.
+
+시행일 2026.09.01`;
+
+export const TERMS = `서비스 이용약관
+
+시행일 2026.09.01
+
+틈(TEUM) 서비스 이용약관
 
 제1조 (목적)
 이 약관은 틈이 제공하는 구독 관리 서비스의 이용 조건과 절차를 정합니다.
@@ -429,7 +423,11 @@ export const TERMS = `틈(TEUM) 서비스 이용약관
 제4조 (면책)
 틈은 외부 서비스의 실제 해지·결제·요금제 변경을 대행하지 않습니다. 공식 서비스에서 직접 처리해야 합니다.`;
 
-export const PRIVACY = `개인정보처리방침
+export const PRIVACY = `개인정보 수집·이용
+
+회원가입·계정 운영에 필요한 최소 항목
+
+시행일 2026.09.01
 
 틈은 이메일 계정, 구독·일정 기록, 알림 설정을 서비스 제공 목적으로만 보관합니다. 마이데이터 기반 금융 연동은 MVP 범위에 포함되지 않습니다.
 

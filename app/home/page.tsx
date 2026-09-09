@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
-import { dateLabel, monthLabel, relativeTime, thisWeek, won } from "@/lib/format";
+import { dateLabel, monthLabel, relativeTime, thisWeek, won, ymd } from "@/lib/format";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 
@@ -21,27 +21,34 @@ export default function HomePage() {
     if (typeof window === "undefined") return;
     if (new URLSearchParams(window.location.search).get("invite") === "1") setInvite(true);
   }, []);
+  useEffect(() => {
+    if (PROMOS.length < 2) return;
+    const t = setInterval(() => setPromo((p) => (p + 1) % PROMOS.length), 3000);
+    return () => clearInterval(t);
+  }, []);
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const leak = leaksOf(live);
   const week = useMemo(() => thisWeek(), []);
-  const upcoming = live.slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);
+  const weekKeys = new Set(week.map((d) => d.key));
+  const upcoming = live.filter((s) => weekKeys.has(s.nextPay)).sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);
   const unread = notices.filter((n) => !n.read).length;
   const marked = useMemo(() => {
+    const today = ymd(new Date());
     const map = new Map<string, string[]>();
     for (const s of live) {
       const arr = map.get(s.nextPay) ?? [];
-      arr.push(s.unused ? "#ff6b7a" : "#9ec4ff");
+      arr.push(s.nextPay === today ? "#2F80ED" : "#E3EDFF");
       map.set(s.nextPay, arr);
       if (s.trialEnds && s.trialEnds !== s.nextPay) {
         const t = map.get(s.trialEnds) ?? [];
-        t.push("#ffb020");
+        t.push(s.trialEnds === today ? "#2F80ED" : "#E3EDFF");
         map.set(s.trialEnds, t);
       }
     }
     for (const e of events) {
       const arr = map.get(e.date) ?? [];
-      arr.push("#ff7aa2");
+      arr.push(e.date === today ? "#FF6B7A" : "#FF9CA6");
       map.set(e.date, arr);
     }
     return map;
@@ -61,35 +68,30 @@ export default function HomePage() {
                   <path d="M6 9a6 6 0 1 1 12 0c0 7 2 7 2 9H4c0-2 2-2 2-9z" />
                   <path d="M10 20a2 2 0 0 0 4 0" />
                 </svg>
-                {unread ? <span className="badge">{unread}</span> : null}
+                {unread ? <span className="badge">{unread > 9 ? "9+" : unread}</span> : null}
               </button>
             </div>
-            <div className="promo">
-              <i className="promo-deco" />
-              <i className="promo-deco two" />
+            <div className="promo photo">
               <button
                 type="button"
                 onClick={() => {
-                  if (promo === 0) setInvite(true);
-                  else if (promo === 1) router.push("/subscriptions");
-                  else if (promo === 2) router.push("/add/image");
-                  else if (promo === 3) router.push("/benefits");
-                  else if (promo === 4) router.push("/calendar");
-                  else if (promo === 5) router.push("/me/alerts");
+                  const href = PROMOS[promo].href;
+                  if (href === "invite") setInvite(true);
+                  else router.push(href);
                 }}
-                style={{ textAlign: "left", width: "100%" }}
+                style={{ width: "100%" }}
               >
-                <span className="new">{PROMOS[promo].kicker}</span>
-                <h2>{PROMOS[promo].title}</h2>
-                <p>{PROMOS[promo].sub}</p>
+                <img className="promo-full" src={PROMOS[promo].image} alt="" />
               </button>
-              <div className="promo-nav">
-                <button type="button" onClick={() => setPromo((p) => (p + 5) % 6)} aria-label="이전">‹</button>
-                <span className="dots">
-                  {PROMOS.map((_, i) => <i key={i} className={i === promo ? "on" : ""} />)}
-                </span>
-                <button type="button" onClick={() => setPromo((p) => (p + 1) % 6)} aria-label="다음">›</button>
-              </div>
+              {PROMOS.length > 1 ? (
+                <div className="promo-nav">
+                  <button type="button" onClick={() => setPromo((p) => (p + PROMOS.length - 1) % PROMOS.length)} aria-label="이전">‹</button>
+                  <span className="dots">
+                    {PROMOS.map((_, i) => <i key={i} className={i === promo ? "on" : ""} />)}
+                  </span>
+                  <button type="button" onClick={() => setPromo((p) => (p + 1) % PROMOS.length)} aria-label="다음">›</button>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -112,16 +114,17 @@ export default function HomePage() {
             <div className="overview">
               <div className="k">이번 달 구독비</div>
               <div className="amt">{won(monthPay)}</div>
-              {live.length === 0 ? (
-                <div className="cold-bar">아직 등록된 구독이 없어요</div>
-              ) : leak.count > 0 ? (
+              {leak.count > 0 ? (
                 <button className="leak" type="button" onClick={() => router.push("/inspect")}>
                   <span>●</span>
                   새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약
                   <span className="cta">확인하기 ›</span>
                 </button>
               ) : (
-                <div className="cold-bar">이번 달 새는 구독이 없어요</div>
+                <button className="ok-leak" type="button" onClick={() => router.push("/inspect")}>
+                  틈이 없어요. 구독을 잘 관리하고 계시네요!
+                  <span className="cta">확인하기 ›</span>
+                </button>
               )}
             </div>
 
@@ -131,7 +134,7 @@ export default function HomePage() {
             </div>
             <div className="card">
               {upcoming.length === 0 ? (
-                <div className="empty" style={{ background: "transparent", padding: 12 }}>예정된 결제가 없어요</div>
+                <div className="empty" style={{ background: "transparent", padding: 12 }}>예정 없음</div>
               ) : upcoming.map((s) => (
                 <button key={s.id} className="row" type="button" onClick={() => router.push(`/subscriptions/${s.id}`)} style={{ width: "100%", textAlign: "left" }}>
                   <Brand name={s.name} color={s.color} logo={s.logo} />

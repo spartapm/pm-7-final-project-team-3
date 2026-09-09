@@ -6,16 +6,16 @@
 
 | 명세 | 화면 | 라우트 | 상태 |
 | --- | --- | --- | --- |
-| SP-AU-Login | 로그인 | `/login` | ✅ 종료 화살표+모달, 포커스 힌트, 이메일·비번 검증, 소셜 1차 제외 토스트 |
-| SP-AU-SignUp | 회원가입 | `/signup` | ✅ 약관 필수/선택, 이메일 검증 |
-| SP-AU-Terms | 약관 상세 | `/signup/terms` | ✅ |
-| SP-AU-SignUpCp | 가입 완료 | `/signup/done` | ✅ |
-| SP-AU-Find PW | 비밀번호 찾기 | `/forgot` | ✅ 클라우드 계정 조회 |
-| SP-AU-Verify | 인증코드 | `/forgot/verify` | ✅ 데모 코드 123456 |
-| SP-AU-NewPW | 새 비밀번호 | `/forgot/new` | ✅ Supabase 비밀번호 반영 |
-| SP-AU-PWCp | 재설정 완료 | `/forgot/done` | ✅ |
+| SP-AU-Login | 로그인 | `/login` | ✅ 종료 화살표+모달, 슬로건 로고 에셋, 포커스 힌트, 이메일·비번 검증, 소셜 1차 제외 토스트 |
+| SP-AU-SignUp | 회원가입 | `/signup` | ✅ 비번 확인, 전체동의, 만14세/약관/개인정보/마케팅+자세히, 가입 후 로그인으로 |
+| SP-AU-Terms | 약관 상세 | `/signup/terms` | ✅ 4종 문서, 확인 버튼, TRI:ON · 틈 |
+| SP-AU-SignUpCp | 가입 완료 | `/signup/done` | ✅ 조아틈끼, 「로그인 하러 가기」. 홈 로고 버튼은 9/8 삭제 |
+| SP-AU-Find PW | 비밀번호 찾기 | `/forgot` | ✅ 카피·인증 코드 받기, 미가입 필드 에러 |
+| SP-AU-Verify | 인증코드 | `/forgot/verify` | ✅ 6칸·포커스 강조·재전송 1분·인증하기 |
+| SP-AU-NewPW | 새 비밀번호 | `/forgot/new` | ✅ 확인 필드, 불일치 문구, 「비밀번호 변경」 |
+| SP-AU-PWCp | 재설정 완료 | `/forgot/done` | ✅ 조아틈끼, 로그인 하러 가기 |
 | SP-OnBdAgree | 알림 사전안내 | `/onboarding/alerts` | ✅ |
-| SP-HM-Dashbd | 홈 대시보드 | `/home` | ✅ 로고·배너 캐러셀 6장·친구초대 시트·주간 캘린더·월 구독비·누수 배너·MY 결제일·점검 CTA·FAB |
+| SP-HM-Dashbd | 홈 대시보드 | `/home` | ✅ 알림 9+, 슬라이드 배너 4장 3초, 주간 캘린더 색, 0원/누수 카피, 이번 주 MY 결제일 2개, FAB +→X |
 | SP-HM-Reminder | 알림 사이드시트 | 홈 시트 | ✅ 확인 / 모두 읽음 |
 | SP-Coldhome | 홈 0건 | `/home` (신규 가입) | ✅ 0원, 빈 결제, 빈 안내바 |
 | SP-SB-List | 내 구독 | `/subscriptions` | ✅ 요약 카드, 카테고리 칩, 정렬(결제일/금액/최신/상태), empty |

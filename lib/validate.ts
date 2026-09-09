@@ -16,7 +16,7 @@ export function emailError(v: string) {
 export function passwordError(v: string, opts?: { min?: number; max?: number }) {
   const min = opts?.min ?? 10;
   const max = opts?.max ?? 20;
-  if (!v) return PASSWORD_HINT;
+  if (!v || v.toUpperCase() === "NULL") return PASSWORD_HINT;
   if (
     HANGUL.test(v) ||
     v.length < min ||
