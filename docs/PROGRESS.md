@@ -21,21 +21,21 @@
 | SP-SB-List | 내 구독 | `/subscriptions` | ✅ 요약 카드, 카테고리 칩, 정렬(결제일/금액/최신/상태), empty |
 | SP-ColdSub | 구독 목록 empty | 위 empty | ✅ |
 | SP-SB-Detail | 구독 상세 | `/subscriptions/[id]` | ✅ 상태 드롭다운, 결합 문구, 결제수단, 틈이 확인했어요, 삭제 모달(놀란틈끼) |
-| SP-SB-Edit | 등록/수정 | `/subscriptions/new`, `.../edit` | ✅ 필수*, 자동완성, 첫 결제일, 무료체험 토글, 알림 스위치, 저장 비활성 |
+| SP-SB-Edit | 등록/수정 | `/subscriptions/new`, `.../edit` | ✅ 필수*, 자동완성, 첫 결제일 소형 캘린더(오늘 이전 비활성), 무료체험 토글, 알림 스위치, 저장 비활성 |
 | SP-SB-EditCp | 저장 완료 | `/subscriptions/saved` | ✅ 조아틈끼, 요약 카드, 상세로 이동 |
 | SP-CAL-Calendar | 캘린더 | `/calendar` | ✅ 구독/일상/전체 필터, 월 이동, 도트, 선택일 목록, 공유 |
 | SP-CAL-Fab | FAB 펼침 | 공통 FAB | ✅ 구독·일상 탭 + 이미지/음성/직접 |
-| SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ 필수*·알림 5종·메모 50자. ❌ 소형 캘린더/TimePicker는 네이티브 입력 |
+| SP-CAL-CustomEdit | 일상 등록/수정 | `/events/new`, `/events/[id]/edit` | ✅ 필수*·알림 5종·메모 50자. 소형 캘린더/TimePicker. 자정 넘김 시 종료일 자동 |
 | SP-CAL-Detail | 일정 상세 | `/events/[id]` | ✅ 수정·삭제(놀란틈끼, 복구 불가 카피) |
 | SP-CAL-ScheduleCp | 일정 저장 완료 | `/events/saved` | ✅ 조아틈끼 |
 | SP-BNF-Main | 혜택 | `/benefits` | ✅ 0건「빈틈이 없어요!」, 점검받기, 카테고리 4종, empty 카드틈끼 |
 | SP-BNF-Detail | 혜택 상세 | `/benefits/[id]` | ✅ 공식 서비스 이동 |
 | SP-BNF-Insp | AI 점검 | `/inspect` | ✅ 대기 로딩틈끼·닫기, 실패 우는틈끼·다시 시도/혜택 홈 |
-| SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 등록 전·최대 3장·분석하기·대기/실패. 웹 권한 팝업 없음(명세 예외) |
-| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ idle + 듣기(중단/59초) + 저장 + 종료 확인 + 대기/실패 |
-| SP-ADD-Result | 분석 결과 목록 | 없음 | ❌ 추출 항목 선택 화면 없음. 분석 후 바로 Check/일상 폼 |
-| SP-ADD-ResultExitConf | 결과 이탈 확인 | 없음 | ❌ Result가 없어서 같이 없음 |
-| SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ SubForm 자동입력, 요금 불일치 경고, 저장 전 미반영 |
+| SP-ADD-Img* | 이미지 등록 | `/add/image` | ✅ 등록 전·최대 3장·분석하기·대기/실패. Gemini 3.6. 웹 권한 팝업 없음(명세 예외) |
+| SP-ADD-Mic* | 음성 등록 | `/add/voice` | ✅ idle + 듣기(중단/59초) + 저장 + Gemini 3.6 분석 + 종료 확인 + 대기/실패 |
+| SP-ADD-Result | 분석 결과 목록 | `/add/result` | ✅ 추출 결과, 확인 필요, 직접 입력(둠칫틈끼), 일괄 저장, 카드→Check |
+| SP-ADD-ResultExitConf | 결과 이탈 확인 | Result 팝업 | ✅ 궁금틈끼, 딤 탭 닫힘 없음, 계속 확인하기/나가기 |
+| SP-ADD-Check | 인식 확인 | `/add/confirm` | ✅ SubForm 자동입력, 금액 필드 하단 요금 불일치 경고, 저장 전 미반영, 첫 결제일 소형 캘린더 |
 | SP-MY-Main | 마이 | `/me` | ✅ 셀카틈끼, MVP 토스트 원문, 계정 탈퇴 #FF0008 |
 | SP-MY-Reminder | 알림 설정 | `/me/alerts` | ✅ 결제/가격/캘린더/마케팅 수신동의 + 즉시 반영 |
 | SP-My-Logout | 로그아웃 확인 | 모달 | ✅ 「로그아웃 하시겠어요?」 |
@@ -45,11 +45,12 @@
 
 클라우드: 계정·구독·일정·알림을 Supabase에 동기화. 결제 예정 알림은 구독·알림 설정에서 동적으로 생성. 지난 결제일은 다음 주기로 넘김.
 
+제출용 상세 범위: `docs/제출-구현범위.md`
+
 ## 아직 덜 맞은 것
 
-- `SP-ADD-Result` / `SP-ADD-ResultExitConf`: 분석 후 항목 선택·이탈 확인 화면이 없음.
-- 일상 일시: 명세의 딤드 소형 캘린더 + TimePicker 순차 호출 대신 네이티브 date/time.
-- 9/8 초록 박스: 가입완료 로고 삭제, 구독 폼 무료체험·결제수단·작성중단 팝업까지는 반영. 캔버스 전체 초록 박스를 다 훑진 않음.
+- 9/8 초록 박스(`413:1895`, SPEC-EVENT-01): 소형 캘린더 → TimePicker 순차, 하루 종일, 알림 5종, 메모 50자, 저장 토스트까지 반영. 구독 첫 결제일도 같은 소형 캘린더.
+- 음성 분석은 Gemini. 이미지·음성에서 서로 다른 값이 복수로 나온 경우의 필드 경고는 단일 추출값만 내려오면 금액 불일치만 표시.
 
 ## 의도적으로 뺀 것
 

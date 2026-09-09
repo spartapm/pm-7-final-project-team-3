@@ -10,7 +10,10 @@ npm run dev
 ```
 
 브라우저에서 http://localhost:3003  
+배포: https://pm-7-final-project-team-3-nu.vercel.app  
 화면은 390px 폭 + 레터박스입니다. 개발자 도구 모바일 뷰(390×844)가 가장 가깝습니다.
+
+구현/미구현 범위: `docs/제출-구현범위.md`
 
 ## 데모 계정
 

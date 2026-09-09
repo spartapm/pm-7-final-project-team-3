@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
@@ -10,7 +10,7 @@ import { cycleEvery, won } from "@/lib/format";
 export default function InspectPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const [waiting, setWaiting] = useState(false);
+  const [waiting, setWaiting] = useState(true);
   const [fail, setFail] = useState(false);
   const [open, setOpen] = useState(false);
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
@@ -19,10 +19,15 @@ export default function InspectPage() {
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
   const shown = open ? ranked : ranked.slice(0, 3);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => setWaiting(false), 1400);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const rerun = () => {
     setWaiting(true);
     setFail(false);
-    setTimeout(() => setWaiting(false), 1400);
+    window.setTimeout(() => setWaiting(false), 1400);
   };
 
   if (waiting) {

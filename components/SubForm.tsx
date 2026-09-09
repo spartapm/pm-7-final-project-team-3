@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { WhenPick } from "@/components/WhenPick";
 import { Back, Brand, Gate, Modal, PhoneShell } from "@/components/ui";
-import { categorySelectOptions, searchServices, SERVICES } from "@/lib/catalog";
-import { uid } from "@/lib/format";
+import { categorySelectOptions, emptyDraft, searchServices, SERVICES } from "@/lib/catalog";
+import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
+import { dateLabel, uid, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import type { BillingCycle, Category, DraftSub, Subscription } from "@/lib/types";
+import type { BillingCycle, Category, DraftSub, ExtractSubItem, Subscription } from "@/lib/types";
 
 function fromSub(s: Subscription): DraftSub {
   return {
@@ -34,7 +36,17 @@ function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-export function SubForm({ existingId, check = false }: { existingId: string | null; check?: boolean }) {
+export function SubForm({
+  existingId,
+  check = false,
+  fromResult = false,
+  extractId = null,
+}: {
+  existingId: string | null;
+  check?: boolean;
+  fromResult?: boolean;
+  extractId?: string | null;
+}) {
   const router = useRouter();
   const { subscriptions, upsertSub, draft, setDraft, resetDraft, showToast } = useStore();
   const existing = existingId ? subscriptions.find((s) => s.id === existingId) : null;
@@ -43,9 +55,24 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
   const [trialOn, setTrialOn] = useState((existing?.status ?? draft.status) === "trial");
   const [alertOn, setAlertOn] = useState(existing ? existing.alertDays > 0 : false);
   const [leave, setLeave] = useState(false);
+  const [payPick, setPayPick] = useState(false);
   useEffect(() => {
+    if (fromResult && extractId) {
+      const cur = readExtract();
+      const item = cur?.items.find((x): x is ExtractSubItem => x.id === extractId && x.kind === "subscription");
+      if (item) {
+        setLocal(draftFromSubItem(item));
+        setTrialOn(item.status === "trial");
+        setAlertOn(item.alertDays > 0);
+      } else {
+        setLocal({ ...emptyDraft(), fromAi: true });
+        setTrialOn(false);
+        setAlertOn(false);
+      }
+      return;
+    }
     if (!existingId && draft.name) setLocal({ ...draft, payMethod: draft.payMethod ?? "", trialDays: draft.trialDays ?? "" });
-  }, [draft, existingId]);
+  }, [draft, existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name), [local.name]);
   const known = SERVICES.find((s) => s.name.toLowerCase() === local.name.trim().toLowerCase());
@@ -61,9 +88,20 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
     setOpen(false);
   };
 
+  const goResult = () => {
+    const cur = readExtract();
+    router.replace(`/add/result?kind=subscription&from=${cur?.from ?? "image"}`);
+  };
+
   const save = () => {
     if (!canSave) {
       showToast("필수 항목을 입력해 주세요.", "err");
+      return;
+    }
+    if (fromResult) {
+      const id = extractId && extractId !== "new" ? extractId : uid("ex");
+      upsertExtractItem(subItemFromDraft(id, local, trialOn, alertOn));
+      goResult();
       return;
     }
     const amount = Number(local.amount.replace(/[^0-9]/g, "")) || 0;
@@ -113,16 +151,13 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
     <Gate>
       <PhoneShell>
         <div className="topbar">
-          <Back onClick={() => setLeave(true)} />
+          <Back onClick={() => { if (fromResult) goResult(); else setLeave(true); }} />
           <h1>{check || local.fromAi ? "구독 등록/수정" : existing ? "구독 수정" : "구독 등록"}</h1>
           <span style={{ width: 36 }} />
         </div>
         <div className="scroll">
           <p style={{ fontWeight: 800, fontSize: 20, margin: "4px 0 14px" }}>{check || local.fromAi ? "구독 정보를 작성해주세요" : "구독 정보를 수정해주세요"}</p>
           {local.fromAi || check ? <div className="cold-bar" style={{ marginBottom: 12 }}>AI 초안입니다. 저장하기 전에는 내 구독에 들어가지 않아요.</div> : null}
-          {known && local.amount && Number(local.amount.replace(/[^0-9]/g, "")) !== known.amount ? (
-            <p className="mismatch-warn">⚠️ {known.name} 요금제와 달라요, 확인해주세요</p>
-          ) : null}
           {trialOn ? <p className="field-hint">ⓘ 무료체험의 경우 첫 결제는 결제금액을 0으로 입력해주세요.</p> : null}
           <div className="field">
             <label>서비스명 <i className="req">*</i></label>
@@ -150,7 +185,9 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
           </div>
           <div className="field">
             <label>첫 결제일 <i className="req">*</i></label>
-            <input type="date" value={local.nextPay} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setLocal((p) => ({ ...p, nextPay: e.target.value, payDay: String(Number(e.target.value.slice(8, 10)) || 1) }))} />
+            <button type="button" className="when-chip" onClick={() => setPayPick(true)}>
+              {local.nextPay ? dateLabel(local.nextPay) : "날짜"}
+            </button>
           </div>
           <div className="field">
             <label>결제 주기 <i className="req">*</i></label>
@@ -166,6 +203,9 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
               <input inputMode="numeric" value={local.amount} onChange={(e) => setLocal((p) => ({ ...p, amount: e.target.value.replace(/[^0-9]/g, "") }))} placeholder="17000" />
               <span>원</span>
             </div>
+            {known && local.amount && Number(local.amount.replace(/[^0-9]/g, "")) !== known.amount ? (
+              <p className="mismatch-warn">⚠️ {known.name} 요금제와 달라요, 확인해주세요</p>
+            ) : null}
           </div>
           <label className="check" style={{ alignItems: "center" }}>
             <span className="grow">무료체험</span>
@@ -217,6 +257,18 @@ export function SubForm({ existingId, check = false }: { existingId: string | nu
           </div>
           <button className="btn primary" type="button" disabled={!canSave} style={{ opacity: canSave ? 1 : 0.4 }} onClick={() => { setDraft(local); save(); }}>저장하기</button>
         </div>
+        <WhenPick
+          open={payPick}
+          allDay
+          date={local.nextPay}
+          time=""
+          minDate={ymd(new Date())}
+          onCancel={() => setPayPick(false)}
+          onPick={(d) => {
+            setLocal((p) => ({ ...p, nextPay: d, payDay: String(Number(d.slice(8, 10)) || 1) }));
+            setPayPick(false);
+          }}
+        />
         {leave ? (
           <Modal
             title="작성을 중단하시겠어요?"

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { VoiceWave } from "@/components/VoiceWave";
-import { emptyDraft } from "@/lib/catalog";
+import { beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { useStore } from "@/lib/store";
 
 type Phase = "idle" | "listen" | "save" | "wait" | "fail" | "exit";
@@ -16,7 +16,7 @@ function clockOf(sec: number) {
 function Inner() {
   const router = useRouter();
   const kind = useSearchParams().get("kind") === "event" ? "event" : "subscription";
-  const { setDraft, showToast } = useStore();
+  const { showToast } = useStore();
   const [phase, setPhase] = useState<Phase>("idle");
   const [perm, setPerm] = useState(false);
   const [text, setText] = useState("");
@@ -137,26 +137,39 @@ function Inner() {
     void start();
   };
 
-  const analyze = () => {
+  const analyze = async () => {
     if (!text.trim()) return;
     stopMic();
     setPhase("wait");
-    window.setTimeout(() => {
-      const raw = text.trim();
-      if (!raw) {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.trim(), kind }),
+        signal: ctrl.signal,
+      });
+      const json = await res.json() as {
+        ok?: boolean;
+        items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
+        data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
+      };
+      if (phaseRef.current !== "wait") return;
+      const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
+      if (!json.ok || rows.length === 0) {
         setPhase("fail");
         return;
       }
-      const amount = raw.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/)?.[1]?.replace(/,/g, "") ?? "17000";
-      const name = /유튜브|youtube/i.test(raw) ? "YouTube Premium" : /스포티|spotify/i.test(raw) ? "Spotify" : /넷플릭|netflix/i.test(raw) ? "Netflix" : raw.slice(0, 30);
-      setDraft({ ...emptyDraft(), name, amount, fromAi: true, plan: "" });
-      if (kind === "event") {
-        sessionStorage.setItem("teum:ai-event", JSON.stringify({ title: name, date: new Date().toISOString().slice(0, 10) }));
-        router.push("/events/new");
-      } else {
-        router.push("/add/confirm");
-      }
-    }, 1400);
+      const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
+      beginExtract(kind, "voice", items);
+      router.push(`/add/result?kind=${kind}&from=voice`);
+    } catch {
+      if (phaseRef.current !== "wait") return;
+      setPhase("fail");
+    } finally {
+      window.clearTimeout(timer);
+    }
   };
 
   const recording = phase === "listen" || phase === "save" || phase === "exit";
@@ -233,7 +246,7 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => setPhase("save")}>
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "save"; setPhase("save"); }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />

@@ -3,7 +3,7 @@
 import { Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
-import { emptyDraft } from "@/lib/catalog";
+import { beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { useStore } from "@/lib/store";
 
 type Phase = "pick" | "wait" | "fail";
@@ -18,10 +18,12 @@ function isPngJpg(file: File) {
 function Inner() {
   const router = useRouter();
   const kind = useSearchParams().get("kind") === "event" ? "event" : "subscription";
-  const { setDraft, showToast } = useStore();
+  const { showToast } = useStore();
   const [phase, setPhase] = useState<Phase>("pick");
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
   const pickFiles = (list: FileList | File[] | null) => {
     const incoming = Array.from(list ?? []);
@@ -40,6 +42,8 @@ function Inner() {
   const analyze = async () => {
     if (files.length === 0) return;
     setPhase("wait");
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), 25000);
     try {
       const images = await Promise.all(files.slice(0, MAX).map(async (f) => {
         const blob = await fetch(f.url).then((r) => r.blob());
@@ -53,32 +57,27 @@ function Inner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images, kind }),
+        signal: ctrl.signal,
       });
-      const json = await res.json() as { ok?: boolean; data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string } };
-      if (!json.ok || !json.data) {
+      const json = await res.json() as {
+        ok?: boolean;
+        items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
+        data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
+      };
+      if (phaseRef.current !== "wait") return;
+      const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
+      if (!json.ok || rows.length === 0) {
         setPhase("fail");
         return;
       }
-      const d = json.data;
-      if (kind === "event") {
-        sessionStorage.setItem("teum:ai-event", JSON.stringify({
-          title: d.title || d.name || "",
-          date: d.date || new Date().toISOString().slice(0, 10),
-        }));
-        router.push("/events/new");
-        return;
-      }
-      setDraft({
-        ...emptyDraft(),
-        name: d.name || "",
-        plan: d.plan || "",
-        amount: String(d.amount || "").replace(/[^\d]/g, ""),
-        category: "ott",
-        fromAi: true,
-      });
-      router.push("/add/confirm");
+      const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
+      beginExtract(kind, "image", items);
+      router.push(`/add/result?kind=${kind}&from=image`);
     } catch {
+      if (phaseRef.current !== "wait") return;
       setPhase("fail");
+    } finally {
+      window.clearTimeout(timer);
     }
   };
 
@@ -97,7 +96,13 @@ function Inner() {
           <div className="scroll">
             <h2 className="add-title">추가 할 이미지를 올려주세요</h2>
             <p className="muted">여러 장 올려도 구독 및 일정을 함께 찾을 수 있어요.</p>
-            <button className="upload-area" type="button" onClick={() => inputRef.current?.click()}>
+            <button className="upload-area" type="button" onClick={() => {
+              if (files.length >= MAX) {
+                showToast("⚠️  이미지는 최대 3장까지 올릴 수 있어요.", "err");
+                return;
+              }
+              inputRef.current?.click();
+            }}>
               <span className="upload-plus">↑</span>
               <strong>이미지 추가하기</strong>
               <em>최대 3장 · PNG/JPG</em>
@@ -131,7 +136,7 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => setPhase("pick")}>
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "pick"; setPhase("pick"); }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />

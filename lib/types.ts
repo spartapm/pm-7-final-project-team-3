@@ -57,6 +57,51 @@ export type LifeEvent = {
   memo: string;
   createdAt: number;
   alertMin?: number;
+  endDate?: string;
+};
+
+export type ExtractFrom = "image" | "voice";
+
+export type ExtractSubItem = {
+  id: string;
+  kind: "subscription";
+  name: string;
+  plan: string;
+  amount: string;
+  day: number | null;
+  nextPay: string;
+  category: Category;
+  cycle: BillingCycle;
+  payMethod: string;
+  memo: string;
+  alertDays: number;
+  trialDays: string;
+  status: SubStatus;
+  needConfirm: boolean;
+};
+
+export type ExtractEventItem = {
+  id: string;
+  kind: "event";
+  title: string;
+  date: string;
+  endDate: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  memo: string;
+  alertMin: number;
+  needConfirm: boolean;
+};
+
+export type ExtractItem = ExtractSubItem | ExtractEventItem;
+
+export type ExtractState = {
+  kind: AddKind;
+  from: ExtractFrom;
+  items: ExtractItem[];
+  dirty: boolean;
+  origin: string;
 };
 
 export type Notice = {

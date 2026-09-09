@@ -603,9 +603,58 @@ img { display: block; max-width: 100%; }
 .wait { position: relative; }
 .wait-close { position: absolute; top: 8px; right: 8px; }
 .when-row { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.when-row.allday { grid-template-columns: 40px 1fr; }
 .when-row span { font-size: 13px; font-weight: 700; color: #4b4e58; }
 .when-row input { height: 44px; }
-.when-row.bad input { border-color: #ff0000; }
+.when-row.bad input, .when-chip.bad { border-color: #ff0000; }
+.when-chip {
+  height: 44px; border-radius: 12px; border: 1px solid #e3e8f0; background: #f7f9fc;
+  font-size: 14px; font-weight: 700; color: #171a21;
+}
+.field > .when-chip { width: 100%; }
+.when-sheet {
+  background: #fff; border-radius: 20px; padding: 16px 14px 18px; width: 100%;
+  box-shadow: 0 20px 48px rgba(20, 23, 28, 0.18);
+}
+.when-month {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; font-size: 16px;
+}
+.when-month button { width: 36px; height: 36px; font-size: 22px; color: #3d414b; }
+.when-grid .cal-cell { height: 40px; }
+.when-grid .cal-cell.off, .when-grid .cal-cell:disabled { opacity: 0.35; }
+.time-pick-label { text-align: center; font-weight: 800; margin: 0 0 10px; }
+.time-cols { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 8px; align-items: center; }
+.time-colon { text-align: center; font-size: 22px; font-weight: 800; color: #171a21; }
+.time-col {
+  max-height: 220px; overflow: auto; border: 1px solid #e3e8f0; border-radius: 14px; background: #f7f9fc;
+}
+.time-col button {
+  display: block; width: 100%; height: 40px; font-weight: 700; color: #4b4e58;
+}
+.time-col button.on { background: #eaf3ff; color: #2f80ed; }
+
+.result-page h2 { margin: 4px 0 8px; font-size: 22px; font-weight: 800; }
+.result-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.result-card {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 16px; border: 1px solid #e3e8f0; border-radius: 16px;
+  background: #fff; text-align: left;
+}
+.result-card-body { flex: 1; min-width: 0; }
+.result-card-body b { display: block; font-size: 15px; font-weight: 800; }
+.result-card-body em { display: block; margin-top: 2px; font-size: 13px; font-style: normal; color: #8b909a; font-weight: 600; }
+.result-chevron { color: #c5cad3; font-size: 22px; line-height: 1; }
+.result-manual {
+  background: #f3f6fb; border-radius: 16px; padding: 16px; margin: 8px 0 18px; text-align: center;
+}
+.result-manual p { margin: 0 0 10px; font-size: 14px; font-weight: 700; }
+.result-manual button {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 48px; border-radius: 14px; background: #fff;
+  border: 1px solid #e3e8f0; font-weight: 800;
+}
+.result-manual img { width: 36px; height: 36px; object-fit: contain; }
 .mismatch-warn { color: #c23b3b; font-size: 13px; font-weight: 700; margin: -4px 0 12px; }
 .amt-row { display: flex; align-items: center; gap: 8px; }
 .amt-row input { flex: 1; }
