@@ -120,16 +120,15 @@ export async function loginCloud(email: string, password: string): Promise<{
 }> {
   const sb = getSupabase();
   if (!sb) return { status: "off" };
-  const res = await timed(
-    sb.from("accounts").select("id, email, password, onboarded, marketing, alerts, login_at").eq("email", email.trim().toLowerCase()).maybeSingle(),
-    { data: null, error: { message: "timeout", code: "timeout" } },
-  );
-  if (res.error) {
-    if (isMissingTable(res.error)) return { status: "missing-table" };
-    return { status: "error", message: res.error.message };
-  }
-  if (!res.data || res.data.password !== password) return { status: "ok", mismatch: true };
-  return { status: "ok", account: res.data };
+  return timed((async () => {
+    const res = await sb.from("accounts").select("id, email, password, onboarded, marketing, alerts, login_at").eq("email", email.trim().toLowerCase()).maybeSingle();
+    if (res.error) {
+      if (isMissingTable(res.error)) return { status: "missing-table" as const };
+      return { status: "error" as const, message: res.error.message };
+    }
+    if (!res.data || res.data.password !== password) return { status: "ok" as const, mismatch: true };
+    return { status: "ok" as const, account: res.data };
+  })(), { status: "error", message: "timeout" });
 }
 
 export async function signupCloud(input: {
