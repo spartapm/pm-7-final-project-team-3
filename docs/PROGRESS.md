@@ -16,7 +16,7 @@
 | SP-AU-PWCp | 재설정 완료 | `/forgot/done` | ✅ 조아틈끼, 로그인 하러 가기 |
 | SP-OnBdAgree | 알림 사전안내 | `/home` 첫 진입 팝업 | ✅ 알림틈끼, 마케팅 광고 알림 수신 동의, 거부/받기, 시각 토스트 |
 | SP-HM-Dashbd | 홈 대시보드 | `/home` | ✅ 알림 9+, 슬라이드 배너 4장 3초, 주간 캘린더 색, 0원/누수 카피, 이번 주 MY 결제일 2개, FAB +→X |
-| SP-HM-Reminder | 알림 사이드시트 | 홈 시트 | ✅ 확인 / 모두 읽음 |
+| SP-HM-Reminder | 알림 사이드시트 | 홈 시트 | ✅ 확인 / 일괄 삭제 (9/8) |
 | SP-Coldhome | 홈 0건 | `/home` (신규 가입) | ✅ 0원, `아직 등록된 구독이 없어요`, `예정된 결제가 없어요` |
 | SP-SB-List | 내 구독 | `/subscriptions` | ✅ 요약 카드, 카테고리 칩, 정렬(결제일/금액/최신/상태), empty |
 | SP-ColdSub | 구독 목록 empty | 위 empty | ✅ |

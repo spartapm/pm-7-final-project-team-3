@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell } from "@/components/ui";
-import { SERVICES } from "@/lib/catalog";
+import { findBrand } from "@/lib/brands";
 import { clearExtract, readExtract } from "@/lib/extract";
 import { dateLabel, uid, won } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -147,7 +147,7 @@ function Inner() {
         return;
       }
       for (const s of ready) {
-        const known = SERVICES.find((x) => x.name.toLowerCase() === s.name.trim().toLowerCase());
+        const known = findBrand(s.name);
         const id = uid("sub");
         const amount = Number(s.amount) || 0;
         upsertSub({
@@ -164,7 +164,7 @@ function Inner() {
           unused: false,
           memo: s.memo,
           color: known?.color ?? "#2576f2",
-          logo: known?.logo ?? "",
+          logo: "",
           trialEnds: null,
           paused: false,
           alertDays: s.alertDays,
@@ -210,14 +210,12 @@ function Inner() {
           <p className="muted">중복 항목을 확인하고 저장 전 내용을 수정할 수 있어요.</p>
           <div className="result-list">
             {state.items.map((item) => {
-              const known = item.kind === "subscription"
-                ? SERVICES.find((s) => s.name.toLowerCase() === item.name.trim().toLowerCase())
-                : null;
+              const known = item.kind === "subscription" ? findBrand(item.name) : null;
               const label = item.kind === "event" ? item.title : item.name;
               return (
                 <button key={item.id} type="button" className="result-card" onClick={() => openItem(item)}>
                   {item.kind === "subscription" ? (
-                    <Brand name={known?.name ?? item.name} color={known?.color ?? "#2576f2"} logo={known?.logo ?? item.name.slice(0, 1)} />
+                    <Brand name={known?.name ?? item.name} color={known?.color ?? "#2576f2"} logo={item.name.slice(0, 1)} />
                   ) : (
                     <span className="brand" style={{ background: "#ff7aa2" }}>{label.slice(0, 1) || "·"}</span>
                   )}

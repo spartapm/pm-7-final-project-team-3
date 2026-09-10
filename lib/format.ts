@@ -143,7 +143,8 @@ export function monthGrid(year: number, month: number) {
   const first = new Date(year, month, 1);
   const start = new Date(first);
   start.setDate(1 - first.getDay());
-  const cells: { key: string; date: number; inMonth: boolean; dow: number }[] = [];
+  const cells: { key: string; date: number; inMonth: boolean; dow: number; today: boolean }[] = [];
+  const todayKey = ymd(new Date());
   for (let i = 0; i < 42; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
@@ -152,6 +153,7 @@ export function monthGrid(year: number, month: number) {
       date: d.getDate(),
       inMonth: d.getMonth() === month,
       dow: d.getDay(),
+      today: ymd(d) === todayKey,
     });
   }
   return cells;

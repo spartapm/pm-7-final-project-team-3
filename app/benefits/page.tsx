@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { BENEFITS, benefitStatus } from "@/lib/catalog";
 import { daysUntil, won } from "@/lib/format";
 import { leaksOf } from "@/lib/stats";
@@ -30,11 +30,13 @@ export default function BenefitsPage() {
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
   const leak = leaksOf(subscriptions);
   const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
-  const list = BENEFITS
-    .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
-    .filter((b) => kind === "all" || b.kind === kind)
-    .slice()
-    .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+  const list = kind === "card"
+    ? []
+    : BENEFITS
+      .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
+      .filter((b) => kind === "all" || b.kind === kind)
+      .slice()
+      .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
   return (
     <Gate>
       <PhoneShell>
@@ -55,11 +57,11 @@ export default function BenefitsPage() {
             )}
             <button className="btn" type="button" onClick={() => router.push("/inspect")}>구독 점검받기</button>
           </div>
-          <div className="chip-row" style={{ margin: "14px 0 8px" }}>
+          <ChipScroller style={{ margin: "14px 0 8px" }}>
             {KIND_FILTERS.map((f) => (
               <button key={f.id} className={`chip outline ${kind === f.id ? "on" : ""}`} type="button" onClick={() => setKind(f.id)}>{f.label}</button>
             ))}
-          </div>
+          </ChipScroller>
           <div className="section-title" style={{ marginTop: 4 }}>인기 구독 혜택</div>
           {list.length === 0 ? (
             <div className="empty">
@@ -84,7 +86,6 @@ export default function BenefitsPage() {
             );
           })}
         </div>
-        <Fab />
         <TabBar />
       </PhoneShell>
     </Gate>

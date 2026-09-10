@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Back, Brand, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { Back, Brand, ChipScroller, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { BENEFITS, CATEGORIES, benefitStatus, isBundleLike } from "@/lib/catalog";
 import { cycleEvery, dateLabel, dueBadge, dueLabel, won } from "@/lib/format";
 import { monthlyAmount } from "@/lib/stats";
@@ -92,11 +92,11 @@ export default function SubListPage() {
             ) : null}
           </div>
           <div className="sub-body">
-            <div className="chip-row" style={{ marginBottom: 4 }}>
+            <ChipScroller style={{ marginBottom: 4 }}>
               {cats.map((c) => (
                 <button key={c.id} className={`chip ${cat === c.id ? "on" : ""}`} type="button" onClick={() => setCat(c.id as Category | "all")}>{c.label}</button>
               ))}
-            </div>
+            </ChipScroller>
             <div className="list-head">
               <span>등록된 구독</span>
               {live.length > 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WhenPick } from "@/components/WhenPick";
 import { Back, Gate, PhoneShell } from "@/components/ui";
@@ -8,14 +8,6 @@ import { eventItemFromForm, readExtract, upsertExtractItem } from "@/lib/extract
 import { dateLabel, pad, parseYmd, timeLabel, uid, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ExtractEventItem, LifeEvent } from "@/lib/types";
-
-const ALERTS = [
-  { min: 5, label: "5분전" },
-  { min: 10, label: "10분 전" },
-  { min: 15, label: "15분 전" },
-  { min: 30, label: "30분 전" },
-  { min: 60, label: "1시간 전" },
-];
 
 function hmNow() {
   const d = new Date();
@@ -52,7 +44,7 @@ export function EventForm({
   const [end, setEnd] = useState(existing?.end || (fromResult ? "" : endShift?.time ?? ""));
   const [allDay, setAllDay] = useState(existing?.allDay ?? false);
   const [memo, setMemo] = useState(existing?.memo ?? "");
-  const [alertMin, setAlertMin] = useState(existing?.alertMin ?? 30);
+  const [alertMin, setAlertMin] = useState(30);
   const [fromAi, setFromAi] = useState(fromResult);
   const [tried, setTried] = useState(false);
   const [pick, setPick] = useState<null | "start" | "end">(null);
@@ -70,7 +62,7 @@ export function EventForm({
         setEnd(item.end);
         setAllDay(item.allDay);
         setMemo(item.memo);
-        setAlertMin(item.alertMin);
+        setAlertMin(30);
         setFromAi(true);
       }
       return;
@@ -154,8 +146,6 @@ export function EventForm({
     }
   };
 
-  const alertLabel = useMemo(() => ALERTS.find((a) => a.min === alertMin)?.label ?? "30분 전", [alertMin]);
-
   return (
     <Gate>
       <PhoneShell>
@@ -223,10 +213,7 @@ export function EventForm({
           {!timeOk && date && endD ? <p className="err-msg">종료 시간은 시작 시간보다 늦어야 해요</p> : null}
           <div className="field">
             <label>알림</label>
-            <select value={alertMin} onChange={(e) => setAlertMin(Number(e.target.value))}>
-              {ALERTS.map((a) => <option key={a.min} value={a.min}>{a.label}</option>)}
-            </select>
-            <p className="field-hint">{alertLabel}</p>
+            <div className="when-chip" style={{ pointerEvents: "none" }}>30분 전</div>
           </div>
           <div className="field">
             <label>메모</label>

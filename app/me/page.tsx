@@ -41,6 +41,7 @@ export default function MePage() {
             <div className="menu">
               <button type="button" onClick={() => router.push("/signup/terms?doc=terms&from=me")}>이용약관 및 개인정보처리방침 <span>›</span></button>
               <button className="danger-txt" type="button" onClick={() => router.push("/me/withdraw")}>계정 탈퇴 <span>›</span></button>
+              <div className="version-row">앱 버전 0.1.0</div>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { VoiceWave } from "@/components/VoiceWave";
-import { beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
+import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { useStore } from "@/lib/store";
 
 type Phase = "idle" | "listen" | "save" | "wait" | "fail" | "exit";
@@ -27,7 +27,10 @@ function Inner() {
   phaseRef.current = phase;
 
   const stopMic = () => {
-    recRef.current?.stop();
+    const rec = recRef.current as { stop?: () => void; abort?: () => void; onresult?: null } | null;
+    rec?.abort?.();
+    rec?.stop?.();
+    if (rec) rec.onresult = null;
     recRef.current = null;
     stream?.getTracks().forEach((t) => t.stop());
     setStream(null);
@@ -124,10 +127,7 @@ function Inner() {
   };
 
   const toSave = () => {
-    recRef.current?.stop();
-    recRef.current = null;
-    stream?.getTracks().forEach((t) => t.stop());
-    setStream(null);
+    stopMic();
     setPhase("save");
   };
 
@@ -163,7 +163,7 @@ function Inner() {
       }
       const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
       beginExtract(kind, "voice", items);
-      router.push(`/add/result?kind=${kind}&from=voice`);
+      router.push(afterExtractPath(kind, items[0].id));
     } catch {
       if (phaseRef.current !== "wait") return;
       setPhase("fail");
@@ -180,8 +180,8 @@ function Inner() {
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => {
-            if (phase === "listen" || phase === "save") {
-              recRef.current?.stop();
+            if (phase === "listen" || phase === "save" || phase === "idle") {
+              stopMic();
               setPhase("exit");
             } else if (phase === "wait") {
               setPhase("save");
@@ -250,9 +250,9 @@ function Inner() {
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />
-            <h2>데이터를 생성하고 있어요</h2>
-            <p className="muted">잠시만 기다리시면 제가 적어드릴께요.</p>
-            <p className="inspect-note">ⓘ 이미지 인식이 제대로 안되었을 경우 직접 수정 진행하셔야 합니다.</p>
+            <h2>음성을 분석하고 있어요</h2>
+            <p className="muted">잠시만 기다리시면 제가 적어드릴게요.</p>
+            <p className="inspect-note">ⓘ 음성 인식이 제대로 안되었을 경우 직접 수정 진행하셔야 합니다.</p>
           </div>
         ) : null}
         {phase === "fail" ? (
@@ -304,6 +304,7 @@ type Rec = {
   interimResults: boolean;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
   onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onerror: (() => void) | null;
 };

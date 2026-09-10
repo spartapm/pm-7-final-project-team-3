@@ -116,7 +116,7 @@ function Inner() {
                     <button
                       key={c.key}
                       type="button"
-                      className={`cal-cell ${c.inMonth ? "" : "out"} ${c.dow === 0 ? "sun" : ""} ${c.dow === 6 ? "sat" : ""} ${sel === c.key ? "on" : ""}`}
+                      className={`cal-cell ${c.inMonth ? "" : "out"} ${c.dow === 0 ? "sun" : ""} ${c.dow === 6 ? "sat" : ""} ${c.today ? "today" : ""} ${sel === c.key ? "on" : ""}`}
                       onClick={() => setSel(c.key)}
                     >
                       <span className="d">{c.date}</span>

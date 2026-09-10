@@ -1,3 +1,4 @@
+import { BRANDS } from "./brands";
 import type { AlertPrefs, Benefit, Category, DraftSub, LifeEvent, Notice, Subscription } from "./types";
 import { daysUntil, dateLabel, nextPayDate } from "./format";
 
@@ -55,6 +56,8 @@ export const BENEFITS: Benefit[] = [
     body: "T 멤버십 결합 시 넷플릭스 스탠다드가 포함돼요.",
     href: "https://www.tworld.co.kr",
     icon: "🎬",
+    howTo: "T 월드에서 결합 상품을 신청한 뒤, 틈 구독 목록에 넷플릭스를 등록해 주세요.",
+    terms: "실제 제공 여부와 요금은 SKT 결합 정책에 따릅니다. 틈은 신청·해지를 대행하지 않아요.",
   },
   {
     id: "kt-pick",
@@ -66,6 +69,8 @@ export const BENEFITS: Benefit[] = [
     href: "https://product.kt.com",
     icon: "🎧",
     expires: "2026-09-20",
+    howTo: "KT 결합 요금제에서 OTT·음원·전자책 중 하나를 고른 뒤 틈에 해당 구독을 등록해 주세요.",
+    terms: "선택 혜택은 월 1회 변경될 수 있으며, 실제 조건은 KT 정책에 따릅니다.",
   },
   {
     id: "lgu-disney",
@@ -76,6 +81,8 @@ export const BENEFITS: Benefit[] = [
     body: "유독 결합 시 디즈니+ 월 이용료가 할인돼요.",
     href: "https://www.lguplus.com",
     icon: "🏰",
+    howTo: "유플러스 유독에서 디즈니+ 결합을 신청한 뒤 틈 구독 목록에 등록해 주세요.",
+    terms: "할인 금액과 대상 요금제는 LG U+ 안내에 따릅니다.",
   },
   {
     id: "coupang-wow",
@@ -86,6 +93,8 @@ export const BENEFITS: Benefit[] = [
     body: "와우 멤버십 하나로 배송과 영상을 같이 쓸 수 있어요.",
     href: "https://www.coupang.com",
     icon: "📦",
+    howTo: "쿠팡 앱에서 와우 멤버십을 가입한 뒤 틈에 쿠팡와우를 등록해 주세요.",
+    terms: "로켓배송·쿠팡플레이 제공 범위는 쿠팡 멤버십 약관에 따릅니다.",
   },
   {
     id: "naver-spotify",
@@ -96,25 +105,16 @@ export const BENEFITS: Benefit[] = [
     body: "네이버플러스 멤버십에 스포티파이 이용권이 포함돼요.",
     href: "https://nid.naver.com",
     icon: "🎵",
-  },
-  {
-    id: "card-ott",
-    kind: "card",
-    provider: "카드",
-    providerColor: "#2F7DEB",
-    title: "월 자동결제 · 네이버페이 포인트 적립",
-    body: "구독 자동결제 시 포인트가 쌓이는 카드를 확인해 보세요.",
-    href: "https://card-search.naver.com",
-    icon: "💳",
-    expires: "2026-09-30",
+    howTo: "네이버플러스 멤버십에서 스포티파이 이용권을 활성화한 뒤 틈에 등록해 주세요.",
+    terms: "포함 여부와 이용 기간은 네이버플러스 혜택 안내에 따릅니다.",
   },
 ];
 
 export const PROMOS = [
-  { image: "/banners/slide-1.png", href: "invite" as const },
-  { image: "/banners/slide-2.png", href: "/subscriptions" as const },
-  { image: "/banners/slide-3.png", href: "/add/image" as const },
-  { image: "/banners/slide-4.png", href: "/benefits" as const },
+  { image: "/banners/slide-1.png", href: "/benefits" as const },
+  { image: "/banners/slide-2.png", href: "" as const },
+  { image: "/banners/slide-3.png", href: "/calendar" as const },
+  { image: "/banners/slide-4.png", href: "/subscriptions" as const },
 ];
 
 export function emptyDraft(kind: "subscription" | "event" = "subscription"): DraftSub {
@@ -138,28 +138,23 @@ export function emptyDraft(kind: "subscription" | "event" = "subscription"): Dra
   };
 }
 
-const SERVICE_ALIASES: Record<string, string[]> = {
-  Netflix: ["넷플", "넷플릭스", "net", "netflix"],
-  "YouTube Premium": ["유튜브", "유튭", "youtube", "yt"],
-  "Disney+": ["디즈니", "disney"],
-  티빙: ["tving", "티빙"],
-  ChatGPT: ["챗지피티", "챗gpt", "chatgpt", "gpt"],
-  Spotify: ["스포티", "스포티파이", "spotify"],
-  멜론: ["melon", "멜론"],
-  네이버플러스: ["네이버", "naver"],
-  쿠팡와우: ["쿠팡", "coupang", "와우"],
-  배민클럽: ["배민", "baemin"],
-  "Canva Pro": ["캔바", "canva"],
-  "iCloud+": ["아이클라우드", "icloud"],
-};
-
 export function searchServices(q: string) {
   const n = q.trim().toLowerCase();
   if (n.length < 1) return [];
-  return SERVICES.filter((s) => {
-    if (s.name.toLowerCase().includes(n)) return true;
-    return (SERVICE_ALIASES[s.name] ?? []).some((a) => a.toLowerCase().includes(n) || n.includes(a.toLowerCase()));
-  }).slice(0, 8);
+  return BRANDS.filter((b) => {
+    const keys = [b.name, b.file.replace("+", ""), ...b.aliases];
+    return keys.some((k) => {
+      const kl = k.toLowerCase();
+      if (kl.includes(n)) return true;
+      return n.length >= 2 && kl.length >= 2 && n.includes(kl);
+    });
+  }).slice(0, 8).map((b) => ({
+    name: b.name,
+    category: b.category,
+    amount: b.amount ?? 0,
+    color: b.color,
+    logo: "",
+  }));
 }
 
 export function seedSubscriptions(): Subscription[] {
@@ -358,9 +353,10 @@ export function benefitStatus(b: Benefit, subs: Subscription[]): "owned" | "expi
 }
 
 export function isBundleLike(sub: Subscription) {
+  if (sub.parentId) return true;
   if (["네이버플러스", "쿠팡와우", "배민클럽"].includes(sub.name)) return true;
-  if (/결합|포함될 수 있/.test(`${sub.plan} ${sub.memo}`)) return true;
-  return BENEFITS.some((b) => b.title.includes(sub.name) || b.body.includes(sub.name));
+  if (/결합/.test(`${sub.name} ${sub.plan}`)) return true;
+  return false;
 }
 
 function payLabel(iso: string) {

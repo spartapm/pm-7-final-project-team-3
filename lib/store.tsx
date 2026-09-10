@@ -283,12 +283,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     const trimmed = email.trim().toLowerCase();
     const cloud = await loginCloud(trimmed, password);
-    if (cloud.status === "error") {
-      setCloudStatus("error");
-      return { ok: false, server: true };
-    }
     if (cloud.status === "missing-table") setCloudStatus("missing-table");
     else if (cloud.status === "ok") setCloudStatus("ok");
+    else if (cloud.status === "error") setCloudStatus("error");
     else setCloudStatus("off");
 
     const local = users.find((u) => u.email.toLowerCase() === trimmed);

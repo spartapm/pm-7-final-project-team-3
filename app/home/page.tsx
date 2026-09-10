@@ -71,10 +71,7 @@ export default function HomePage() {
             <div className="home-hero-top">
               <Logo light />
               <button className="bell" type="button" aria-label="알림" onClick={() => setSheet(true)}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6 9a6 6 0 1 1 12 0c0 7 2 7 2 9H4c0-2 2-2 2-9z" />
-                  <path d="M10 20a2 2 0 0 0 4 0" />
-                </svg>
+                <img src="/icons/bell.png" alt="" />
                 {unread ? <span className="badge">{unread > 9 ? "9+" : unread}</span> : null}
               </button>
             </div>
@@ -83,8 +80,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   const href = PROMOS[promo].href;
-                  if (href === "invite") setInvite(true);
-                  else router.push(href);
+                  if (href) router.push(href);
                 }}
                 style={{ width: "100%" }}
               >
@@ -123,18 +119,18 @@ export default function HomePage() {
               <div className="amt">{won(monthPay)}</div>
               {live.length === 0 ? (
                 <button className="ok-leak" type="button" onClick={() => router.push("/subscriptions/new")}>
-                  아직 등록된 구독이 없어요
+                  <span className="leak-copy">아직 등록된 구독이 없어요</span>
                   <span className="cta">등록하기 ›</span>
                 </button>
               ) : leak.count > 0 ? (
                 <button className="leak" type="button" onClick={() => router.push("/inspect")}>
                   <span>●</span>
-                  새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약
+                  <span className="leak-copy">새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약</span>
                   <span className="cta">확인하기 ›</span>
                 </button>
               ) : (
                 <button className="ok-leak" type="button" onClick={() => router.push("/inspect")}>
-                  틈이 없어요. 구독을 잘 관리하고 계시네요!
+                  <span className="leak-copy">틈이 없어요. 구독을 잘 관리하고 계시네요!</span>
                   <span className="cta">확인하기 ›</span>
                 </button>
               )}
@@ -169,7 +165,7 @@ export default function HomePage() {
         {sheet ? (
           <>
             <div className="sheet-back" onClick={() => setSheet(false)} />
-            <div className="sheet">
+            <div className="sheet side">
               <div className="sheet-head">
                 <h2>알림</h2>
                 <button className="icon-btn round" type="button" onClick={() => setSheet(false)} aria-label="닫기">✕</button>

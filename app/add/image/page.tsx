@@ -3,7 +3,7 @@
 import { Suspense, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
-import { beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
+import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { useStore } from "@/lib/store";
 
 type Phase = "pick" | "wait" | "fail";
@@ -72,7 +72,7 @@ function Inner() {
       }
       const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
       beginExtract(kind, "image", items);
-      router.push(`/add/result?kind=${kind}&from=image`);
+      router.push(afterExtractPath(kind, items[0].id));
     } catch {
       if (phaseRef.current !== "wait") return;
       setPhase("fail");

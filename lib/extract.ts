@@ -1,4 +1,5 @@
-import { emptyDraft, SERVICES } from "./catalog";
+import { findBrand } from "./brands";
+import { emptyDraft } from "./catalog";
 import { nextPayDate, pad, uid } from "./format";
 import type { AddKind, DraftSub, ExtractEventItem, ExtractItem, ExtractState, ExtractSubItem } from "./types";
 
@@ -40,6 +41,10 @@ export function upsertExtractItem(item: ExtractItem) {
   });
 }
 
+export function afterExtractPath(kind: AddKind, id: string) {
+  return kind === "event" ? `/events/new?from=result&i=${id}` : `/add/confirm?from=result&i=${id}`;
+}
+
 export function emptySubItem(): ExtractSubItem {
   return {
     id: uid("ex"),
@@ -77,7 +82,7 @@ export function emptyEventItem(): ExtractEventItem {
 }
 
 function knownOf(name: string) {
-  return SERVICES.find((s) => s.name.toLowerCase() === name.trim().toLowerCase());
+  return findBrand(name);
 }
 
 export function subItemFromRaw(raw: {

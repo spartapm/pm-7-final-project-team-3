@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WhenPick } from "@/components/WhenPick";
 import { Back, Brand, Gate, Modal, PhoneShell } from "@/components/ui";
-import { categorySelectOptions, emptyDraft, searchServices, SERVICES } from "@/lib/catalog";
+import { findBrand } from "@/lib/brands";
+import { categorySelectOptions, emptyDraft, searchServices } from "@/lib/catalog";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
 import { dateLabel, uid, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -17,6 +18,7 @@ function fromSub(s: Subscription): DraftSub {
     category: s.category,
     amount: String(s.amount),
     cycle: s.cycle,
+    everyMonths: s.everyMonths ?? (s.cycle === "yearly" ? 12 : 1),
     payDay: String(s.payDay),
     nextPay: s.nextPay,
     autoRenew: s.autoRenew,
@@ -75,7 +77,7 @@ export function SubForm({
   }, [draft, existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name), [local.name]);
-  const known = SERVICES.find((s) => s.name.toLowerCase() === local.name.trim().toLowerCase());
+  const known = findBrand(local.name);
   const nameOk = local.name.trim().length >= 2 && local.name.trim().length <= 30 && local.name.trim().toUpperCase() !== "NULL";
   const amountOk = trialOn || Boolean(local.amount.replace(/[^0-9]/g, ""));
   const dateOk = Boolean(local.nextPay);
@@ -83,8 +85,13 @@ export function SubForm({
   const canSave = nameOk && amountOk && dateOk && trialOk;
 
   const pick = (name: string) => {
-    const hit = SERVICES.find((s) => s.name === name);
-    setLocal((p) => ({ ...p, name, category: hit?.category ?? p.category, amount: hit ? String(hit.amount) : p.amount }));
+    const hit = findBrand(name);
+    setLocal((p) => ({
+      ...p,
+      name,
+      category: hit?.category ?? p.category,
+      amount: hit?.amount ? String(hit.amount) : p.amount,
+    }));
     setOpen(false);
   };
 
@@ -107,7 +114,7 @@ export function SubForm({
     const amount = Number(local.amount.replace(/[^0-9]/g, "")) || 0;
     const payDay = Number(local.nextPay.slice(8, 10)) || 1;
     const color = known?.color ?? "#2576f2";
-    const logo = known?.logo ?? "";
+    const logo = "";
     const trialEnds = trialOn ? addDays(local.nextPay, Number(local.trialDays) || 14) : null;
     try {
       const id = existing?.id ?? uid("sub");
@@ -118,6 +125,7 @@ export function SubForm({
         category: local.category,
         amount,
         cycle: local.cycle,
+        everyMonths: local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1),
         payDay,
         nextPay: local.nextPay,
         status: trialOn ? "trial" : local.status === "paused" ? "paused" : "active",
@@ -162,7 +170,7 @@ export function SubForm({
           <div className="field">
             <label>서비스명 <i className="req">*</i></label>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Brand name={known?.name ?? local.name} color={known?.color ?? "#2576f2"} logo={known?.logo ?? ""} />
+              <Brand name={known?.name ?? local.name} color={known?.color ?? "#2576f2"} logo="" />
               <input
                 style={{ flex: 1 }}
                 value={local.name}
@@ -191,11 +199,17 @@ export function SubForm({
           </div>
           <div className="field">
             <label>결제 주기 <i className="req">*</i></label>
-            <select value={local.cycle} onChange={(e) => setLocal((p) => ({ ...p, cycle: e.target.value as BillingCycle }))}>
-              <option value="monthly">월</option>
-              <option value="yearly">연</option>
-              <option value="weekly">주</option>
-            </select>
+            <div className="amt-row">
+              <input
+                inputMode="numeric"
+                value={String(local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1))}
+                onChange={(e) => {
+                  const n = Math.min(99, Math.max(1, Number(e.target.value.replace(/[^0-9]/g, "")) || 1));
+                  setLocal((p) => ({ ...p, everyMonths: n, cycle: n === 12 ? "yearly" : "monthly" }));
+                }}
+              />
+              <span>개월</span>
+            </div>
           </div>
           <div className="field">
             <label>결제 금액 <i className="req">*</i></label>

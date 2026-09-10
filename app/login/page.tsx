@@ -20,10 +20,17 @@ export default function LoginPage() {
 
   const submit = async () => {
     const ee = emailError(email);
-    const pe = passwordError(password);
     setEErr(ee);
-    setPErr(pe);
-    if (ee || pe) return;
+    if (ee) {
+      setPErr("");
+      return;
+    }
+    if (!password.trim()) {
+      setPErr(passwordError(password));
+      return;
+    }
+    setPErr("");
+    setPwFocus(false);
     setBusy(true);
     const res = await login(email, password);
     setBusy(false);
@@ -50,6 +57,7 @@ export default function LoginPage() {
         <div className="brand-block" style={{ paddingTop: 8 }}>
           <img className="login-logo" src="/brand/logo-slogan.png" alt="틈 — 구독도 일정도, 빈틈없이" />
         </div>
+        <form onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <div className={`field inbox ${eErr ? "err" : ""}`}>
           <label>이메일</label>
           <input
@@ -83,7 +91,8 @@ export default function LoginPage() {
         </div>
         {pErr ? <div className="err-msg">{pErr}</div> : pwFocus ? <div className="field-hint">{PASSWORD_HINT}</div> : null}
         <Link className="forgot-link" href="/forgot">비밀번호를 잊으셨나요?</Link>
-        <button className="btn primary" type="button" onClick={submit} disabled={busy}>{busy ? "로그인 중…" : "로그인"}</button>
+        <button className="btn primary" type="submit" disabled={busy}>{busy ? "로그인 중…" : "로그인"}</button>
+        </form>
         <div className="or">또는</div>
         <button className="btn google social" type="button" onClick={social}>
           <img src="/icons/google.png" alt="" width={22} height={22} />

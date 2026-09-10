@@ -43,6 +43,8 @@ export default function VerifyPage() {
     const expected = sessionStorage.getItem("teum:code") ?? "123456";
     if (code !== expected) {
       setErr("코드가 일치하지 않습니다. 다시 입력해 주세요");
+      setDigits(["", "", "", "", "", ""]);
+      refs.current[0]?.focus();
       return;
     }
     router.push("/forgot/new");
@@ -100,7 +102,7 @@ export default function VerifyPage() {
         >
           코드 재전송{cool > 0 ? ` (${pad(cool)})` : ""}
         </button>
-        <p className="muted" style={{ fontSize: 12, margin: "8px 0 20px" }}>🤔 코드가 오지 않았어요.</p>
+        <div style={{ height: 20 }} />
         <button className="btn primary" type="button" onClick={submit} disabled={digits.join("").length < 6}>
           인증하기
         </button>

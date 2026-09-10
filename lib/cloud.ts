@@ -81,6 +81,24 @@ function rowToNotice(row: Record<string, unknown>): Notice {
   };
 }
 
+const CLOUD_MS = 3500;
+
+function timed<T>(p: PromiseLike<T>, fallback: T, ms = CLOUD_MS): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    Promise.resolve(p).then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(t);
+        resolve(fallback);
+      },
+    );
+  });
+}
+
 function alertsOf(raw: unknown, fallback: AlertPrefs): AlertPrefs {
   if (!raw || typeof raw !== "object") return fallback;
   const a = raw as Record<string, unknown>;
@@ -102,7 +120,10 @@ export async function loginCloud(email: string, password: string): Promise<{
 }> {
   const sb = getSupabase();
   if (!sb) return { status: "off" };
-  const res = await sb.from("accounts").select("id, email, password, onboarded, marketing, alerts, login_at").eq("email", email.trim().toLowerCase()).maybeSingle();
+  const res = await timed(
+    sb.from("accounts").select("id, email, password, onboarded, marketing, alerts, login_at").eq("email", email.trim().toLowerCase()).maybeSingle(),
+    { data: null, error: { message: "timeout", code: "timeout" } },
+  );
   if (res.error) {
     if (isMissingTable(res.error)) return { status: "missing-table" };
     return { status: "error", message: res.error.message };

@@ -31,6 +31,7 @@ export type Subscription = {
   category: Category;
   amount: number;
   cycle: BillingCycle;
+  everyMonths?: number;
   payDay: number;
   nextPay: string;
   status: SubStatus;
@@ -125,6 +126,8 @@ export type Benefit = {
   href: string;
   icon: string;
   expires?: string;
+  howTo?: string;
+  terms?: string;
 };
 
 export type DraftSub = {
@@ -133,6 +136,7 @@ export type DraftSub = {
   category: Category;
   amount: string;
   cycle: BillingCycle;
+  everyMonths?: number;
   payDay: string;
   nextPay: string;
   autoRenew: boolean;

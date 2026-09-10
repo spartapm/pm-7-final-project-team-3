@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Back, BounceIfAuthed, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PASSWORD_HINT, emailError, signupPasswordError } from "@/lib/validate";
+
+const DRAFT = "teum:signup-draft";
 
 const TERMS = [
   { key: "age", required: true, label: "[필수] 만 14세 이상입니다.", doc: "age" },
@@ -27,6 +29,21 @@ export default function SignupPage() {
   const [pwFocus, setPwFocus] = useState(false);
   const [cfFocus, setCfFocus] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(DRAFT);
+      if (!raw) return;
+      const d = JSON.parse(raw) as { email?: string; password?: string; confirm?: string; agree?: typeof agree };
+      if (d.email) setEmail(d.email);
+      if (d.password) setPassword(d.password);
+      if (d.confirm) setConfirm(d.confirm);
+      if (d.agree) setAgree(d.agree);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    sessionStorage.setItem(DRAFT, JSON.stringify({ email, password, confirm, agree }));
+  }, [email, password, confirm, agree]);
 
   const requiredOk = agree.age && agree.terms && agree.privacy;
   const allOk = requiredOk && agree.marketing;
@@ -59,6 +76,7 @@ export default function SignupPage() {
       else showToast(res.error ?? "가입에 실패했습니다.", "err");
       return;
     }
+    sessionStorage.removeItem(DRAFT);
     logout();
     router.push("/signup/done");
   };

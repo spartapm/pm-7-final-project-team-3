@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { brandIcon } from "@/lib/brands";
 import { useStore } from "@/lib/store";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
@@ -65,12 +66,8 @@ export function Gate({ children }: { children: ReactNode }) {
 
 export function Logo({ light = false, large = false }: { light?: boolean; large?: boolean }) {
   return (
-    <span className={`home-brand ${large ? "lg" : ""}`} style={{ color: light ? "#fff" : "#16171b" }}>
-      <span className="logo-mark" aria-hidden>
-        <i className="bar" />
-        <i className="gap" />
-        <i className="bar" />
-      </span>
+    <span className={`home-brand ${large ? "lg" : ""} ${light ? "light" : ""}`} style={{ color: light ? "#fff" : "#16171b" }}>
+      <img className="home-logo-img" src="/brand/home-logo.png" alt="" />
       <span className="logo-word">틈</span>
     </span>
   );
@@ -99,10 +96,10 @@ export function Back({ href, onClick }: { href?: string; onClick?: () => void })
 export function TabBar() {
   const path = usePathname();
   const tabs = [
-    { href: "/home", label: "홈", icon: HomeIco },
-    { href: "/calendar", label: "캘린더", icon: CalIco },
-    { href: "/benefits", label: "혜택", icon: GiftIco },
-    { href: "/me", label: "마이", icon: UserIco },
+    { href: "/home", label: "홈", onSrc: "/nav/home-on.png", offSrc: "/nav/home-off.png" },
+    { href: "/calendar", label: "캘린더", onSrc: "/nav/cal-on.png", offSrc: "/nav/cal-off.png" },
+    { href: "/benefits", label: "혜택", onSrc: "/nav/gift-on.png", offSrc: "/nav/gift-off.png" },
+    { href: "/me", label: "마이", onSrc: "/nav/me-on.png", offSrc: "/nav/me-off.png" },
   ];
   return (
     <nav className="tabbar">
@@ -112,11 +109,10 @@ export function TabBar() {
           : t.href === "/benefits"
             ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
             : path === t.href || path.startsWith(t.href + "/");
-        const Icon = t.icon;
         return (
           <Link key={t.href} href={t.href} className={on ? "on" : ""}>
-            <Icon on={on} />
-            {t.label}
+            <img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" />
+            <span>{t.label}</span>
           </Link>
         );
       })}
@@ -124,36 +120,51 @@ export function TabBar() {
   );
 }
 
-function HomeIco({ on }: { on: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8">
-      <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z" />
-    </svg>
-  );
+export function bindChipDrag(el: HTMLElement | null) {
+  if (!el) return () => undefined;
+  let down = false;
+  let x = 0;
+  let left = 0;
+  let moved = false;
+  const onDown = (e: PointerEvent) => {
+    down = true;
+    moved = false;
+    x = e.clientX;
+    left = el.scrollLeft;
+  };
+  const onMove = (e: PointerEvent) => {
+    if (!down) return;
+    const dx = e.clientX - x;
+    if (Math.abs(dx) > 10) {
+      if (!moved) {
+        moved = true;
+        try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      }
+      el.scrollLeft = left - dx;
+    }
+  };
+  const onUp = () => { down = false; };
+  const onClick = (e: MouseEvent) => {
+    if (!moved) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  };
+  el.addEventListener("pointerdown", onDown);
+  el.addEventListener("pointermove", onMove);
+  el.addEventListener("pointerup", onUp);
+  el.addEventListener("click", onClick, true);
+  return () => {
+    el.removeEventListener("pointerdown", onDown);
+    el.removeEventListener("pointermove", onMove);
+    el.removeEventListener("pointerup", onUp);
+    el.removeEventListener("click", onClick, true);
+  };
 }
-function CalIco({ on }: { on: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on ? 2.2 : 1.8}>
-      <rect x="4" y="5" width="16" height="15" rx="2" />
-      <path d="M8 3v4M16 3v4M4 10h16" />
-    </svg>
-  );
-}
-function GiftIco({ on }: { on: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8">
-      <rect x="3" y="10" width="18" height="10" rx="1.5" />
-      <path d="M3 10h18M12 10v10M12 10c-2-3-5-4-6-2s1 3 6 2M12 10c2-3 5-4 6-2s-1 3-6 2" />
-    </svg>
-  );
-}
-function UserIco({ on }: { on: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on ? 2.2 : 1.8}>
-      <circle cx="12" cy="8" r="3.2" />
-      <path d="M5 19c1.6-3 4-4.5 7-4.5S17.4 16 19 19" />
-    </svg>
-  );
+
+export function ChipScroller({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => bindChipDrag(ref.current), []);
+  return <div ref={ref} className="chip-row drag" style={style}>{children}</div>;
 }
 
 export function Fab({ children }: { children?: ReactNode }) {
@@ -170,7 +181,7 @@ export function Fab({ children }: { children?: ReactNode }) {
       {open ? (
         <div className="fab-menu">
           <h3>일정 추가하기</h3>
-          <div className="fab-tabs">
+          <div className={`fab-tabs ${tab === "event" ? "life" : ""}`}>
             <button className={tab === "subscription" ? "on" : ""} type="button" onClick={() => setTab("subscription")}>구독</button>
             <button className={tab === "event" ? "on" : ""} type="button" onClick={() => setTab("event")}>일상</button>
           </div>
@@ -184,13 +195,14 @@ export function Fab({ children }: { children?: ReactNode }) {
             음성으로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
+          <div className="fab-split" />
           <button
             className="fab-row"
             type="button"
             onClick={() => go(tab === "subscription" ? "/subscriptions/new" : "/events/new")}
           >
             <span className="ico-sq" style={{ background: "#2576f2" }}>☰</span>
-            {tab === "subscription" ? "구독 직접 추가" : "일상 일정 직접 추가"}
+            {tab === "subscription" ? "구독 직접 추가" : "일상 직접 추가"}
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
         </div>
@@ -248,23 +260,8 @@ export function Modal({
   );
 }
 
-const BRAND_SRC: Record<string, string> = {
-  Netflix: "/icons/brands/netflix.png",
-  "YouTube Premium": "/icons/brands/youtube.png",
-  "Disney+": "/icons/brands/disney.png",
-  티빙: "/icons/brands/tving.png",
-  ChatGPT: "/icons/brands/chatgpt.png",
-  Spotify: "/icons/brands/spotify.png",
-  멜론: "/icons/brands/melon.png",
-  "Canva Pro": "/icons/brands/canva.png",
-  네이버플러스: "/icons/brands/naver.png",
-  쿠팡와우: "/icons/brands/coupang.png",
-  배민클럽: "/icons/brands/baemin.png",
-  "iCloud+": "/icons/brands/icloud.png",
-};
-
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
-  const src = BRAND_SRC[name];
+  const src = brandIcon(name);
   return (
     <span className="brand" style={src ? undefined : { background: color }} aria-hidden>
       {src ? <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : (logo || name.slice(0, 1))}

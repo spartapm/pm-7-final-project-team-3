@@ -13,7 +13,8 @@ npm run dev
 배포: https://pm-7-final-project-team-3-nu.vercel.app  
 화면은 390px 폭 + 레터박스입니다. 개발자 도구 모바일 뷰(390×844)가 가장 가깝습니다.
 
-구현/미구현 범위: `docs/제출-구현범위.md`
+구현/미구현 범위: `docs/제출-구현범위.md`  
+번호 항목(SP-AU-SignUp-01, SP-HM-Dashbd-01 …) 체크리스트: `docs/SPEC-INVENTORY.md`
 
 ## 데모 계정
 
