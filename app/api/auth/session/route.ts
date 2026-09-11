@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { SOCIAL_COOKIE } from "@/lib/oauth";
+import { SOCIAL_COOKIE, readSocialTicket } from "@/lib/oauth";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const ticket = new URL(req.url).searchParams.get("ticket") ?? "";
+  if (ticket) {
+    const data = await readSocialTicket(ticket);
+    if (data?.email) return NextResponse.json(data);
+    return NextResponse.json({ email: null });
+  }
   const raw = (await cookies()).get(SOCIAL_COOKIE)?.value;
   if (!raw) return NextResponse.json({ email: null });
   try {

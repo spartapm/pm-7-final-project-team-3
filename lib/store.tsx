@@ -388,8 +388,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const loginSocial: Store["loginSocial"] = useCallback(async (email) => {
     const trimmed = email.trim().toLowerCase();
     const local = users.find((u) => u.email.toLowerCase() === trimmed);
-    if (local) return login(trimmed, local.password);
-
     const found = await findAccountByEmail(trimmed);
     if (found.account) {
       const password = `TeumSoc1!${uid("pw").slice(-6)}`;
@@ -427,6 +425,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     }
 
+    if (local) {
+      sessionStorage.removeItem(SESSION_FLAG);
+      touch();
+      skipPush.current = true;
+      setState(withNotices({
+        ...stateRef.current,
+        email: trimmed,
+        loggedIn: true,
+        loginAt: Date.now(),
+        termsAccepted: true,
+        privacyAccepted: true,
+      }));
+      skipPush.current = false;
+      return { ok: true };
+    }
+
     const password = `TeumSoc1!${uid("pw").slice(-6)}`;
     const created = await signup(trimmed, password, false);
     if (created.ok) return created;
@@ -448,7 +462,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
     skipPush.current = false;
     return { ok: true };
-  }, [login, rememberUser, signup, users]);
+  }, [rememberUser, signup, users]);
 
   const emailRegistered: Store["emailRegistered"] = useCallback(async (email) => {
     const trimmed = email.trim().toLowerCase();

@@ -51,7 +51,8 @@ function LoginInner() {
     if (q.get("social") !== "fail") return;
     const why = q.get("why") ?? "";
     const msg =
-      why === "kakao-token" || why === "google-token" ? "소셜 인증에 실패했어요. 다시 시도해주세요."
+      why === "kakao-token" || why === "google-token" || why === "kakao-secret" || why === "google-secret"
+        ? "소셜 인증에 실패했어요. 다시 시도해주세요."
         : why === "kakao-state" || why === "google-state" ? "로그인 연결이 끊겼어요. 다시 시도해주세요."
           : why === "kakao-key" || why === "google-key" ? "소셜 로그인 설정이 아직 끝나지 않았어요."
             : "소셜 로그인에 실패했어요. 다시 시도해주세요.";

@@ -1,12 +1,11 @@
-import { KAKAO_REST_API_KEY, STATE_COOKIE, authOrigin, failLogin, finishSocial, readCookie, unpackOAuthStart } from "@/lib/oauth";
+import { KAKAO_REST_API_KEY, authOrigin, failLogin, finishSocial, readOAuthState, socialEmail, tokenFailReason } from "@/lib/oauth";
 
 export async function GET(req: Request) {
   const key = KAKAO_REST_API_KEY;
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
-  const saved = unpackOAuthStart(readCookie(req, STATE_COOKIE));
-  if (!code || !state || !saved || state !== saved.state) return failLogin(req, "kakao-state");
+  const saved = await readOAuthState(url.searchParams.get("state") ?? "");
+  if (!code || !saved) return failLogin(req, "kakao-state");
 
   const redirectUri = saved.redirectUri || `${authOrigin(req)}/api/auth/kakao/callback`;
   const body = new URLSearchParams({
@@ -24,7 +23,7 @@ export async function GET(req: Request) {
     body,
   });
   const token = await tokenRes.json() as { access_token?: string };
-  if (!token.access_token) return failLogin(req, "kakao-token");
+  if (!token.access_token) return failLogin(req, tokenFailReason("kakao", token));
 
   const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
     headers: { Authorization: `Bearer ${token.access_token}` },
@@ -33,9 +32,7 @@ export async function GET(req: Request) {
     id?: number;
     kakao_account?: { email?: string };
   };
-  const fromKakao = me.kakao_account?.email?.trim().toLowerCase() ?? "";
-  const fallback = me.id ? `k${me.id}@teum.app` : "";
-  const email = (fromKakao && fromKakao.length <= 30 ? fromKakao : "") || fallback;
+  const email = socialEmail(me.kakao_account?.email ?? "", me.id, "k");
   if (!email) return failLogin(req, "kakao-email");
   return finishSocial(req, email, "kakao");
 }
