@@ -22,6 +22,39 @@ export function randomState() {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+export function readCookie(req: Request, name: string) {
+  const raw = req.headers.get("cookie") ?? "";
+  for (const part of raw.split(";")) {
+    const [k, ...rest] = part.trim().split("=");
+    if (k === name) return decodeURIComponent(rest.join("="));
+  }
+  return "";
+}
+
+export function packOAuthStart(state: string, redirectUri: string) {
+  return JSON.stringify({ state, redirectUri });
+}
+
+export function unpackOAuthStart(raw: string) {
+  try {
+    const d = JSON.parse(raw) as { state?: string; redirectUri?: string };
+    if (d.state) return { state: d.state, redirectUri: d.redirectUri || "" };
+  } catch {
+    if (raw) return { state: raw, redirectUri: "" };
+  }
+  return null;
+}
+
+export function setAuthCookie(res: NextResponse, name: string, value: string, req: Request, maxAge = 600) {
+  res.cookies.set(name, value, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+    secure: authOrigin(req).startsWith("https"),
+  });
+}
+
 export function failLogin(req: Request, reason: string) {
   const url = new URL("/login", authOrigin(req));
   url.searchParams.set("social", "fail");

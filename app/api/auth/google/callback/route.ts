@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, STATE_COOKIE, authOrigin, failLogin, finishSocial } from "@/lib/oauth";
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, STATE_COOKIE, authOrigin, failLogin, finishSocial, readCookie, unpackOAuthStart } from "@/lib/oauth";
 
 export async function GET(req: Request) {
   const id = GOOGLE_CLIENT_ID;
@@ -7,11 +6,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const jar = await cookies();
-  const saved = jar.get(STATE_COOKIE)?.value;
-  if (!code || !state || !saved || state !== saved) return failLogin(req, "google-state");
+  const saved = unpackOAuthStart(readCookie(req, STATE_COOKIE));
+  if (!code || !state || !saved || state !== saved.state) return failLogin(req, "google-state");
 
-  const redirectUri = `${authOrigin(req)}/api/auth/google/callback`;
+  const redirectUri = saved.redirectUri || `${authOrigin(req)}/api/auth/google/callback`;
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -30,7 +28,9 @@ export async function GET(req: Request) {
     headers: { Authorization: `Bearer ${token.access_token}` },
   });
   const me = await meRes.json() as { email?: string; id?: string };
-  const email = me.email?.trim().toLowerCase() || (me.id ? `g${me.id}@google.teum.app` : "");
+  const fromGoogle = me.email?.trim().toLowerCase() ?? "";
+  const fallback = me.id ? `g${String(me.id).slice(-12)}@teum.app` : "";
+  const email = (fromGoogle && fromGoogle.length <= 30 ? fromGoogle : "") || fallback;
   if (!email) return failLogin(req, "google-email");
   return finishSocial(req, email, "google");
 }

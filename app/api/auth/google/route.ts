@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GOOGLE_CLIENT_ID, STATE_COOKIE, authOrigin, failLogin, randomState } from "@/lib/oauth";
+import { GOOGLE_CLIENT_ID, STATE_COOKIE, authOrigin, failLogin, packOAuthStart, randomState, setAuthCookie } from "@/lib/oauth";
 
 export async function GET(req: Request) {
   const id = GOOGLE_CLIENT_ID;
@@ -15,12 +15,6 @@ export async function GET(req: Request) {
   url.searchParams.set("access_type", "online");
   url.searchParams.set("prompt", "select_account");
   const res = NextResponse.redirect(url);
-  res.cookies.set(STATE_COOKIE, state, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 600,
-    secure: authOrigin(req).startsWith("https"),
-  });
+  setAuthCookie(res, STATE_COOKIE, packOAuthStart(state, redirectUri), req);
   return res;
 }

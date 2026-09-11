@@ -391,7 +391,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (local) return login(trimmed, local.password);
 
     const found = await findAccountByEmail(trimmed);
-    if (found.status === "error") return { ok: false, error: "서버가 불안정합니다. 잠시 후 다시 시도해주세요." };
     if (found.account) {
       const password = `TeumSoc1!${uid("pw").slice(-6)}`;
       rememberUser(trimmed, password);
@@ -429,7 +428,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     const password = `TeumSoc1!${uid("pw").slice(-6)}`;
-    return signup(trimmed, password, false);
+    const created = await signup(trimmed, password, false);
+    if (created.ok) return created;
+    rememberUser(trimmed, password);
+    sessionStorage.removeItem(SESSION_FLAG);
+    touch();
+    skipPush.current = true;
+    setState(withNotices({
+      ...empty(),
+      accountId: uid("acc"),
+      email: trimmed,
+      loggedIn: true,
+      loginAt: Date.now(),
+      onboarded: false,
+      termsAccepted: true,
+      privacyAccepted: true,
+      marketingAccepted: false,
+      alerts: defaultAlerts(),
+    }));
+    skipPush.current = false;
+    return { ok: true };
   }, [login, rememberUser, signup, users]);
 
   const emailRegistered: Store["emailRegistered"] = useCallback(async (email) => {
