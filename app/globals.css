@@ -190,7 +190,7 @@ img { display: block; max-width: 100%; }
 .btn.ghost { background: #eef3fb; color: var(--blue); box-shadow: none; }
 .btn.kakao { background: #fddc3f; color: #1c1c1c; gap: 8px; box-shadow: none; }
 .btn.google { background: #fff; border: 1px solid #e3e8f0; gap: 8px; box-shadow: none; }
-.btn.social { opacity: 0.55; }
+.btn.social { opacity: 1; }
 .btn.social img { width: 22px; height: 22px; object-fit: contain; }
 .btn.danger { background: #fff; color: var(--danger); border: 1px solid #ffd4d8; box-shadow: none; }
 .btn:active:not(:disabled) { transform: scale(0.99); }

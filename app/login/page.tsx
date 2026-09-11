@@ -10,7 +10,7 @@ import { PASSWORD_HINT, emailError, passwordError } from "@/lib/validate";
 function LoginInner() {
   const router = useRouter();
   const q = useSearchParams();
-  const { login, showToast } = useStore();
+  const { login, loggedIn, showToast } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [eErr, setEErr] = useState("");
@@ -47,8 +47,9 @@ function LoginInner() {
   };
 
   useEffect(() => {
+    if (loggedIn) return;
     if (q.get("social") === "fail") showToast("소셜 로그인에 실패했어요. 다시 시도해주세요.", "err");
-  }, [q, showToast]);
+  }, [loggedIn, q, showToast]);
 
   const social = (provider: "google" | "kakao") => {
     window.location.href = provider === "google" ? "/api/auth/google" : "/api/auth/kakao";

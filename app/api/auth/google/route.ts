@@ -3,6 +3,7 @@ import { GOOGLE_CLIENT_ID, STATE_COOKIE, authOrigin, failLogin, randomState } fr
 
 export async function GET(req: Request) {
   const id = GOOGLE_CLIENT_ID;
+  if (!id) return failLogin(req, "google-key");
   const state = randomState();
   const redirectUri = `${authOrigin(req)}/api/auth/google/callback`;
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
