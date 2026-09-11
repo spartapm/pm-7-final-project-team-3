@@ -10,23 +10,23 @@ export type BrandMeta = {
 };
 
 export const BRANDS: BrandMeta[] = [
-  { file: "netflix", name: "Netflix", category: "ott", color: "#E50914", aliases: ["넷플", "넷플릭스"], amount: 17000 },
+  { file: "netflix", name: "Netflix", category: "ott", color: "#E50914", aliases: ["넷플", "넷플릭스", "netflix"], amount: 17000 },
   { file: "youtube", name: "YouTube Premium", category: "ott", color: "#FF0000", aliases: ["유튜브", "유튜브 프리미엄", "유튜브프리미엄", "유튭", "youtube", "yt"], amount: 14900 },
-  { file: "disney", name: "Disney+", category: "ott", color: "#113CCF", aliases: ["디즈니", "disneyplus"], amount: 9900 },
-  { file: "tving", name: "티빙", category: "ott", color: "#FF153C", aliases: ["tving"], amount: 9500 },
-  { file: "chatgpt", name: "ChatGPT", category: "ai", color: "#10A37F", aliases: ["챗지피티", "챗gpt", "gpt"], amount: 29000 },
-  { file: "spotify", name: "Spotify", category: "music", color: "#1ED760", aliases: ["스포티", "스포티파이"], amount: 10900 },
-  { file: "melon", name: "멜론", category: "music", color: "#00CD3C", aliases: ["melon"], amount: 10900 },
-  { file: "naver", name: "네이버플러스", category: "membership", color: "#03C75A", aliases: ["네이버", "naver"], amount: 4900 },
-  { file: "coupang", name: "쿠팡와우", category: "shopping", color: "#E47422", aliases: ["쿠팡", "coupang", "와우"], amount: 7890 },
-  { file: "baemin", name: "배민클럽", category: "delivery", color: "#2AC1BC", aliases: ["배민", "baemin", "배달의민족"], amount: 4990 },
-  { file: "canva", name: "Canva Pro", category: "design", color: "#7C6FEF", aliases: ["캔바", "canva"], amount: 15000 },
-  { file: "icloud", name: "iCloud+", category: "cloud", color: "#3693F3", aliases: ["아이클라우드", "icloud"], amount: 3300 },
-  { file: "adobe", name: "Adobe", category: "design", color: "#FF0000", aliases: ["어도비", "creative cloud"] },
-  { file: "apple", name: "Apple One", category: "membership", color: "#111111", aliases: ["애플", "apple one"] },
-  { file: "applearcade", name: "Apple Arcade", category: "game", color: "#FF375F", aliases: ["애플아케이드"] },
-  { file: "applemusic", name: "Apple Music", category: "music", color: "#FC3C44", aliases: ["애플뮤직"] },
-  { file: "appletv", name: "Apple TV+", category: "ott", color: "#111111", aliases: ["애플티비"] },
+  { file: "disney", name: "Disney+", category: "ott", color: "#113CCF", aliases: ["디즈니", "disneyplus", "disney+", "디즈니플러스"], amount: 9900 },
+  { file: "tving", name: "티빙", category: "ott", color: "#FF153C", aliases: ["tving", "티빙"], amount: 9500 },
+  { file: "chatgpt", name: "ChatGPT", category: "ai", color: "#10A37F", aliases: ["챗지피티", "챗gpt", "gpt", "openai"], amount: 29000 },
+  { file: "spotify", name: "Spotify", category: "music", color: "#1ED760", aliases: ["스포티", "스포티파이", "spotify"], amount: 11900 },
+  { file: "melon", name: "멜론", category: "music", color: "#00CD3C", aliases: ["melon", "멜론"], amount: 10900 },
+  { file: "naver", name: "네이버플러스", category: "membership", color: "#03C75A", aliases: ["네이버", "naver", "네이버플러스"], amount: 4900 },
+  { file: "coupang", name: "쿠팡와우", category: "shopping", color: "#E47422", aliases: ["쿠팡", "coupang", "와우", "쿠팡와우"], amount: 7890 },
+  { file: "baemin", name: "배민클럽", category: "delivery", color: "#2AC1BC", aliases: ["배민", "baemin", "배달의민족"], amount: 3990 },
+  { file: "canva", name: "Canva Pro", category: "design", color: "#7C6FEF", aliases: ["캔바", "canva"], amount: 13000 },
+  { file: "icloud", name: "iCloud+", category: "cloud", color: "#3693F3", aliases: ["아이클라우드", "icloud"], amount: 4300 },
+  { file: "adobe", name: "Adobe", category: "design", color: "#FF0000", aliases: ["어도비", "creative cloud", "adobe"], amount: 89000 },
+  { file: "apple", name: "Apple One", category: "membership", color: "#111111", aliases: ["애플", "apple one", "애플원"], amount: 12900 },
+  { file: "applearcade", name: "Apple Arcade", category: "game", color: "#FF375F", aliases: ["애플아케이드", "apple arcade"], amount: 6500 },
+  { file: "applemusic", name: "Apple Music", category: "music", color: "#FC3C44", aliases: ["애플뮤직", "apple music"], amount: 8900 },
+  { file: "appletv", name: "Apple TV+", category: "ott", color: "#111111", aliases: ["애플티비", "apple tv", "appletv"], amount: 6500 },
   { file: "bluehands", name: "블루핸즈", category: "mobility", color: "#0033A0", aliases: ["bluehands"] },
   { file: "bugs", name: "Bugs", category: "music", color: "#E31C79", aliases: ["벅스"] },
   { file: "cakeplus", name: "케이크플러스", category: "edu", color: "#FF6B00", aliases: ["cake", "케이크"] },
@@ -77,7 +77,7 @@ export const BRANDS: BrandMeta[] = [
   { file: "plang", name: "플랭", category: "edu", color: "#111111", aliases: ["plang"] },
   { file: "polaris", name: "폴라리스 오피스", category: "productivity", color: "#1A73E8", aliases: ["폴라리스"] },
   { file: "primevideo", name: "Prime Video", category: "ott", color: "#00A8E1", aliases: ["프라임", "아마존"] },
-  { file: "psshop", name: "PlayStation Plus", category: "game", color: "#003087", aliases: ["플스", "ps"] },
+  { file: "psshop", name: "PlayStation Plus", category: "game", color: "#003087", aliases: ["플스", "ps", "플레이스테이션"], amount: 7900 },
   { file: "publy", name: "퍼블리", category: "edu", color: "#111111", aliases: ["publy"] },
   { file: "qanda", name: "콴다", category: "edu", color: "#00D68F", aliases: ["qanda"] },
   { file: "quat", name: "Quat", category: "other", color: "#111111", aliases: [] },
@@ -99,12 +99,12 @@ export const BRANDS: BrandMeta[] = [
   { file: "toss", name: "토스", category: "membership", color: "#0064FF", aliases: ["toss"] },
   { file: "tuzupass", name: "투쥬패스", category: "membership", color: "#111111", aliases: [] },
   { file: "updf", name: "UPDF", category: "productivity", color: "#E21A23", aliases: [] },
-  { file: "watcha", name: "왓챠", category: "ott", color: "#FF0558", aliases: ["watcha"] },
-  { file: "wave", name: "웨이브", category: "ott", color: "#0D0D0D", aliases: ["wavve", "wave"] },
+  { file: "watcha", name: "왓챠", category: "ott", color: "#FF0558", aliases: ["watcha", "왓차"], amount: 7900 },
+  { file: "wave", name: "웨이브", category: "ott", color: "#0D0D0D", aliases: ["wavve", "wave", "웨이브"], amount: 7900 },
   { file: "welaaa", name: "윌라", category: "webtoon", color: "#FF6A00", aliases: ["welaaa"] },
   { file: "wps", name: "WPS Office", category: "productivity", color: "#C31111", aliases: [] },
   { file: "x", name: "X Premium", category: "sns", color: "#111111", aliases: ["트위터", "twitter"] },
-  { file: "xbox", name: "Xbox Game Pass", category: "game", color: "#107C10", aliases: ["엑스박스"] },
+  { file: "xbox", name: "Xbox Game Pass", category: "game", color: "#107C10", aliases: ["엑스박스", "게임패스"], amount: 21900 },
   { file: "yogiyo", name: "요기요", category: "delivery", color: "#FA0050", aliases: ["yogiyo"] },
   { file: "zep", name: "Zep", category: "sns", color: "#5B5FFF", aliases: [] },
   { file: "zwift", name: "Zwift", category: "sports", color: "#F15A29", aliases: [] },
@@ -130,11 +130,22 @@ export function brandIcon(name: string): string | undefined {
   return undefined;
 }
 
-export function findBrand(name: string): BrandMeta | undefined {
+export function findBrandExact(name: string): BrandMeta | undefined {
   const n = compact(name);
   if (!n) return undefined;
   return BRANDS.find((b) => {
     const keys = [b.name, b.file, ...b.aliases].map(compact).filter(Boolean);
-    return keys.includes(n) || keys.some((k) => k.length >= 2 && (n.includes(k) || k.includes(n)));
+    return keys.includes(n);
+  });
+}
+
+export function findBrand(name: string): BrandMeta | undefined {
+  const exact = findBrandExact(name);
+  if (exact) return exact;
+  const n = compact(name);
+  if (!n) return undefined;
+  return BRANDS.find((b) => {
+    const keys = [b.name, b.file, ...b.aliases].map(compact).filter(Boolean);
+    return keys.some((k) => k.length >= 2 && (n.includes(k) || k.includes(n)));
   });
 }

@@ -58,6 +58,15 @@ export const BENEFITS: Benefit[] = [
     icon: "🎬",
     howTo: "T 월드에서 결합 상품을 신청한 뒤, 틈 구독 목록에 넷플릭스를 등록해 주세요.",
     terms: "실제 제공 여부와 요금은 SKT 결합 정책에 따릅니다. 틈은 신청·해지를 대행하지 않아요.",
+    officialUrl: "https://www.tworld.co.kr",
+    brandColor: "#E31837",
+    parent: { name: "SKT T 멤버십", sub: "월 자동결제 · 통신비 청구서 합산" },
+    perk: { name: "넷플릭스 스탠다드", sub: "월 정기결제" },
+    priceSingle: 13500,
+    priceBundle: 0,
+    copy: { prefix: "SKT 결합으로 ", highlight: "넷플릭스", middle: "를\n매달 ", priceText: "0원", suffix: "에 즐겨보세요!" },
+    steps: ["T 월드에서 T 우주/결합 혜택을 확인하세요.", "넷플릭스 포함 상품을 신청하세요.", "틈 구독 목록에 결합상품으로 등록하세요."],
+    termsList: ["실제 제공 여부와 요금은 SKT 결합 정책에 따릅니다.", "틈은 신청·해지를 대행하지 않아요."],
   },
   {
     id: "kt-pick",
@@ -71,6 +80,15 @@ export const BENEFITS: Benefit[] = [
     expires: "2026-09-20",
     howTo: "KT 결합 요금제에서 OTT·음원·전자책 중 하나를 고른 뒤 틈에 해당 구독을 등록해 주세요.",
     terms: "선택 혜택은 월 1회 변경될 수 있으며, 실제 조건은 KT 정책에 따릅니다.",
+    officialUrl: "https://product.kt.com",
+    brandColor: "#E8630A",
+    parent: { name: "KT 결합 요금제", sub: "월 자동결제 · 통신비 청구서 합산" },
+    perk: { name: "티빙 · 지니 · 밀리 택1", sub: "월 정기결제" },
+    priceSingle: 10900,
+    priceBundle: 0,
+    copy: { prefix: "KT 결합으로 ", highlight: "콘텐츠 1개", middle: "를\n매달 ", priceText: "0원", suffix: "에 즐겨보세요!" },
+    steps: ["KT 결합 요금제에서 혜택을 고르세요.", "선택한 서비스를 활성화하세요.", "틈에 결합상품으로 등록하세요."],
+    termsList: ["선택 혜택은 월 1회 변경될 수 있습니다.", "실제 조건은 KT 정책에 따릅니다."],
   },
   {
     id: "lgu-disney",
@@ -83,6 +101,15 @@ export const BENEFITS: Benefit[] = [
     icon: "🏰",
     howTo: "유플러스 유독에서 디즈니+ 결합을 신청한 뒤 틈 구독 목록에 등록해 주세요.",
     terms: "할인 금액과 대상 요금제는 LG U+ 안내에 따릅니다.",
+    officialUrl: "https://www.lguplus.com",
+    brandColor: "#E6007E",
+    parent: { name: "LG U+ 유독 요금제", sub: "월 자동결제 · 통신비 청구서 합산" },
+    perk: { name: "디즈니+ 스탠다드", sub: "월 정기결제" },
+    priceSingle: 9900,
+    priceBundle: 4900,
+    copy: { prefix: "LG U+ 유독 결합으로 ", highlight: "통신비 혜택", middle: " 받고,\n매월 ", priceText: "디즈니+ 스탠다드 4,900원", suffix: "에 즐겨보세요!" },
+    steps: ["유플러스 유독에서 디즈니+ 결합을 확인하세요.", "결합 신청 후 디즈니+를 활성화하세요.", "틈 구독 목록에 결합상품으로 등록하세요."],
+    termsList: ["할인 금액과 대상 요금제는 LG U+ 안내에 따릅니다.", "틈은 해지나 요금제 변경을 대행하지 않아요."],
   },
   {
     id: "coupang-wow",
@@ -95,6 +122,15 @@ export const BENEFITS: Benefit[] = [
     icon: "📦",
     howTo: "쿠팡 앱에서 와우 멤버십을 가입한 뒤 틈에 쿠팡와우를 등록해 주세요.",
     terms: "로켓배송·쿠팡플레이 제공 범위는 쿠팡 멤버십 약관에 따릅니다.",
+    officialUrl: "https://www.coupang.com",
+    brandColor: "#A16207",
+    parent: { name: "쿠팡 와우", sub: "월 자동결제" },
+    perk: { name: "쿠팡플레이", sub: "멤버십 포함" },
+    priceSingle: 7890,
+    priceBundle: 7890,
+    copy: { prefix: "와우 멤버십으로 ", highlight: "배송과 영상", middle: "을\n매달 ", priceText: "7,890원", suffix: "에 즐겨보세요!" },
+    steps: ["쿠팡 앱에서 와우 멤버십을 가입하세요.", "쿠팡플레이를 활성화하세요.", "틈에 쿠팡와우를 등록하세요."],
+    termsList: ["로켓배송·쿠팡플레이 제공 범위는 쿠팡 멤버십 약관에 따릅니다."],
   },
   {
     id: "naver-spotify",
@@ -107,6 +143,15 @@ export const BENEFITS: Benefit[] = [
     icon: "🎵",
     howTo: "네이버플러스 멤버십에서 스포티파이 이용권을 활성화한 뒤 틈에 등록해 주세요.",
     terms: "포함 여부와 이용 기간은 네이버플러스 혜택 안내에 따릅니다.",
+    officialUrl: "https://nid.naver.com",
+    brandColor: "#03C75A",
+    parent: { name: "네이버플러스 멤버십", sub: "월 자동결제" },
+    perk: { name: "스포티파이 프리미엄 베이직", sub: "월 정기결제" },
+    priceSingle: 15800,
+    priceBundle: 4900,
+    copy: { prefix: "네이버플러스로 ", highlight: "멤버십 혜택", middle: " 받고,\n매월 ", priceText: "스포티파이 4,900원", suffix: "에 즐겨보세요!" },
+    steps: ["네이버플러스 멤버십을 확인하세요.", "스포티파이 이용권을 활성화하세요.", "틈에 결합상품으로 등록하세요."],
+    termsList: ["포함 여부와 이용 기간은 네이버플러스 혜택 안내에 따릅니다."],
   },
 ];
 
@@ -135,6 +180,10 @@ export function emptyDraft(kind: "subscription" | "event" = "subscription"): Dra
     fromAi: false,
     payMethod: "",
     trialDays: "",
+    mode: "solo",
+    bundleProvider: "",
+    bundleId: "",
+    included: "",
   };
 }
 
@@ -353,8 +402,7 @@ export function benefitStatus(b: Benefit, subs: Subscription[]): "owned" | "expi
 }
 
 export function isBundleLike(sub: Subscription) {
-  if (sub.parentId) return true;
-  if (["네이버플러스", "쿠팡와우", "배민클럽"].includes(sub.name)) return true;
+  if (sub.parentId || sub.bundleId || sub.bundleProvider) return true;
   if (/결합/.test(`${sub.name} ${sub.plan}`)) return true;
   return false;
 }

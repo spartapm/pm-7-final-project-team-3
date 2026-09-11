@@ -180,14 +180,22 @@ function Inner() {
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => {
-            if (phase === "listen" || phase === "save" || phase === "idle") {
+            if (phase === "idle") {
+              stopMic();
+              router.replace("/home");
+              return;
+            }
+            if (phase === "listen" || phase === "save") {
               stopMic();
               setPhase("exit");
-            } else if (phase === "wait") {
-              setPhase("save");
-            } else {
-              router.back();
+              return;
             }
+            if (phase === "wait") {
+              phaseRef.current = "idle";
+              setPhase("idle");
+              return;
+            }
+            router.replace("/home");
           }} />
           <h1>음성으로 등록</h1>
           <span style={{ width: 36 }} />
@@ -246,7 +254,7 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "save"; setPhase("save"); }}>
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "idle"; setPhase("idle"); }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />
@@ -270,7 +278,7 @@ function Inner() {
               <h3>음성 분석을 그만할까요?</h3>
               <p>분석 중인 내용은 저장되지 않아요.</p>
               <div className="modal-actions">
-                <button className="btn cancel" type="button" onClick={() => { stopMic(); router.back(); }}>분석 그만하기</button>
+                <button className="btn cancel" type="button" onClick={() => { stopMic(); setText(""); setSec(0); setPhase("idle"); }}>분석 그만하기</button>
                 <button className="btn primary" type="button" onClick={() => setPhase("listen")}>계속 진행하기</button>
               </div>
             </div>
@@ -283,7 +291,7 @@ function Inner() {
               <h3>마이크 권한이 필요해요</h3>
               <p>음성으로 일정을 등록하려면<br />마이크 접근을 허용해주세요</p>
               <div className="modal-actions">
-                <button className="btn ghost" type="button" onClick={() => { setPerm(false); router.back(); }}>다른 방법으로 등록</button>
+                <button className="btn ghost" type="button" onClick={() => { setPerm(false); router.replace("/home"); }}>다른 방법으로 등록</button>
                 <button className="btn primary" type="button" onClick={openSettings}>설정으로 이동</button>
               </div>
             </div>

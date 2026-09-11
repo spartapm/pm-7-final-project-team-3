@@ -46,7 +46,13 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
               <span className="grow" style={{ textAlign: "right", fontWeight: 700 }}>30분 전</span>
             </div>
           </div>
-          <img className="alert-banner" src="/banners/alarm.png" alt="일정 30분 전에 알려드려요. 놓치지 않도록 미리 준비해보세요." />
+          <div className="alert-banner-card">
+            <img src="/banners/alarm.png" alt="" />
+            <div>
+              <b>일정 30분 전에 알려드려요</b>
+              <span>놓치지 않도록 미리 준비해보세요.</span>
+            </div>
+          </div>
           <div className="card" style={{ marginTop: 12 }}>
             <div className="muted" style={{ fontWeight: 700, marginBottom: 8 }}>메모</div>
             <p style={{ margin: 0, lineHeight: 1.55 }}>{ev.memo || "작성된 메모가 없어요."}</p>

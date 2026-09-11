@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, ChipScroller, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { BENEFITS, CATEGORIES, benefitStatus, isBundleLike } from "@/lib/catalog";
@@ -36,6 +36,22 @@ export default function SubListPage() {
   const [cat, setCat] = useState<Category | "all">("all");
   const [sort, setSort] = useState<SortKey>("pay");
   const [sortOpen, setSortOpen] = useState(false);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("teum:sub-list");
+      if (raw) {
+        const saved = JSON.parse(raw) as { cat?: Category | "all"; sort?: SortKey };
+        if (saved.cat) setCat(saved.cat);
+        if (saved.sort) setSort(saved.sort);
+      }
+    } catch { /* ignore */ }
+    setReady(true);
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    sessionStorage.setItem("teum:sub-list", JSON.stringify({ cat, sort }));
+  }, [ready, cat, sort]);
   const live = subscriptions.filter((s) => s.status !== "ended");
   const list = live
     .filter((s) => cat === "all" || catLabel(s.category) === catLabel(cat))

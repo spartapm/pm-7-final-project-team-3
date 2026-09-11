@@ -43,7 +43,11 @@ export default function BenefitsPage() {
         <div className="topbar left hero"><h1>혜택</h1></div>
         <div className="scroll tabbed">
           <div className="hero-dark">
-            <div className="pillars" aria-hidden><i /><i /><i /></div>
+            <img
+              className={`hero-logo ${leak.count > 0 ? "" : "inv"}`}
+              src={leak.count > 0 ? "/brand/benefit-banner.png" : "/brand/logo-banner.png"}
+              alt=""
+            />
             {leak.count > 0 ? (
               <>
                 <h2>새는 구독 {leak.count}개를 찾았어요</h2>
@@ -52,7 +56,7 @@ export default function BenefitsPage() {
             ) : (
               <>
                 <h2>빈틈이 없어요!</h2>
-                <p>구독을 잘 관리하고 계시네요</p>
+                <p>구독을 잘 관리하고 계시네요.</p>
               </>
             )}
             <button className="btn" type="button" onClick={() => router.push("/inspect")}>구독 점검받기</button>

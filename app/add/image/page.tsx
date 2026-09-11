@@ -87,7 +87,7 @@ function Inner() {
         <div className="topbar">
           <Back onClick={() => {
             setFiles([]);
-            router.back();
+            router.replace("/home");
           }} />
           <h1>이미지로 추가</h1>
           <span style={{ width: 36 }} />

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
-import { dateLabel, monthLabel, relativeTime, thisWeek, won, ymd } from "@/lib/format";
+import { dateLabel, monthLabel, relativeTime, thisWeek, won } from "@/lib/format";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 
@@ -33,7 +33,7 @@ export default function HomePage() {
     const t = setInterval(() => setPromo((p) => (p + 1) % PROMOS.length), 3000);
     return () => clearInterval(t);
   }, []);
-  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
+  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const leak = leaksOf(live);
   const week = useMemo(() => thisWeek(), []);
@@ -41,21 +41,20 @@ export default function HomePage() {
   const upcoming = live.filter((s) => weekKeys.has(s.nextPay)).sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);
   const unread = notices.filter((n) => !n.read).length;
   const marked = useMemo(() => {
-    const today = ymd(new Date());
     const map = new Map<string, string[]>();
     for (const s of live) {
       const arr = map.get(s.nextPay) ?? [];
-      arr.push(s.nextPay === today ? "#2F80ED" : "#E3EDFF");
+      arr.push("#3057F5");
       map.set(s.nextPay, arr);
       if (s.trialEnds && s.trialEnds !== s.nextPay) {
         const t = map.get(s.trialEnds) ?? [];
-        t.push(s.trialEnds === today ? "#2F80ED" : "#E3EDFF");
+        t.push("#3057F5");
         map.set(s.trialEnds, t);
       }
     }
     for (const e of events) {
       const arr = map.get(e.date) ?? [];
-      arr.push(e.date === today ? "#FF6B7A" : "#FF9CA6");
+      arr.push("#FF6B7F");
       map.set(e.date, arr);
     }
     return map;

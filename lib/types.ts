@@ -46,6 +46,9 @@ export type Subscription = {
   createdAt: number;
   payMethod?: string;
   parentId?: string;
+  bundleProvider?: string;
+  bundleId?: string;
+  included?: string;
 };
 
 export type LifeEvent = {
@@ -128,6 +131,15 @@ export type Benefit = {
   expires?: string;
   howTo?: string;
   terms?: string;
+  officialUrl?: string;
+  brandColor?: string;
+  parent?: { name: string; sub: string };
+  perk?: { name: string; sub: string };
+  priceSingle?: number;
+  priceBundle?: number;
+  copy?: { prefix: string; highlight: string; middle: string; priceText: string; suffix: string };
+  steps?: string[];
+  termsList?: string[];
 };
 
 export type DraftSub = {
@@ -147,6 +159,10 @@ export type DraftSub = {
   fromAi: boolean;
   payMethod: string;
   trialDays: string;
+  mode?: "solo" | "bundle";
+  bundleProvider?: string;
+  bundleId?: string;
+  included?: string;
 };
 
 export type AlertPrefs = {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { isBundleLike } from "@/lib/catalog";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import { cycleEvery, won } from "@/lib/format";
@@ -13,7 +14,8 @@ export default function InspectPage() {
   const [waiting, setWaiting] = useState(true);
   const [fail, setFail] = useState(false);
   const [open, setOpen] = useState(false);
-  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
+  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
+  const cold = live.length === 0;
   const leak = leaksOf(live);
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
@@ -74,14 +76,22 @@ export default function InspectPage() {
         <div className="topbar"><Back /><h1>AI 구독 점검</h1><span style={{ width: 36 }} /></div>
         <div className="scroll tabbed">
           <div className="insp-hero">
-            <i className="mark" aria-hidden />
-            <h2>{leak.count > 0 ? `새는 구독 ${leak.count}개를 찾았어요` : "새는 구독이 보이지 않아요"}</h2>
+            {leak.count > 0 ? <i className="mark" aria-hidden /> : <img className="hero-logo" src="/brand/home-logo-icon.png" alt="" />}
+            <h2>
+              {cold
+                ? "등록된 구독이 없어요"
+                : leak.count > 0
+                  ? `새는 구독 ${leak.count}개를 찾았어요`
+                  : "빈틈이 없어요!"}
+            </h2>
             <p>
-              {leak.count > 0
-                ? `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
-                : "등록된 구독 기준으로는 중복·미사용이 뚜렷하지 않아요."}
+              {cold
+                ? "구독을 먼저 등록하면 새는 틈을 찾아드려요."
+                : leak.count > 0
+                  ? `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
+                  : "구독을 잘 관리하고 계시네요."}
             </p>
-            <button className="btn" type="button" onClick={rerun}>다시 점검하기</button>
+            <button className="btn" type="button" disabled={cold} onClick={rerun}>다시 점검하기</button>
           </div>
           <div className="card">
             <div style={{ fontWeight: 800, marginBottom: 8 }}>현재 구독 중인 서비스</div>
@@ -114,7 +124,7 @@ export default function InspectPage() {
           </div>
           <div className="section-title">AI가 추천하는 결합상품</div>
           <p className="muted" style={{ marginTop: -6, marginBottom: 8 }}>추천은 참고용입니다. 자동 해지·변경은 하지 않아요.</p>
-          <div className="bundle">
+          {live.some((s) => isBundleLike(s) && /네이버|스포티/.test(`${s.name} ${s.included ?? ""}`)) ? null : <div className="bundle">
             <div className="bundle-head">
               <span>+ 결합상품</span>
               <span className="save">-10,900원</span>
@@ -126,8 +136,8 @@ export default function InspectPage() {
               <span className="good">결합 이용 시 4,900원</span>
             </div>
             <div style={{ textAlign: "right", marginTop: 8 }}><button className="linkish" type="button" onClick={() => router.push("/benefits/naver-spotify")}>자세히 보기 ›</button></div>
-          </div>
-          <div className="bundle pink">
+          </div>}
+          {live.some((s) => isBundleLike(s) && /유독|디즈니/.test(`${s.name} ${s.included ?? ""} ${s.bundleProvider ?? ""}`)) ? null : <div className="bundle pink">
             <div className="bundle-head">
               <span>+ 결합상품</span>
               <span className="save">-3,890원</span>
@@ -139,7 +149,7 @@ export default function InspectPage() {
               <span className="good">결합 이용 시 15,000원</span>
             </div>
             <div style={{ textAlign: "right", marginTop: 8 }}><button className="linkish" type="button" onClick={() => router.push("/benefits/lgu-disney")}>자세히 보기 ›</button></div>
-          </div>
+          </div>}
         </div>
         <TabBar />
       </PhoneShell>

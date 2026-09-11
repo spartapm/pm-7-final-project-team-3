@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Logo, PhoneShell } from "@/components/ui";
+import { PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 
 export default function Splash() {
@@ -20,8 +20,7 @@ export default function Splash() {
   return (
     <PhoneShell>
       <div className="splash">
-        <Logo large />
-        <p className="slogan">구독도 일정도, 빈틈없이</p>
+        <img className="splash-logo" src="/brand/logo-slogan.png" alt="틈 — 구독도 일정도, 빈틈없이" />
       </div>
     </PhoneShell>
   );

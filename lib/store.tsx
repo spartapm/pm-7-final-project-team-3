@@ -14,6 +14,7 @@ import { emptyDraft, mergePayNotices, seedEvents, seedNotices, seedSubscriptions
 import {
   deleteAccount,
   emailOnCloud,
+  findAccountByEmail,
   loginCloud,
   pullAccount,
   pushAccount,
@@ -135,6 +136,7 @@ type Store = AppState & {
   showToast: (message: string, kind?: ToastKind) => void;
   clearToast: () => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string; server?: boolean }>;
+  loginSocial: (email: string) => Promise<{ ok: boolean; error?: string }>;
   signup: (email: string, password: string, marketing: boolean) => Promise<{ ok: boolean; error?: string }>;
   emailRegistered: (email: string) => Promise<boolean>;
   resetPassword: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
@@ -383,6 +385,53 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, [rememberUser, users]);
 
+  const loginSocial: Store["loginSocial"] = useCallback(async (email) => {
+    const trimmed = email.trim().toLowerCase();
+    const local = users.find((u) => u.email.toLowerCase() === trimmed);
+    if (local) return login(trimmed, local.password);
+
+    const found = await findAccountByEmail(trimmed);
+    if (found.status === "error") return { ok: false, error: "서버가 불안정합니다. 잠시 후 다시 시도해주세요." };
+    if (found.account) {
+      const password = `TeumSoc1!${uid("pw").slice(-6)}`;
+      rememberUser(trimmed, password);
+      sessionStorage.removeItem(SESSION_FLAG);
+      touch();
+      skipPush.current = true;
+      let next: AppState = {
+        ...stateRef.current,
+        accountId: found.account.id,
+        email: found.account.email || trimmed,
+        loggedIn: true,
+        loginAt: Date.now(),
+        onboarded: Boolean(found.account.onboarded),
+        termsAccepted: true,
+        privacyAccepted: true,
+        marketingAccepted: Boolean(found.account.marketing),
+      };
+      const pulled = await pullAccount(found.account.id, next.alerts);
+      if (pulled.status === "ok" && pulled.data) {
+        const remote = pulled.data;
+        next = {
+          ...next,
+          onboarded: remote.onboarded || next.onboarded,
+          marketingAccepted: remote.marketing || next.marketingAccepted,
+          alerts: remote.alerts ?? next.alerts,
+          subscriptions: remote.subscriptions,
+          events: remote.events,
+          notices: remote.notices,
+          seeded: remote.subscriptions.length > 0,
+        };
+      }
+      setState(withNotices(next));
+      skipPush.current = false;
+      return { ok: true };
+    }
+
+    const password = `TeumSoc1!${uid("pw").slice(-6)}`;
+    return signup(trimmed, password, false);
+  }, [login, rememberUser, signup, users]);
+
   const emailRegistered: Store["emailRegistered"] = useCallback(async (email) => {
     const trimmed = email.trim().toLowerCase();
     const cloud = await emailOnCloud(trimmed);
@@ -507,6 +556,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       showToast,
       clearToast,
       login,
+      loginSocial,
       signup,
       emailRegistered,
       resetPassword,
@@ -538,6 +588,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       showToast,
       clearToast,
       login,
+      loginSocial,
       signup,
       emailRegistered,
       resetPassword,

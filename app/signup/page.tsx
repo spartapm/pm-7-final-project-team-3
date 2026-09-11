@@ -156,6 +156,16 @@ export default function SignupPage() {
         <button className="btn primary" type="button" onClick={submit} disabled={busy || !requiredOk}>
           {busy ? "가입 중…" : "가입하기"}
         </button>
+        <div className="or">또는</div>
+        <button className="btn google social" type="button" onClick={() => { window.location.href = "/api/auth/google"; }}>
+          <img src="/icons/google.png" alt="" width={22} height={22} />
+          Google로 계속하기
+        </button>
+        <div style={{ height: 8 }} />
+        <button className="btn kakao social" type="button" onClick={() => { window.location.href = "/api/auth/kakao"; }}>
+          <img src="/icons/kakao.png" alt="" width={22} height={22} />
+          카카오로 계속하기
+        </button>
         <div className="auth-foot">
           이미 계정이 있으신가요?  <Link href="/login">로그인</Link>
         </div>

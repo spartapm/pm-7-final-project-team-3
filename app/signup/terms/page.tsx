@@ -26,9 +26,13 @@ function Inner() {
         <span style={{ width: 36 }} />
       </div>
       <div className="scroll">
-        <div className="legal">{item.body}</div>
-        <p className="legal-brand">TRI:ON · 틈</p>
-        <button className="btn primary" type="button" onClick={() => router.push(back)}>확인</button>
+        <div className="legal-page">
+          <h2>{item.title}</h2>
+          <p className="legal-date">시행일 2026.09.01</p>
+          <div className="legal-card">{item.body.replace(/^[^\n]+\n+(시행일[^\n]+\n+)?/, "")}</div>
+          <p className="legal-brand">TRI:ON · 틈</p>
+          <button className="btn primary" type="button" onClick={() => router.push(back)}>확인</button>
+        </div>
       </div>
     </PhoneShell>
   );

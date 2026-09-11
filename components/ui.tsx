@@ -15,6 +15,20 @@ export function PhoneShell({ children }: { children: ReactNode }) {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+  useEffect(() => {
+    const apply = () => {
+      if (!window.matchMedia("(min-width: 720px)").matches) {
+        document.documentElement.style.setProperty("--phone-scale", "1");
+        return;
+      }
+      const pad = 40;
+      const scale = Math.min(1, (window.innerWidth - pad) / 390, (window.innerHeight - pad) / 844);
+      document.documentElement.style.setProperty("--phone-scale", String(Math.max(0.35, scale)));
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, []);
   return (
     <div className={desktop ? "stage desktop" : "stage mobile"}>
       {desktop ? (
@@ -93,7 +107,7 @@ export function Back({ href, onClick }: { href?: string; onClick?: () => void })
   );
 }
 
-export function TabBar() {
+export function TabBar({ active }: { active?: string }) {
   const path = usePathname();
   const tabs = [
     { href: "/home", label: "홈", onSrc: "/nav/home-on.png", offSrc: "/nav/home-off.png" },
@@ -104,11 +118,13 @@ export function TabBar() {
   return (
     <nav className="tabbar">
       {tabs.map((t) => {
-        const on = t.href === "/home"
-          ? path === "/home" || path.startsWith("/subscriptions")
-          : t.href === "/benefits"
-            ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
-            : path === t.href || path.startsWith(t.href + "/");
+        const on = active
+          ? t.href === active
+          : t.href === "/home"
+            ? path === "/home" || path.startsWith("/subscriptions")
+            : t.href === "/benefits"
+              ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
+              : path === t.href || path.startsWith(t.href + "/");
         return (
           <Link key={t.href} href={t.href} className={on ? "on" : ""}>
             <img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" />
@@ -171,7 +187,16 @@ export function Fab({ children }: { children?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"subscription" | "event">("subscription");
   const router = useRouter();
+  const path = usePathname();
   const go = (href: string) => {
+    const from = path.startsWith("/calendar")
+      ? "/calendar"
+      : path.startsWith("/benefits") || path.startsWith("/inspect")
+        ? "/benefits"
+        : path.startsWith("/me")
+          ? "/me"
+          : "/home";
+    sessionStorage.setItem("teum:fab-tab", from);
     setOpen(false);
     router.push(href);
   };
@@ -186,12 +211,12 @@ export function Fab({ children }: { children?: ReactNode }) {
             <button className={tab === "event" ? "on" : ""} type="button" onClick={() => setTab("event")}>일상</button>
           </div>
           <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 이미지입니다" : "일상 관련 이미지입니다"); go(`/add/image?kind=${tab}`); }}>
-            <span className="ico-sq" style={{ background: "#7c6fef" }}>🖼</span>
+            <span className="ico-sq"><img src="/icons/fab-image.png" alt="" /></span>
             이미지로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
           <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 음성입니다" : "일상 관련 음성입니다"); go(`/add/voice?kind=${tab}`); }}>
-            <span className="ico-sq" style={{ background: "#f0a202" }}>🎙</span>
+            <span className="ico-sq"><img src="/icons/fab-voice.png" alt="" /></span>
             음성으로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
@@ -201,7 +226,9 @@ export function Fab({ children }: { children?: ReactNode }) {
             type="button"
             onClick={() => go(tab === "subscription" ? "/subscriptions/new" : "/events/new")}
           >
-            <span className="ico-sq" style={{ background: "#2576f2" }}>☰</span>
+            <span className="ico-sq">
+              <img src={tab === "subscription" ? "/icons/fab-sub.png" : "/icons/fab-life.png"} alt="" />
+            </span>
             {tab === "subscription" ? "구독 직접 추가" : "일상 직접 추가"}
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>

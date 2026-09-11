@@ -3,7 +3,8 @@
 import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, Gate, Modal, PhoneShell, TabBar } from "@/components/ui";
-import { CATEGORIES, isBundleLike } from "@/lib/catalog";
+import { isBundleLike } from "@/lib/catalog";
+import { providerName } from "@/lib/bundles";
 import { dateLabel, won } from "@/lib/format";
 import { useStore } from "@/lib/store";
 
@@ -33,7 +34,6 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
       </Gate>
     );
   }
-  const cat = CATEGORIES.find((c) => c.id === sub.category)?.label ?? sub.category;
   const paused = sub.paused || sub.status === "paused";
   const statusLabel = sub.status === "trial" ? "무료체험" : paused ? "일시정지" : "이용 중";
   const badgeCls = sub.status === "trial" ? "trial" : paused ? "pause" : "on";
@@ -59,7 +59,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
                 {sub.name}
                 {isBundleLike(sub) ? <span className="bundle-tag">결합상품</span> : null}
               </div>
-              <div className="muted">{sub.plan || cat}</div>
+              <div className="muted">{isBundleLike(sub) ? (sub.bundleProvider ? providerName(sub.bundleProvider) : "결합상품") : (sub.plan || "단독 구독")}</div>
             </div>
             <div ref={statusRef} className="status-dd">
             <button className={`sub-badge ${badgeCls}`} type="button" onClick={() => setStatusOpen((v) => !v)}>{statusLabel} ▾</button>
@@ -95,7 +95,13 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
             <div className="trial-pill">{trialMonths}개월 무료체험 중</div>
           ) : null}
           <div className="card" style={{ marginTop: 12 }}>
-            <Row k="요금제" v={sub.plan || "-"} />
+            {isBundleLike(sub) ? (
+              <>
+                <Row k="제공사" v={sub.bundleProvider ? providerName(sub.bundleProvider) : "-"} />
+                <Row k="결합상품" v={sub.name} />
+                {sub.included ? <Row k="포함 서비스" v={sub.included} /> : null}
+              </>
+            ) : null}
             <Row k="월 결제 금액" v={won(monthly)} />
             <Row k="다음 결제" v={dateLabel(sub.nextPay)} />
             <Row k="결제 주기" v={`${sub.everyMonths ?? (sub.cycle === "yearly" ? 12 : 1)}개월`} />

@@ -10,11 +10,12 @@ npm run dev
 ```
 
 브라우저에서 http://localhost:3003  
-배포: https://pm-7-final-project-team-3-nu.vercel.app  
+배포: https://myteum.vercel.app  
 화면은 390px 폭 + 레터박스입니다. 개발자 도구 모바일 뷰(390×844)가 가장 가깝습니다.
 
 구현/미구현 범위: `docs/제출-구현범위.md`  
-번호 항목(SP-AU-SignUp-01, SP-HM-Dashbd-01 …) 체크리스트: `docs/SPEC-INVENTORY.md`
+번호 항목(SP-AU-SignUp-01, SP-HM-Dashbd-01 …) 체크리스트: `docs/SPEC-INVENTORY.md`  
+비밀번호 찾기 메일(Resend) DNS: `docs/resend-dns.md`
 
 ## 데모 계정
 
@@ -33,4 +34,4 @@ npm run db:schema
 
 피그마: [틈 TEUM](https://www.figma.com/design/G5i65LGv2ljKhvm8xN2cGU)
 
-공통 `+`는 구독 / 일상으로 갈라지고, 이미지·음성·직접 입력을 고릅니다. AI가 채운 값은 저장 전까지 목록에 넣지 않습니다. 카카오·구글 로그인은 1차 범위 제외라 버튼만 두고 안내 토스트를 띄웁니다.
+공통 `+`는 구독 / 일상으로 갈라지고, 이미지·음성·직접 입력을 고릅니다. AI가 채운 값은 저장 전까지 목록에 넣지 않습니다.

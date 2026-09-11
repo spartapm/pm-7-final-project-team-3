@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Back, BounceIfAuthed, Modal, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PASSWORD_HINT, emailError, passwordError } from "@/lib/validate";
 
-export default function LoginPage() {
+function LoginInner() {
   const router = useRouter();
+  const q = useSearchParams();
   const { login, showToast } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +46,13 @@ export default function LoginPage() {
     router.replace("/home");
   };
 
-  const social = () => showToast("1차 개발 범위에서 제외된 기능이에요.", "info");
+  useEffect(() => {
+    if (q.get("social") === "fail") showToast("소셜 로그인에 실패했어요. 다시 시도해주세요.", "err");
+  }, [q, showToast]);
+
+  const social = (provider: "google" | "kakao") => {
+    window.location.href = provider === "google" ? "/api/auth/google" : "/api/auth/kakao";
+  };
 
   return (
     <PhoneShell>
@@ -94,12 +101,12 @@ export default function LoginPage() {
         <button className="btn primary" type="submit" disabled={busy}>{busy ? "로그인 중…" : "로그인"}</button>
         </form>
         <div className="or">또는</div>
-        <button className="btn google social" type="button" onClick={social}>
+        <button className="btn google social" type="button" onClick={() => social("google")}>
           <img src="/icons/google.png" alt="" width={22} height={22} />
           Google로 계속하기
         </button>
         <div style={{ height: 8 }} />
-        <button className="btn kakao social" type="button" onClick={social}>
+        <button className="btn kakao social" type="button" onClick={() => social("kakao")}>
           <img src="/icons/kakao.png" alt="" width={22} height={22} />
           카카오로 계속하기
         </button>
@@ -123,4 +130,8 @@ export default function LoginPage() {
       ) : null}
     </PhoneShell>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense><LoginInner /></Suspense>;
 }

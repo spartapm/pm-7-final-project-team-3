@@ -35,7 +35,7 @@ function Inner() {
           title: s.autoRenew ? `${s.name} 갱신` : `${s.name} 결제`,
           right: won(s.amount),
           href: `/subscriptions/${s.id}`,
-          color: "#2576f2",
+          color: "#3057F5",
         });
         if (s.trialEnds && s.trialEnds !== s.nextPay) {
           add(s.trialEnds, {
@@ -43,7 +43,7 @@ function Inner() {
             title: `${s.name} 무료체험 종료`,
             right: dateLabel(s.trialEnds),
             href: `/subscriptions/${s.id}`,
-            color: "#ff7700",
+            color: "#3057F5",
           });
         }
       }
@@ -56,12 +56,12 @@ function Inner() {
           title: `${b.provider} 혜택 만료`,
           right: b.title,
           href: `/benefits/${b.id}`,
-          color: "#f0a202",
+          color: "#3057F5",
         });
       }
     }
     if (filter !== "sub") {
-      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#ff7aa2" });
+      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
     }
     return map;
   }, [live, events, filter]);

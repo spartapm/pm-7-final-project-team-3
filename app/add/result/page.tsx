@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Back, Brand, Gate, PhoneShell } from "@/components/ui";
+import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { findBrand } from "@/lib/brands";
 import { clearExtract, readExtract } from "@/lib/extract";
 import { dateLabel, uid, won } from "@/lib/format";
@@ -31,6 +31,7 @@ function Inner() {
   const { upsertSub, upsertEvent, showToast } = useStore();
   const [state, setState] = useState<ExtractState | null>(null);
   const [exit, setExit] = useState(false);
+  const [fabTab, setFabTab] = useState("/home");
   const exitRef = useRef(false);
   const dirtyRef = useRef(false);
   exitRef.current = exit;
@@ -46,10 +47,11 @@ function Inner() {
       return false;
     };
     if (!sync()) {
-      router.replace(from === "voice" ? `/add/voice?kind=${kind}` : `/add/image?kind=${kind}`);
+      router.replace("/home");
       return;
     }
     const onShow = () => { sync(); };
+    setFabTab(sessionStorage.getItem("teum:fab-tab") || "/home");
     window.addEventListener("pageshow", onShow);
     window.addEventListener("focus", onShow);
     return () => {
@@ -71,7 +73,8 @@ function Inner() {
         history.pushState({ teumResult: 1 }, "");
         return;
       }
-      router.replace(from === "voice" ? `/add/voice?kind=${kind}` : `/add/image?kind=${kind}`);
+      clearExtract();
+      router.replace("/home");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -79,7 +82,7 @@ function Inner() {
 
   const leave = (clear: boolean) => {
     if (clear) clearExtract();
-    router.replace(from === "voice" ? `/add/voice?kind=${kind}` : `/add/image?kind=${kind}`);
+    router.replace("/home");
   };
 
   const askLeave = () => {
@@ -205,7 +208,7 @@ function Inner() {
           <h1>추출 결과</h1>
           <span style={{ width: 36 }} />
         </div>
-        <div className="scroll result-page">
+        <div className="scroll tabbed result-page">
           <h2>{kind === "event" ? "일정을 확인해주세요" : "구독을 확인해주세요"}</h2>
           <p className="muted">중복 항목을 확인하고 저장 전 내용을 수정할 수 있어요.</p>
           <div className="result-list">
@@ -237,6 +240,7 @@ function Inner() {
           </div>
           <button className="btn primary" type="button" disabled={state.items.length === 0} onClick={saveAll}>저장하기</button>
         </div>
+        <TabBar active={fabTab} />
         {exit ? (
           <div className="modal-back">
             <div className="modal">

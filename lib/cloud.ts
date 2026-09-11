@@ -164,6 +164,21 @@ export async function signupCloud(input: {
   return { status: "ok" };
 }
 
+export async function findAccountByEmail(email: string): Promise<{
+  status: CloudStatus;
+  account?: { id: string; email: string; onboarded: boolean; marketing: boolean; alerts: unknown };
+}> {
+  const sb = getSupabase();
+  if (!sb) return { status: "off" };
+  const res = await sb.from("accounts").select("id, email, onboarded, marketing, alerts").eq("email", email.trim().toLowerCase()).maybeSingle();
+  if (res.error) {
+    if (isMissingTable(res.error)) return { status: "missing-table" };
+    return { status: "error" };
+  }
+  if (!res.data) return { status: "ok" };
+  return { status: "ok", account: res.data };
+}
+
 export async function emailOnCloud(email: string): Promise<{ status: CloudStatus; found?: boolean }> {
   const sb = getSupabase();
   if (!sb) return { status: "off" };
