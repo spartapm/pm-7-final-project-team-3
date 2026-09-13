@@ -67,13 +67,16 @@ export function SubForm({
   const router = useRouter();
   const { subscriptions, upsertSub, draft, setDraft, resetDraft, showToast } = useStore();
   const existing = existingId ? subscriptions.find((s) => s.id === existingId) : null;
-  const [local, setLocal] = useState<DraftSub>(existing ? fromSub(existing) : draft);
+  const [local, setLocal] = useState<DraftSub>(existing ? fromSub(existing) : emptyDraft());
   const [open, setOpen] = useState(false);
-  const [picked, setPicked] = useState(Boolean(existing?.name || draft.name));
-  const [trialOn, setTrialOn] = useState((existing?.status ?? draft.status) === "trial");
+  const [picked, setPicked] = useState(Boolean(existing?.name));
+  const [trialOn, setTrialOn] = useState((existing?.status ?? "") === "trial");
   const [alertOn, setAlertOn] = useState(existing ? existing.alertDays > 0 : false);
   const [leave, setLeave] = useState(false);
   const [payPick, setPayPick] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [tried, setTried] = useState(false);
+  const [dup, setDup] = useState(false);
   const mode = local.mode === "bundle" ? "bundle" : "solo";
 
   useEffect(() => {
@@ -93,13 +96,19 @@ export function SubForm({
       }
       return;
     }
-    if (!existingId && draft.name) setLocal({ ...draft, payMethod: draft.payMethod ?? "", trialDays: draft.trialDays ?? "" });
+    if (existingId) return;
+    setLocal(emptyDraft());
+    setTrialOn(false);
+    setAlertOn(false);
+    setPicked(false);
   }, [draft, existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name), [local.name]);
   const known = findBrandExact(local.name) ?? (picked ? findBrand(local.name) : undefined);
+  const amountNum = Number(digitsOf(local.amount));
+  const amountRangeOk = digitsOf(local.amount) === "" || (/^\d+$/.test(digitsOf(local.amount)) && amountNum >= 0 && amountNum <= 99999999);
   const nameOk = local.name.trim().length >= 2 && local.name.trim().length <= 30 && local.name.trim().toUpperCase() !== "NULL";
-  const amountOk = trialOn || Boolean(digitsOf(local.amount));
+  const amountOk = trialOn || (Boolean(digitsOf(local.amount)) && amountRangeOk);
   const dateOk = Boolean(local.nextPay);
   const trialOk = !trialOn || (/^\d{1,2}$/.test(local.trialDays) && Number(local.trialDays) >= 1 && Number(local.trialDays) <= 99);
   const bundleOk = mode === "solo" || Boolean(local.bundleProvider && local.name.trim());
@@ -136,9 +145,16 @@ export function SubForm({
     router.replace(`/add/result?kind=subscription&from=${cur?.from ?? "image"}`);
   };
 
-  const save = () => {
-    if (!canSave) {
-      showToast("필수 항목을 입력해 주세요.", "err");
+  const save = (force = false) => {
+    setTried(true);
+    if (saving) return;
+    if (!nameOk || !amountOk || !dateOk || !trialOk || !bundleOk || !amountRangeOk) {
+      return;
+    }
+    const amount = Number(digitsOf(local.amount)) || 0;
+    const twin = subscriptions.find((s) => s.id !== existing?.id && s.name.trim().toLowerCase() === local.name.trim().toLowerCase() && s.amount === amount);
+    if (twin && !force) {
+      setDup(true);
       return;
     }
     if (fromResult) {
@@ -147,10 +163,11 @@ export function SubForm({
       goResult();
       return;
     }
-    const amount = Number(digitsOf(local.amount)) || 0;
     const payDay = Number(local.nextPay.slice(8, 10)) || 1;
     const color = known?.color ?? "#2576f2";
     const trialEnds = trialOn ? addDays(local.nextPay, Number(local.trialDays) || 14) : null;
+    const months = local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1);
+    setSaving(true);
     try {
       const id = existing?.id ?? uid("sub");
       upsertSub({
@@ -159,10 +176,10 @@ export function SubForm({
         plan: local.plan,
         category: known?.category ?? local.category,
         amount,
-        cycle: (local.everyMonths ?? 1) === 12 ? "yearly" : local.cycle,
-        everyMonths: local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1),
+        cycle: months === 12 ? "yearly" : local.cycle,
+        everyMonths: months,
         payDay,
-        nextPay: local.nextPay,
+        nextPay: trialEnds || local.nextPay,
         status: trialOn ? "trial" : local.status === "paused" ? "paused" : "active",
         autoRenew: local.autoRenew,
         unused: existing?.unused ?? false,
@@ -184,11 +201,12 @@ export function SubForm({
         id,
         name: local.name.trim(),
         amount,
-        cycle: local.cycle,
+        months,
         alert: alertOn,
       }));
       router.replace("/subscriptions/saved");
     } catch {
+      setSaving(false);
       showToast("⚠️ 저장에 실패했어요. 다시 시도해주세요.", "err");
     }
   };
@@ -198,11 +216,11 @@ export function SubForm({
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => { if (fromResult) goResult(); else setLeave(true); }} />
-          <h1>{check || local.fromAi ? "구독 등록/수정" : existing ? "구독 수정" : "구독 등록"}</h1>
+          <h1>{existing ? "구독 수정" : "구독 등록"}</h1>
           <span style={{ width: 36 }} />
         </div>
         <div className="scroll">
-          <p style={{ fontWeight: 800, fontSize: 20, margin: "4px 0 14px" }}>{check || local.fromAi ? "구독 정보를 작성해주세요" : "구독 정보를 수정해주세요"}</p>
+          <p style={{ fontWeight: 800, fontSize: 20, margin: "4px 0 14px" }}>{existing ? "구독 정보를 수정해주세요" : "새 구독 정보를 입력해주세요"}</p>
           {local.fromAi || check ? <div className="cold-bar" style={{ marginBottom: 12 }}>AI 초안입니다. 저장하기 전에는 내 구독에 들어가지 않아요.</div> : null}
           {trialOn ? <p className="field-hint">ⓘ 무료체험의 경우 첫 결제는 결제금액을 0으로 입력해주세요.</p> : null}
           <div className="mode-toggle">
@@ -225,8 +243,8 @@ export function SubForm({
               </select>
             </div>
           ) : null}
-          <div className="field">
-            <label>서비스명 <i className="req">*</i></label>
+          <div className={`field ${tried && !nameOk ? "err" : ""}`}>
+            <label htmlFor="sub-name">서비스명 <i className="req">*</i></label>
             {mode === "bundle" ? (
               <select
                 disabled={!local.bundleProvider}
@@ -255,6 +273,10 @@ export function SubForm({
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Brand name={known?.name ?? local.name} color={known?.color ?? "#2576f2"} logo="" />
                 <input
+                  id="sub-name"
+                  aria-required="true"
+                  aria-invalid={tried && !nameOk}
+                  aria-describedby={tried && !nameOk ? "sub-name-err" : undefined}
                   style={{ flex: 1 }}
                   value={local.name}
                   maxLength={30}
@@ -278,20 +300,23 @@ export function SubForm({
                 ))}
               </div>
             ) : null}
+            {tried && !nameOk ? <p id="sub-name-err" className="err-msg">서비스명을 입력해 주세요.</p> : null}
             {mode === "bundle" && local.included ? (
               <p className="field-hint">포함 서비스: {local.included}</p>
             ) : null}
           </div>
-          <div className="field">
-            <label>첫 결제일 <i className="req">*</i></label>
-            <button type="button" className="when-chip" onClick={() => setPayPick(true)}>
+          <div className={`field ${tried && !dateOk ? "err" : ""}`}>
+            <label htmlFor="sub-pay">첫 결제일 <i className="req">*</i></label>
+            <button id="sub-pay" type="button" className="when-chip" aria-required="true" onClick={() => setPayPick(true)}>
               {local.nextPay ? dateLabel(local.nextPay) : "날짜"}
             </button>
           </div>
           <div className="field">
-            <label>결제 주기 <i className="req">*</i></label>
+            <label htmlFor="sub-cycle">결제 주기 <i className="req">*</i></label>
             <div className="amt-row">
               <input
+                id="sub-cycle"
+                aria-required="true"
                 inputMode="numeric"
                 value={String(local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1))}
                 onChange={(e) => {
@@ -302,10 +327,14 @@ export function SubForm({
               <span>개월</span>
             </div>
           </div>
-          <div className="field">
-            <label>{mode === "bundle" ? "결합상품 결제금액" : "결제 금액"} <i className="req">*</i></label>
+          <div className={`field ${tried && (!amountOk || !amountRangeOk) ? "err" : ""}`}>
+            <label htmlFor="sub-amount">{mode === "bundle" ? "결합상품 결제금액" : "결제 금액"} <i className="req">*</i></label>
             <div className="amt-row">
               <input
+                id="sub-amount"
+                aria-required="true"
+                aria-invalid={tried && (!amountOk || !amountRangeOk)}
+                aria-describedby={!amountRangeOk ? "sub-amount-err" : undefined}
                 inputMode="numeric"
                 value={commaWon(local.amount)}
                 onChange={(e) => setLocal((p) => ({ ...p, amount: digitsOf(e.target.value) }))}
@@ -313,7 +342,11 @@ export function SubForm({
               />
               <span>원</span>
             </div>
-            {mode === "solo" && known && local.amount && Number(digitsOf(local.amount)) !== known.amount ? (
+            {!amountRangeOk ? (
+              <p id="sub-amount-err" className="err-msg">최대 99,999,999원까지 입력할 수 있어요.</p>
+            ) : tried && !amountOk ? (
+              <p id="sub-amount-err" className="err-msg">결제 금액을 입력해 주세요.</p>
+            ) : mode === "solo" && known && local.amount && Number(digitsOf(local.amount)) !== known.amount ? (
               <p className="mismatch-warn">⚠️ {known.name} 요금제와 달라요, 확인해주세요</p>
             ) : null}
           </div>
@@ -335,8 +368,8 @@ export function SubForm({
             </div>
           ) : null}
           <div className="field">
-            <label>결제 수단</label>
-            <input value={local.payMethod} maxLength={10} onChange={(e) => setLocal((p) => ({ ...p, payMethod: e.target.value }))} placeholder="결제수단의 별칭을 입력해주세요" />
+            <label htmlFor="sub-pay-method">결제 수단</label>
+            <input id="sub-pay-method" value={local.payMethod} maxLength={10} onChange={(e) => setLocal((p) => ({ ...p, payMethod: e.target.value }))} placeholder="결제수단의 별칭을 입력해주세요" />
           </div>
           <label className="check" style={{ alignItems: "center" }}>
             <span className="grow">
@@ -352,10 +385,10 @@ export function SubForm({
             </div>
           ) : null}
           <div className="field">
-            <label>메모</label>
-            <textarea value={local.memo} onChange={(e) => setLocal((p) => ({ ...p, memo: e.target.value }))} placeholder="해지 가능일 · 종료일 · 메모 (선택)" />
+            <label htmlFor="sub-memo">메모</label>
+            <textarea id="sub-memo" value={local.memo} onChange={(e) => setLocal((p) => ({ ...p, memo: e.target.value }))} placeholder="해지 가능일 · 종료일 · 메모 (선택)" />
           </div>
-          <button className="btn primary" type="button" disabled={!canSave} style={{ opacity: canSave ? 1 : 0.4 }} onClick={() => { setDraft(local); save(); }}>저장하기</button>
+          <button className="btn primary" type="button" disabled={saving || !amountRangeOk} onClick={() => { setDraft(local); save(); }}>{saving ? "저장 중…" : "저장하기"}</button>
         </div>
         <WhenPick
           open={payPick}
@@ -369,6 +402,16 @@ export function SubForm({
             setPayPick(false);
           }}
         />
+        {dup ? (
+          <Modal
+            title="비슷한 구독이 있어요"
+            body={"같은 이름과 금액의 구독이 이미 등록되어 있어요.\n그래도 저장할까요?"}
+            cancel="취소"
+            confirm="계속 저장"
+            onCancel={() => setDup(false)}
+            onConfirm={() => { setDup(false); save(true); }}
+          />
+        ) : null}
         {leave ? (
           <Modal
             title="작성을 중단하시겠어요?"

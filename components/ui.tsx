@@ -23,7 +23,7 @@ export function PhoneShell({ children }: { children: ReactNode }) {
       }
       const pad = 40;
       const scale = Math.min(1, (window.innerWidth - pad) / 390, (window.innerHeight - pad) / 844);
-      document.documentElement.style.setProperty("--phone-scale", String(Math.max(0.35, scale)));
+      document.documentElement.style.setProperty("--phone-scale", String(Math.max(0.9, scale)));
     };
     apply();
     window.addEventListener("resize", apply);
@@ -80,9 +80,8 @@ export function Gate({ children }: { children: ReactNode }) {
 
 export function Logo({ light = false, large = false }: { light?: boolean; large?: boolean }) {
   return (
-    <span className={`home-brand ${large ? "lg" : ""} ${light ? "light" : ""}`} style={{ color: light ? "#fff" : "#16171b" }}>
-      <img className="home-logo-img" src="/brand/home-logo.png" alt="" />
-      <span className="logo-word">틈</span>
+    <span className={`home-brand ${large ? "lg" : ""} ${light ? "light" : ""}`}>
+      <img className="home-logo-img" src={light ? "/brand/logo-white.png" : "/brand/home-logo.png"} alt="틈" />
     </span>
   );
 }
@@ -110,24 +109,31 @@ export function Back({ href, onClick }: { href?: string; onClick?: () => void })
 export function TabBar({ active }: { active?: string }) {
   const path = usePathname();
   const tabs = [
-    { href: "/home", label: "홈", onSrc: "/nav/home-on.png", offSrc: "/nav/home-off.png" },
-    { href: "/calendar", label: "캘린더", onSrc: "/nav/cal-on.png", offSrc: "/nav/cal-off.png" },
-    { href: "/benefits", label: "혜택", onSrc: "/nav/gift-on.png", offSrc: "/nav/gift-off.png" },
-    { href: "/me", label: "마이", onSrc: "/nav/me-on.png", offSrc: "/nav/me-off.png" },
+    { href: "/subscriptions", label: "구독목록", kind: "img" as const, onSrc: "/nav/list-on.png", offSrc: "/nav/list-off.png" },
+    { href: "/calendar", label: "캘린더", kind: "img" as const, onSrc: "/nav/cal-on.png", offSrc: "/nav/cal-off.png" },
+    { href: "/home", label: "홈", kind: "home" as const, onSrc: "/nav/home-on.png", offSrc: "/nav/home-off.png" },
+    { href: "/benefits", label: "혜택", kind: "img" as const, onSrc: "/nav/gift-on.png", offSrc: "/nav/gift-off.png" },
+    { href: "/me", label: "마이", kind: "img" as const, onSrc: "/nav/me-on.png", offSrc: "/nav/me-off.png" },
   ];
   return (
-    <nav className="tabbar">
+    <nav className="tabbar five">
       {tabs.map((t) => {
         const on = active
           ? t.href === active
           : t.href === "/home"
-            ? path === "/home" || path.startsWith("/subscriptions")
-            : t.href === "/benefits"
-              ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
-              : path === t.href || path.startsWith(t.href + "/");
+            ? path === "/home"
+            : t.href === "/subscriptions"
+              ? path.startsWith("/subscriptions")
+              : t.href === "/benefits"
+                ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
+                : path === t.href || path.startsWith(`${t.href}/`);
         return (
-          <Link key={t.href} href={t.href} className={on ? "on" : ""}>
-            <img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" />
+          <Link key={t.href} href={t.href} className={`${on ? "on" : ""} ${t.kind === "home" ? "home" : ""}`}>
+            {t.kind === "home" ? (
+              <span className="home-orb"><img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" /></span>
+            ) : (
+              <img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" />
+            )}
             <span>{t.label}</span>
           </Link>
         );
@@ -224,7 +230,10 @@ export function Fab({ children }: { children?: ReactNode }) {
           <button
             className="fab-row"
             type="button"
-            onClick={() => go(tab === "subscription" ? "/subscriptions/new" : "/events/new")}
+            onClick={() => {
+              const date = typeof window !== "undefined" ? sessionStorage.getItem("teum:cal-date") : "";
+              go(tab === "subscription" ? "/subscriptions/new" : (date ? `/events/new?date=${date}` : "/events/new"));
+            }}
           >
             <span className="ico-sq">
               <img src={tab === "subscription" ? "/icons/fab-sub.png" : "/icons/fab-life.png"} alt="" />
@@ -272,15 +281,46 @@ export function Modal({
   danger?: boolean;
   mascot?: string;
 }) {
+  const onCancelRef = useRef(onCancel);
+  const onConfirmRef = useRef(onConfirm);
+  onCancelRef.current = onCancel;
+  onConfirmRef.current = onConfirm;
+  const pushed = useRef(true);
+  useEffect(() => {
+    history.pushState({ teumModal: 1 }, "");
+    const onPop = () => {
+      pushed.current = false;
+      onCancelRef.current();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const closeLayer = () => {
+    if (pushed.current) {
+      pushed.current = false;
+      history.back();
+    } else {
+      onCancelRef.current();
+    }
+  };
   return (
-    <div className="modal-back" onClick={onCancel}>
+    <div className="modal-back" onClick={closeLayer}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         {mascot ? <img className="modal-mascot" src={mascot} alt="" /> : null}
         <h3>{title}</h3>
         {body ? <p>{body}</p> : null}
         <div className="modal-actions">
-          <button className="btn cancel" type="button" onClick={onCancel}>{cancel}</button>
-          <button className={`btn ${danger ? "danger" : "primary"}`} type="button" onClick={onConfirm}>{confirm}</button>
+          <button className="btn cancel" type="button" onClick={closeLayer}>{cancel}</button>
+          <button
+            className={`btn ${danger ? "danger" : "primary"}`}
+            type="button"
+            onClick={() => {
+              pushed.current = false;
+              onConfirmRef.current();
+            }}
+          >
+            {confirm}
+          </button>
         </div>
       </div>
     </div>
@@ -288,10 +328,10 @@ export function Modal({
 }
 
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
-  const src = brandIcon(name);
+  const src = brandIcon(name) || "/brand/logo-mark.png";
   return (
-    <span className="brand" style={src ? undefined : { background: color }} aria-hidden>
-      {src ? <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : (logo || name.slice(0, 1))}
+    <span className="brand" style={brandIcon(name) ? undefined : { background: "#eef3fb" }} aria-hidden>
+      <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }} />
     </span>
   );
 }

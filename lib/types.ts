@@ -140,6 +140,8 @@ export type Benefit = {
   copy?: { prefix: string; highlight: string; middle: string; priceText: string; suffix: string };
   steps?: string[];
   termsList?: string[];
+  source?: string;
+  asOf?: string;
 };
 
 export type DraftSub = {
@@ -188,6 +190,7 @@ export type AppState = {
   notices: Notice[];
   alerts: AlertPrefs;
   seeded: boolean;
+  kakaoId?: string;
 };
 
 export const DEMO_EMAIL = "demo@email.com";

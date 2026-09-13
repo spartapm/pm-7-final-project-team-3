@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { BENEFITS, benefitStatus } from "@/lib/catalog";
+import { benefitStatus } from "@/lib/catalog";
 import { daysUntil, won } from "@/lib/format";
+import { useBenefits } from "@/lib/use-benefits";
 import { leaksOf } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import type { BenefitKind } from "@/lib/types";
@@ -27,12 +28,13 @@ const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg:
 export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
+  const { benefits } = useBenefits();
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
   const leak = leaksOf(subscriptions);
   const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
   const list = kind === "card"
     ? []
-    : BENEFITS
+    : benefits
       .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
       .filter((b) => kind === "all" || b.kind === kind)
       .slice()
@@ -44,8 +46,8 @@ export default function BenefitsPage() {
         <div className="scroll tabbed">
           <div className="hero-dark">
             <img
-              className={`hero-logo ${leak.count > 0 ? "" : "inv"}`}
-              src={leak.count > 0 ? "/brand/benefit-banner.png" : "/brand/logo-banner.png"}
+              className="hero-logo"
+              src="/brand/logo-banner-white.png"
               alt=""
             />
             {leak.count > 0 ? (

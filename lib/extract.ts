@@ -41,8 +41,9 @@ export function upsertExtractItem(item: ExtractItem) {
   });
 }
 
-export function afterExtractPath(kind: AddKind, id: string) {
-  return kind === "event" ? `/events/new?from=result&i=${id}` : `/add/confirm?from=result&i=${id}`;
+export function afterExtractPath(kind: AddKind, from: string = "image") {
+  const src = from === "voice" ? "voice" : "image";
+  return `/add/result?kind=${kind}&from=${src}`;
 }
 
 export function emptySubItem(): ExtractSubItem {

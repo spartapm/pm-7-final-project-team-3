@@ -25,15 +25,17 @@ export function EventForm({
   existing,
   fromResult = false,
   extractId = null,
+  presetDate = null,
 }: {
   existing: LifeEvent | null;
   fromResult?: boolean;
   extractId?: string | null;
+  presetDate?: string | null;
 }) {
   const router = useRouter();
   const { upsertEvent, showToast, draft } = useStore();
   const startDefault = existing?.start || (fromResult ? "" : hmNow());
-  const dateDefault = existing?.date ?? (fromResult ? "" : ymd(new Date()));
+  const dateDefault = existing?.date ?? presetDate ?? (fromResult ? "" : ymd(new Date()));
   const endShift = !existing && !fromResult && startDefault
     ? shiftHm(dateDefault, startDefault, 60)
     : null;
@@ -47,7 +49,8 @@ export function EventForm({
   const [alertMin, setAlertMin] = useState(30);
   const [fromAi, setFromAi] = useState(fromResult);
   const [tried, setTried] = useState(false);
-  const [pick, setPick] = useState<null | "start" | "end">(null);
+  const [saving, setSaving] = useState(false);
+  const [pick, setPick] = useState<"start" | "end" | null>(null);
 
   useEffect(() => {
     if (existing) return;
@@ -105,6 +108,7 @@ export function EventForm({
   };
 
   const save = () => {
+    if (saving) return;
     setTried(true);
     if (!nameOk) {
       showToast("일정 이름은 필수 항목이에요.", "err");
@@ -127,6 +131,7 @@ export function EventForm({
       router.replace(`/add/result?kind=event&from=${cur?.from ?? "image"}`);
       return;
     }
+    setSaving(true);
     try {
       upsertEvent({
         id: existing?.id ?? uid("evt"),
@@ -140,8 +145,9 @@ export function EventForm({
         createdAt: existing?.createdAt ?? Date.now(),
         alertMin,
       });
-      router.replace("/events/saved");
+      router.replace(`/calendar?date=${date}`);
     } catch {
+      setSaving(false);
       showToast("저장에 실패했습니다. 잠시 후 다시 시도해주세요.", "err");
     }
   };
@@ -189,25 +195,15 @@ export function EventForm({
             </label>
             <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
               <span>시작</span>
-              <button type="button" className="when-chip" onClick={() => setPick("start")}>
-                {date ? dateLabel(date) : "날짜"}
+              <button type="button" className="when-bar" onClick={() => setPick("start")}>
+                {date ? `${dateLabel(date)}${allDay ? "" : (start ? `  ${timeLabel(start)}` : "")}` : "날짜"}
               </button>
-              {allDay ? null : (
-                <button type="button" className="when-chip" onClick={() => setPick("start")}>
-                  {start ? timeLabel(start) : "시간"}
-                </button>
-              )}
             </div>
             <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
               <span>종료</span>
-              <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("end")}>
-                {endD ? dateLabel(endD) : "날짜"}
+              <button type="button" className={`when-bar ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("end")}>
+                {endD ? `${dateLabel(endD)}${allDay ? "" : (end ? `  ${timeLabel(end)}` : "")}` : "날짜"}
               </button>
-              {allDay ? null : (
-                <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("end")}>
-                  {end ? timeLabel(end) : "시간"}
-                </button>
-              )}
             </div>
           </div>
           {!timeOk && date && endD ? <p className="err-msg">종료 시간은 시작 시간보다 늦어야 해요</p> : null}
@@ -224,7 +220,7 @@ export function EventForm({
               onChange={(e) => setMemo(e.target.value)}
             />
           </div>
-          <button className="btn primary" type="button" disabled={!canSave} style={{ opacity: canSave ? 1 : 0.4 }} onClick={save}>저장하기</button>
+          <button className="btn primary" type="button" disabled={saving} onClick={save}>저장하기</button>
         </div>
         <WhenPick
           open={pick !== null}

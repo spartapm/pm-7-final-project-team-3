@@ -22,7 +22,7 @@ import {
   signupCloud,
   type CloudStatus,
 } from "./cloud";
-import { ensureFuturePay, nextPayDate, uid } from "./format";
+import { daysUntil, ensureFuturePay, nextPayDate, uid } from "./format";
 import type {
   AlertPrefs,
   AppState,
@@ -59,11 +59,18 @@ function empty(): AppState {
     notices: [],
     alerts: defaultAlerts(),
     seeded: false,
+    kakaoId: "",
   };
 }
 
 function withNotices(s: AppState): AppState {
   const subscriptions = s.subscriptions.map((sub) => {
+    if (sub.status === "trial" && sub.trialEnds) {
+      const nextPay = daysUntil(sub.trialEnds) >= 0
+        ? sub.trialEnds
+        : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle);
+      return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
+    }
     const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle);
     return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
   });
@@ -136,12 +143,12 @@ type Store = AppState & {
   showToast: (message: string, kind?: ToastKind) => void;
   clearToast: () => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string; server?: boolean }>;
-  loginSocial: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  loginSocial: (email: string, extra?: { kakaoId?: string }) => Promise<{ ok: boolean; error?: string }>;
   signup: (email: string, password: string, marketing: boolean) => Promise<{ ok: boolean; error?: string }>;
   emailRegistered: (email: string) => Promise<boolean>;
   resetPassword: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
-  withdraw: () => void;
+  withdraw: () => Promise<void>;
   setOnboarded: (marketing: boolean) => void;
   setAlerts: (p: Partial<AlertPrefs>) => void;
   upsertSub: (s: Subscription) => void;
@@ -295,6 +302,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (cloud.mismatch) {
         return { ok: false, error: "가입되지 않았거나, 이메일 또는 비밀번호가 일치하지 않습니다." };
       }
+    } else if (cloud.status === "error") {
+      if (!local || local.password !== password) return { ok: false, server: true };
     } else if (!local || local.password !== password) {
       return { ok: false, error: "가입되지 않았거나, 이메일 또는 비밀번호가 일치하지 않습니다." };
     }
@@ -385,8 +394,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, [rememberUser, users]);
 
-  const loginSocial: Store["loginSocial"] = useCallback(async (email) => {
+  const loginSocial: Store["loginSocial"] = useCallback(async (email, extra) => {
     const trimmed = email.trim().toLowerCase();
+    const kakaoId = extra?.kakaoId ?? "";
     const local = users.find((u) => u.email.toLowerCase() === trimmed);
     const found = await findAccountByEmail(trimmed);
     if (found.account) {
@@ -405,6 +415,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         termsAccepted: true,
         privacyAccepted: true,
         marketingAccepted: Boolean(found.account.marketing),
+        kakaoId: kakaoId || stateRef.current.kakaoId || "",
       };
       const pulled = await pullAccount(found.account.id, next.alerts);
       if (pulled.status === "ok" && pulled.data) {
@@ -436,6 +447,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         loginAt: Date.now(),
         termsAccepted: true,
         privacyAccepted: true,
+        kakaoId: kakaoId || stateRef.current.kakaoId || "",
       }));
       skipPush.current = false;
       return { ok: true };
@@ -443,7 +455,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const password = `TeumSoc1!${uid("pw").slice(-6)}`;
     const created = await signup(trimmed, password, false);
-    if (created.ok) return created;
+    if (created.ok) {
+      if (kakaoId) setState((s) => ({ ...s, kakaoId }));
+      return created;
+    }
     rememberUser(trimmed, password);
     sessionStorage.removeItem(SESSION_FLAG);
     touch();
@@ -459,6 +474,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       privacyAccepted: true,
       marketingAccepted: false,
       alerts: defaultAlerts(),
+      kakaoId,
     }));
     skipPush.current = false;
     return { ok: true };
@@ -485,11 +501,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, loggedIn: false, loginAt: null }));
   }, []);
 
-  const withdraw = useCallback(() => {
+  const withdraw = useCallback(async () => {
     const id = stateRef.current.accountId;
     const mail = stateRef.current.email;
+    const kakaoId = stateRef.current.kakaoId ?? "";
     touch();
-    void deleteAccount(id);
+    if (kakaoId) {
+      try {
+        await fetch("/api/auth/kakao/unlink", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kakaoId }),
+        });
+      } catch { /* unlink best-effort */ }
+    }
+    await deleteAccount(id, mail);
     setUsers((u) => u.filter((x) => x.email !== mail || x.email === DEMO_EMAIL));
     skipPush.current = true;
     setState(empty());
@@ -511,6 +537,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const upsertSub = useCallback((sub: Subscription) => {
+    if (!Number.isFinite(sub.amount) || sub.amount < 0 || sub.amount > 99999999 || !Number.isInteger(sub.amount)) return;
     touch();
     setState((s) => {
       const exists = s.subscriptions.some((x) => x.id === sub.id);

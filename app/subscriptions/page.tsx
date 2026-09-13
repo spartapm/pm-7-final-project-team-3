@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, ChipScroller, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { BENEFITS, CATEGORIES, benefitStatus, isBundleLike } from "@/lib/catalog";
+import { CATEGORY_OPTIONS, benefitStatus, isBundleLike } from "@/lib/catalog";
 import { cycleEvery, dateLabel, dueBadge, dueLabel, won } from "@/lib/format";
 import { monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
+import { useBenefits } from "@/lib/use-benefits";
 import type { Category } from "@/lib/types";
 
 type SortKey = "pay" | "amountDesc" | "amountAsc" | "newest" | "status";
@@ -27,30 +28,41 @@ function statusRank(s: { paused: boolean; status: string }) {
 
 function catLabel(id: Category | "all") {
   if (id === "all") return "전체";
-  return CATEGORIES.find((c) => c.id === id)?.label ?? id;
+  return CATEGORY_OPTIONS.find((c) => c.id === id)?.label ?? id;
 }
 
 export default function SubListPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
+  const { benefits } = useBenefits();
   const [cat, setCat] = useState<Category | "all">("all");
   const [sort, setSort] = useState<SortKey>("pay");
   const [sortOpen, setSortOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem("teum:sub-list");
       if (raw) {
-        const saved = JSON.parse(raw) as { cat?: Category | "all"; sort?: SortKey };
+        const saved = JSON.parse(raw) as { cat?: Category | "all"; sort?: SortKey; y?: number };
         if (saved.cat) setCat(saved.cat);
         if (saved.sort) setSort(saved.sort);
+        requestAnimationFrame(() => {
+          if (scrollRef.current && typeof saved.y === "number") scrollRef.current.scrollTop = saved.y;
+        });
       }
     } catch { /* ignore */ }
     setReady(true);
   }, []);
   useEffect(() => {
     if (!ready) return;
-    sessionStorage.setItem("teum:sub-list", JSON.stringify({ cat, sort }));
+    const el = scrollRef.current;
+    const save = () => {
+      sessionStorage.setItem("teum:sub-list", JSON.stringify({ cat, sort, y: el?.scrollTop ?? 0 }));
+    };
+    save();
+    el?.addEventListener("scroll", save, { passive: true });
+    return () => el?.removeEventListener("scroll", save);
   }, [ready, cat, sort]);
   const live = subscriptions.filter((s) => s.status !== "ended");
   const list = live
@@ -64,10 +76,10 @@ export default function SubListPage() {
       return statusRank(a) - statusRank(b);
     });
   const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
-  const benefitCheck = BENEFITS.filter((b) => benefitStatus(b, live) !== "owned").length;
+  const benefitCheck = benefits.filter((b) => benefitStatus(b, live) !== "owned").length;
   const cats = useMemo(() => {
     const used = new Set(live.map((s) => s.category));
-    return [{ id: "all" as const, label: "전체" }, ...CATEGORIES.filter((c) => used.has(c.id))];
+    return [{ id: "all" as const, label: "전체" }, ...CATEGORY_OPTIONS.filter((c) => used.has(c.id))];
   }, [live]);
   const sortLabel = SORTS.find((s) => s.id === sort)?.label ?? "결제일 순";
 
@@ -79,7 +91,7 @@ export default function SubListPage() {
           <h1>내 구독</h1>
           <span style={{ width: 40 }} />
         </div>
-        <div className="scroll tabbed flush-x">
+        <div className="scroll tabbed flush-x" ref={scrollRef}>
           <div className="sub-hero">
             <div className="muted" style={{ color: "#2576f2", fontWeight: 700 }}>구독 관리</div>
             <h2 style={{ margin: "4px 0 6px", fontSize: 22, fontWeight: 800 }}>

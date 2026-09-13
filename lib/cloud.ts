@@ -384,12 +384,18 @@ export async function pushAccount(state: AppState): Promise<CloudStatus> {
   return "ok";
 }
 
-export async function deleteAccount(accountId: string): Promise<CloudStatus> {
+export async function deleteAccount(accountId: string, email?: string): Promise<CloudStatus> {
   const sb = getSupabase();
   if (!sb) return "off";
-  const res = await sb.from("accounts").delete().eq("id", accountId);
-  if (res.error) {
-    if (isMissingTable(res.error)) return "missing-table";
+  const id = accountId.trim();
+  const mail = email?.trim().toLowerCase() ?? "";
+  await sb.from("notices").delete().eq("account_id", id);
+  await sb.from("events").delete().eq("account_id", id);
+  await sb.from("subscriptions").delete().eq("account_id", id);
+  const byId = await sb.from("accounts").delete().eq("id", id);
+  if (mail) await sb.from("accounts").delete().eq("email", mail);
+  if (byId.error) {
+    if (isMissingTable(byId.error)) return "missing-table";
     return "error";
   }
   return "ok";

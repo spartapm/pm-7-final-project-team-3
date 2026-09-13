@@ -25,6 +25,8 @@ const SECTIONS = [
 export default function WithdrawPage() {
   const router = useRouter();
   const { hydrated, loggedIn, withdraw } = useStore();
+  const [acked, setAcked] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [sheet, setSheet] = useState<"reason" | "done" | null>(null);
   const [reason, setReason] = useState("");
   const [other, setOther] = useState("");
@@ -37,8 +39,10 @@ export default function WithdrawPage() {
   const otherOk = other.trim().length >= 1 && other.trim().length <= 100;
   const canLeave = reason !== "" && (reason !== "기타" || otherOk);
 
-  const finish = () => {
-    withdraw();
+  const finish = async () => {
+    setBusy(true);
+    await withdraw();
+    setBusy(false);
     router.replace("/login");
   };
 
@@ -65,8 +69,12 @@ export default function WithdrawPage() {
         </div>
         <p className="legal-brand">TRI:ON · 틈</p>
         <div className="withdraw-foot">
+          <label className="agree-row" style={{ marginBottom: 12 }}>
+            <input type="checkbox" checked={acked} onChange={(e) => setAcked(e.target.checked)} />
+            <span>데이터가 영구 삭제되고 복구할 수 없음을 확인했습니다.</span>
+          </label>
           <button className="btn ghost" type="button" onClick={() => router.push("/me")}>취소</button>
-          <button className="btn primary" type="button" onClick={() => setSheet("reason")}>탈퇴하기</button>
+          <button className="btn primary" type="button" disabled={!acked} onClick={() => setSheet("reason")}>탈퇴하기</button>
         </div>
       </div>
       {sheet === "reason" ? (
@@ -99,8 +107,13 @@ export default function WithdrawPage() {
               <button
                 className="btn primary"
                 type="button"
-                disabled={!canLeave}
-                onClick={() => { withdraw(); setSheet("done"); }}
+                disabled={!canLeave || busy}
+                onClick={async () => {
+                  setBusy(true);
+                  await withdraw();
+                  setBusy(false);
+                  setSheet("done");
+                }}
               >
                 탈퇴하기
               </button>

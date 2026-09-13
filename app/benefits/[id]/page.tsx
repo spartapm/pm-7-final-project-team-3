@@ -2,16 +2,18 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { BENEFITS } from "@/lib/catalog";
 import { won } from "@/lib/format";
+import { useBenefits } from "@/lib/use-benefits";
 import { useStore } from "@/lib/store";
 
 export default function BenefitDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { showToast } = useStore();
-  const b = BENEFITS.find((x) => x.id === id);
+  const { benefits } = useBenefits();
+  const b = benefits.find((x) => x.id === id) ?? BENEFITS.find((x) => x.id === id);
   const color = b?.brandColor || b?.providerColor || "#3182f6";
   const single = b?.priceSingle ?? 0;
   const bundle = b?.priceBundle ?? 0;
@@ -35,6 +37,12 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
               <div className="bnf-k">현재 선택한 결합상품</div>
               <div className="bnf-card" style={{ borderColor: color }}>
                 {off > 0 ? <span className="bnf-off">{won(off)} 할인</span> : null}
+                {(b.parent || b.perk) ? (
+                  <div className="bnf-icons">
+                    {b.parent ? <span className="a"><Brand name={b.parent.name} color={color} logo="" /></span> : null}
+                    {b.perk ? <span className="b"><Brand name={b.perk.name} color={color} logo="" /></span> : null}
+                  </div>
+                ) : null}
                 {b.copy ? (
                   <p className="bnf-copy">
                     {b.copy.prefix}
@@ -98,6 +106,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
                   </ul>
                 </>
               ) : null}
+              <p className="muted" style={{ fontSize: 12, margin: "12px 4px 0" }}>출처: {b.source ?? "각 사 공식 결합·멤버십 안내"} · 기준일 {b.asOf ?? "2026.09.01"} · 실제 요금은 공식 페이지 확인</p>
               <div style={{ height: 16 }} />
               <button
                 className="btn primary"

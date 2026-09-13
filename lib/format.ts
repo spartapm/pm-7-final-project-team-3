@@ -11,8 +11,15 @@ export function ymd(d: Date) {
 }
 
 export function parseYmd(s: string) {
-  const [y, m, d] = s.split("-").map(Number);
+  const [y, m, d] = String(s).split("-").map(Number);
   return new Date(y, (m || 1) - 1, d || 1);
+}
+
+export function isValidYmd(s: string | null | undefined) {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
 export function addMonths(date: Date, n: number) {
@@ -99,11 +106,12 @@ export function dueBadge(s: string) {
 }
 
 export function relativeTime(at: number) {
-  const mins = Math.round((Date.now() - at) / 60000);
-  if (mins < 60) return `${Math.max(1, mins)}분 전`;
-  const hours = Math.round(mins / 60);
+  const mins = Math.floor((Date.now() - at) / 60000);
+  if (mins < 1) return "방금";
+  if (mins < 60) return `${mins}분 전`;
+  const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}시간 전`;
-  const days = Math.round(hours / 24);
+  const days = Math.floor(hours / 24);
   if (days === 1) return "어제";
   return `${days}일 전`;
 }

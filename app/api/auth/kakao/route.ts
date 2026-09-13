@@ -11,5 +11,6 @@ export async function GET(req: Request) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
+  url.searchParams.set("prompt", "login");
   return NextResponse.redirect(url);
 }

@@ -29,7 +29,12 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
       <Gate>
         <PhoneShell>
           <div className="topbar"><Back href="/subscriptions" /><h1>구독 상세</h1><span style={{ width: 36 }} /></div>
-          <div className="scroll"><div className="empty">구독을 찾을 수 없어요.</div></div>
+          <div className="scroll tabbed"><div className="empty">구독을 찾을 수 없어요.</div>
+            <button className="btn primary" type="button" onClick={() => router.replace("/subscriptions")}>목록으로</button>
+            <div style={{ height: 8 }} />
+            <button className="btn ghost" type="button" onClick={() => router.replace("/home")}>홈으로</button>
+          </div>
+          <TabBar />
         </PhoneShell>
       </Gate>
     );

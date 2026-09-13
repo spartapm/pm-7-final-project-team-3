@@ -22,13 +22,13 @@ function AuthCallbackInner() {
     (async () => {
       try {
         const res = await fetch(ticket ? `/api/auth/session?ticket=${encodeURIComponent(ticket)}` : "/api/auth/session");
-        const json = await res.json() as { email?: string | null };
+        const json = await res.json() as { email?: string | null; kakaoId?: string };
         if (!json.email) {
           showToast("소셜 로그인에 실패했어요. 다시 시도해주세요.", "err");
           router.replace("/login?social=fail");
           return;
         }
-        const out = await loginSocial(json.email);
+        const out = await loginSocial(json.email, { kakaoId: json.kakaoId });
         await fetch("/api/auth/session", { method: "DELETE" });
         if (!out.ok) {
           showToast(out.error ?? "소셜 로그인에 실패했어요. 다시 시도해주세요.", "err");

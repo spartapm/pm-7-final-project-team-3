@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
@@ -22,8 +22,18 @@ function Inner() {
   const [phase, setPhase] = useState<Phase>("pick");
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const goneRef = useRef(false);
+  const filesRef = useRef(files);
+  filesRef.current = files;
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+
+  useEffect(() => () => {
+    goneRef.current = true;
+    abortRef.current?.abort();
+    filesRef.current.forEach((f) => URL.revokeObjectURL(f.url));
+  }, []);
 
   const pickFiles = (list: FileList | File[] | null) => {
     const incoming = Array.from(list ?? []);
@@ -43,6 +53,7 @@ function Inner() {
     if (files.length === 0) return;
     setPhase("wait");
     const ctrl = new AbortController();
+    abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);
     try {
       const images = await Promise.all(files.slice(0, MAX).map(async (f) => {
@@ -64,7 +75,7 @@ function Inner() {
         items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
         data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
       };
-      if (phaseRef.current !== "wait") return;
+      if (goneRef.current || phaseRef.current !== "wait") return;
       const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
       if (!json.ok || rows.length === 0) {
         setPhase("fail");
@@ -72,9 +83,9 @@ function Inner() {
       }
       const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
       beginExtract(kind, "image", items);
-      router.push(afterExtractPath(kind, items[0].id));
+      router.push(afterExtractPath(kind, "image"));
     } catch {
-      if (phaseRef.current !== "wait") return;
+      if (goneRef.current || phaseRef.current !== "wait") return;
       setPhase("fail");
     } finally {
       window.clearTimeout(timer);
@@ -86,6 +97,9 @@ function Inner() {
       <PhoneShell>
         <div className="topbar">
           <Back onClick={() => {
+            abortRef.current?.abort();
+            goneRef.current = true;
+            files.forEach((f) => URL.revokeObjectURL(f.url));
             setFiles([]);
             router.replace("/home");
           }} />
@@ -136,7 +150,11 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "pick"; setPhase("pick"); }}>
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => {
+              abortRef.current?.abort();
+              phaseRef.current = "pick";
+              setPhase("pick");
+            }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />

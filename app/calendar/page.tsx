@@ -1,25 +1,32 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { BENEFITS } from "@/lib/catalog";
-import { dateLabel, fullDateLabel, monthGrid, monthLabel, timeLabel, won, ymd } from "@/lib/format";
+import { dateLabel, fullDateLabel, isValidYmd, monthGrid, monthLabel, timeLabel, won, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { useBenefits } from "@/lib/use-benefits";
 import type { CalendarFilter } from "@/lib/types";
 
 type CalItem = { type: "sub" | "life" | "benefit"; title: string; right: string; href: string; color: string };
 
 function Inner() {
   const router = useRouter();
-  const q = useSearchParams().get("date");
+  const q = useSearchParams();
   const { subscriptions, events, showToast } = useStore();
+  const { benefits } = useBenefits();
   const now = new Date();
-  const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
+  const startDate = isValidYmd(q.get("date")) ? q.get("date")! : ymd(now);
+  const [cursor, setCursor] = useState(() => {
+    const d = startDate.split("-").map(Number);
+    return new Date(d[0], (d[1] || 1) - 1, 1);
+  });
   const [filter, setFilter] = useState<CalendarFilter>("all");
-  const [sel, setSel] = useState(q ?? ymd(now));
+  const [sel, setSel] = useState(startDate);
+  useEffect(() => { sessionStorage.setItem("teum:cal-date", sel); }, [sel]);
   const cells = monthGrid(cursor.getFullYear(), cursor.getMonth());
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
+  const todayKey = ymd(new Date());
 
   const itemsByDay = useMemo(() => {
     const map = new Map<string, CalItem[]>();
@@ -35,7 +42,7 @@ function Inner() {
           title: s.autoRenew ? `${s.name} 갱신` : `${s.name} 결제`,
           right: won(s.amount),
           href: `/subscriptions/${s.id}`,
-          color: "#3057F5",
+          color: s.nextPay === todayKey ? "#2F80ED" : "#E3EDFF",
         });
         if (s.trialEnds && s.trialEnds !== s.nextPay) {
           add(s.trialEnds, {
@@ -43,28 +50,28 @@ function Inner() {
             title: `${s.name} 무료체험 종료`,
             right: dateLabel(s.trialEnds),
             href: `/subscriptions/${s.id}`,
-            color: "#3057F5",
+            color: s.trialEnds === todayKey ? "#2F80ED" : "#E3EDFF",
           });
         }
       }
     }
     if (filter === "all") {
-      for (const b of BENEFITS) {
+      for (const b of benefits) {
         if (!b.expires) continue;
         add(b.expires, {
           type: "benefit",
           title: `${b.provider} 혜택 만료`,
           right: b.title,
           href: `/benefits/${b.id}`,
-          color: "#3057F5",
+          color: b.expires === todayKey ? "#2F80ED" : "#E3EDFF",
         });
       }
     }
     if (filter !== "sub") {
-      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
+      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: e.date === todayKey ? "#FF6B7A" : "#FF9CA6" });
     }
     return map;
-  }, [live, events, filter]);
+  }, [live, events, filter, todayKey, benefits]);
 
   const todayCount = (itemsByDay.get(ymd(now)) ?? []).length;
   const monthCount = [...itemsByDay.keys()].filter((k) => k.startsWith(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`)).reduce((a, k) => a + (itemsByDay.get(k)?.length ?? 0), 0);

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Gate, PhoneShell } from "@/components/ui";
 import { won } from "@/lib/format";
 
-type Saved = { id: string; name: string; amount: number; cycle: string; alert: boolean };
+type Saved = { id: string; name: string; amount: number; cycle?: string; months?: number; alert: boolean };
 
 export default function SavedSub() {
   const router = useRouter();
@@ -16,7 +16,9 @@ export default function SavedSub() {
       if (raw) setSaved(JSON.parse(raw) as Saved);
     } catch { /* ignore */ }
   }, []);
-  const cycle = saved?.cycle === "yearly" ? "1년" : saved?.cycle === "weekly" ? "1주" : "1개월";
+  const cycle = saved?.months
+    ? `${saved.months}개월`
+    : saved?.cycle === "yearly" ? "12개월" : saved?.cycle === "weekly" ? "1주" : "1개월";
   return (
     <Gate>
       <PhoneShell>

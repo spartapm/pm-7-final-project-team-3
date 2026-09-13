@@ -34,5 +34,5 @@ export async function GET(req: Request) {
   };
   const email = socialEmail(me.kakao_account?.email ?? "", me.id, "k");
   if (!email) return failLogin(req, "kakao-email");
-  return finishSocial(req, email, "kakao");
+  return finishSocial(req, email, "kakao", { kakaoId: me.id ? String(me.id) : "" });
 }

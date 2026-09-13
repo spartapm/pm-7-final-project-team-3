@@ -85,18 +85,19 @@ export async function readOAuthState(state: string) {
   return { redirectUri: data.r };
 }
 
-export async function makeSocialTicket(email: string, provider: "kakao" | "google") {
+export async function makeSocialTicket(email: string, provider: "kakao" | "google", extra?: { kakaoId?: string }) {
   return signBody(JSON.stringify({
     email,
     provider,
+    kakaoId: extra?.kakaoId ?? "",
     e: Date.now() + 3 * 60 * 1000,
   }));
 }
 
 export async function readSocialTicket(token: string) {
-  const data = await readSigned<{ email?: string; provider?: string; e?: number }>(token);
+  const data = await readSigned<{ email?: string; provider?: string; kakaoId?: string; e?: number }>(token);
   if (!data?.email || !data.e || data.e < Date.now()) return null;
-  return { email: data.email, provider: data.provider ?? "" };
+  return { email: data.email, provider: data.provider ?? "", kakaoId: data.kakaoId ?? "" };
 }
 
 export function socialEmail(raw: string, fallbackId: string | number | undefined, prefix: "k" | "g") {
@@ -113,11 +114,27 @@ export function failLogin(req: Request, reason: string) {
   return NextResponse.redirect(url);
 }
 
-export async function finishSocial(req: Request, email: string, provider: "kakao" | "google") {
-  const ticket = await makeSocialTicket(email, provider);
+export async function finishSocial(req: Request, email: string, provider: "kakao" | "google", extra?: { kakaoId?: string }) {
+  const ticket = await makeSocialTicket(email, provider, extra);
   const url = new URL("/auth/callback", authOrigin(req));
   url.searchParams.set("ticket", ticket);
   return NextResponse.redirect(url);
+}
+
+export async function unlinkKakao(kakaoId: string) {
+  const admin = process.env.KAKAO_ADMIN_KEY ?? "";
+  const key = admin || KAKAO_REST_API_KEY;
+  const id = kakaoId.trim();
+  if (!key || !id) return false;
+  const res = await fetch("https://kapi.kakao.com/v1/user/unlink", {
+    method: "POST",
+    headers: {
+      Authorization: `KakaoAK ${key}`,
+      "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+    },
+    body: new URLSearchParams({ target_id_type: "user_id", target_id: id }),
+  });
+  return res.ok;
 }
 
 export function tokenFailReason(provider: "kakao" | "google", raw: unknown) {

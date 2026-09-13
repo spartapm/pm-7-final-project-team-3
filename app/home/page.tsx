@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
-import { dateLabel, monthLabel, relativeTime, thisWeek, won } from "@/lib/format";
+import { dateLabel, monthLabel, relativeTime, thisWeek, won, ymd } from "@/lib/format";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 
@@ -42,19 +42,22 @@ export default function HomePage() {
   const unread = notices.filter((n) => !n.read).length;
   const marked = useMemo(() => {
     const map = new Map<string, string[]>();
+    const todayKey = ymd(new Date());
+    const subDot = (key: string) => (key === todayKey ? "#2F80ED" : "#E3EDFF");
+    const lifeDot = (key: string) => (key === todayKey ? "#FF6B7A" : "#FF9CA6");
     for (const s of live) {
       const arr = map.get(s.nextPay) ?? [];
-      arr.push("#3057F5");
+      arr.push(subDot(s.nextPay));
       map.set(s.nextPay, arr);
       if (s.trialEnds && s.trialEnds !== s.nextPay) {
         const t = map.get(s.trialEnds) ?? [];
-        t.push("#3057F5");
+        t.push(subDot(s.trialEnds));
         map.set(s.trialEnds, t);
       }
     }
     for (const e of events) {
       const arr = map.get(e.date) ?? [];
-      arr.push("#FF6B7F");
+      arr.push(lifeDot(e.date));
       map.set(e.date, arr);
     }
     return map;
@@ -101,11 +104,11 @@ export default function HomePage() {
             <div className="mo">{monthLabel(new Date())}</div>
             <div className="week">
               {week.map((d) => (
-                <button key={d.key} type="button" className={day === d.key || (!day && d.today) ? "on" : ""} onClick={() => { setDay(d.key); router.push(`/calendar?date=${d.key}`); }}>
+                <button key={d.key} type="button" className={`${day === d.key ? "on" : ""} ${d.today ? "today" : ""}`} onClick={() => { setDay(d.key); router.push(`/calendar?date=${d.key}`); }}>
                   <span>{d.dow}</span>
                   <span className="num">{d.date}</span>
                   <span className="marks">
-                    {(marked.get(d.key) ?? []).slice(0, 3).map((c, i) => <i key={i} style={{ background: c }} />)}
+                    {Array.from(new Set(marked.get(d.key) ?? [])).slice(0, 2).map((c, i) => <i key={i} style={{ background: c }} />)}
                   </span>
                 </button>
               ))}
@@ -154,11 +157,11 @@ export default function HomePage() {
               ))}
             </div>
 
-            <button className="btn primary inspect-cta" type="button" onClick={() => router.push("/inspect")}>
-              구독비 점검받기
-            </button>
           </div>
         </div>
+        <button className="btn primary inspect-cta" type="button" onClick={() => router.push("/inspect")}>
+          구독비 점검받기
+        </button>
         <Fab />
         <TabBar />
         {sheet ? (
@@ -176,13 +179,22 @@ export default function HomePage() {
                   <p className="muted">모든 알림을 확인했어요</p>
                 </div>
               ) : notices.filter((n) => !n.read).map((n) => (
-                <div key={n.id} className={`notice-item ${n.read ? "" : "unread"}`}>
+                <div key={n.id} className={`notice-item ${n.read ? "" : "unread"}`} role="button" tabIndex={0} onClick={() => {
+                    markNotice(n.id);
+                    if (n.id === "nt_invite" || n.href.includes("invite")) {
+                      setSheet(false);
+                      setInvite(true);
+                      return;
+                    }
+                    router.push(n.href);
+                  }} onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
                   <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : (n.brand ?? "틈").slice(0, 1)} />
                   <div className="grow">
                     <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
                     <p>{n.body}</p>
                   </div>
-                  <button className="mini" type="button" onClick={() => {
+                  <button className="mini" type="button" onClick={(e) => {
+                    e.stopPropagation();
                     markNotice(n.id);
                     if (n.id === "nt_invite" || n.href.includes("invite")) {
                       setSheet(false);

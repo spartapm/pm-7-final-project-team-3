@@ -22,6 +22,8 @@ function Inner() {
   const [text, setText] = useState("");
   const [sec, setSec] = useState(0);
   const recRef = useRef<{ stop: () => void } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const goneRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
@@ -37,6 +39,8 @@ function Inner() {
   };
 
   useEffect(() => () => {
+    goneRef.current = true;
+    abortRef.current?.abort();
     recRef.current?.stop();
     stream?.getTracks().forEach((t) => t.stop());
   }, [stream]);
@@ -142,6 +146,7 @@ function Inner() {
     stopMic();
     setPhase("wait");
     const ctrl = new AbortController();
+    abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);
     try {
       const res = await fetch("/api/analyze", {
@@ -155,7 +160,7 @@ function Inner() {
         items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
         data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
       };
-      if (phaseRef.current !== "wait") return;
+      if (goneRef.current || phaseRef.current !== "wait") return;
       const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
       if (!json.ok || rows.length === 0) {
         setPhase("fail");
@@ -163,9 +168,9 @@ function Inner() {
       }
       const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
       beginExtract(kind, "voice", items);
-      router.push(afterExtractPath(kind, items[0].id));
+      router.push(afterExtractPath(kind, "voice"));
     } catch {
-      if (phaseRef.current !== "wait") return;
+      if (goneRef.current || phaseRef.current !== "wait") return;
       setPhase("fail");
     } finally {
       window.clearTimeout(timer);
@@ -191,6 +196,7 @@ function Inner() {
               return;
             }
             if (phase === "wait") {
+              abortRef.current?.abort();
               phaseRef.current = "idle";
               setPhase("idle");
               return;
