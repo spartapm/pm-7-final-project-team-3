@@ -20,7 +20,11 @@ function Inner() {
     }).catch(() => undefined);
   }, []);
   const nameOf = (id: number | null) => providers.find((p) => p.provider_id === id)?.provider_name ?? "-";
-  const solo = useMemo(() => products.filter((p) => p.is_active || type !== "solo"), [products, type]);
+  const wonOf = (n: number | string | null | undefined) => `${(Number(n) || 0).toLocaleString("ko-KR")}원`;
+  const solo = useMemo(
+    () => products.filter((p) => (p.product_type || "단독") !== "결합" && (p.is_active || type !== "solo")),
+    [products, type],
+  );
   return (
     <>
       <div className="adm-head">
@@ -42,7 +46,7 @@ function Inner() {
                   <td><Link href={`/admin/products/new?solo=${p.product_id}`}>{p.product_name}</Link></td>
                   <td>{nameOf(p.provider_id)}</td>
                   <td>{p.category}</td>
-                  <td>{p.price_standard.toLocaleString("ko-KR")}원</td>
+                  <td>{wonOf(p.price_standard)}</td>
                   <td>{p.is_active ? "공개" : "임시"}</td>
                 </tr>
               ))}
@@ -61,7 +65,7 @@ function Inner() {
                   <td>{b.bundle_id}</td>
                   <td><Link href={`/admin/products/new?bundle=${b.bundle_id}`}>{b.bundle_name}</Link></td>
                   <td>{b.card_title}</td>
-                  <td>{b.price_bundled.toLocaleString("ko-KR")}원</td>
+                  <td>{wonOf(b.price_bundled)}</td>
                   <td>{items.filter((i) => i.bundle_id === b.bundle_id).map((i) => i.product?.product_name).filter(Boolean).join(" · ")}</td>
                   <td>{b.is_active ? "공개" : "임시"}</td>
                 </tr>
