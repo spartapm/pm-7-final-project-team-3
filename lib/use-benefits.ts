@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { findBrand } from "@/lib/brands";
 import { BENEFITS, categoryFromAdmin, type ServiceHit } from "@/lib/catalog";
 import type { BundleProduct } from "@/lib/bundles";
-import type { ProductRow } from "@/lib/catalog-db";
+import type { ProductRow, ProviderRow } from "@/lib/catalog-db";
+import { setCatalogIcons } from "@/lib/catalog-icons";
 import type { Benefit } from "@/lib/types";
 
 function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
@@ -12,13 +13,14 @@ function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
     .filter((p) => (p.product_type || "단독") !== "결합" && p.is_active !== false)
     .map((p) => {
       const brand = findBrand(p.product_name);
+      const logo = p.icon || p.provider?.logo_url || "";
       return {
         id: `p-${p.product_id}`,
         name: p.product_name,
         category: categoryFromAdmin(p.category) || brand?.category || "other",
         amount: Number(p.price_standard) || brand?.amount || 0,
         color: p.provider?.brand_color || brand?.color || "#2576f2",
-        logo: "",
+        logo,
       };
     });
 }
@@ -42,11 +44,15 @@ export function useBenefits() {
     let live = true;
     fetch("/api/catalog")
       .then((r) => r.json())
-      .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; source?: "code" | "db" }) => {
+      .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db" }) => {
         if (!live) return;
         if (d.benefits?.length) setItems(d.benefits);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
+        setCatalogIcons([
+          ...(d.products ?? []).map((p) => ({ name: p.product_name, icon: p.icon || p.provider?.logo_url })),
+          ...(d.providers ?? []).map((p) => ({ name: p.provider_name, icon: p.logo_url })),
+        ]);
         if (d.source === "db") setSource("db");
         setLoaded(true);
       })

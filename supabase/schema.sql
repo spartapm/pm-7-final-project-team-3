@@ -237,6 +237,7 @@ create table if not exists public.product (
   category text not null default '',
   product_type text not null default '단독',
   price_standard int not null default 0,
+  icon text not null default '',
   official_url text not null default '',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -306,6 +307,8 @@ grant all on public.bundle_product to anon, authenticated, service_role;
 grant all on public.bundle_item to anon, authenticated, service_role;
 grant all on public.product_promotion to anon, authenticated, service_role;
 grant usage, select on all sequences in schema public to anon, authenticated, service_role;
+
+alter table public.product add column if not exists icon text;
 
 create unique index if not exists product_provider_name_idx on public.product (provider_id, product_name);
 create unique index if not exists bundle_product_name_idx on public.bundle_product (bundle_name);

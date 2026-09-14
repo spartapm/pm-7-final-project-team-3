@@ -70,6 +70,7 @@ function Inner() {
         setCategory(p.category || "커머스 멤버십");
         setPrice(String(p.price_standard || ""));
         setUrl(p.official_url ?? "");
+        setIcon(isImageIcon(p.icon) ? (p.icon ?? "") : "");
         setActive(p.is_active);
       }
     }).catch(() => undefined);
@@ -97,6 +98,7 @@ function Inner() {
           product_type: "단독",
           price_standard: bundled,
           official_url: url,
+          icon,
           is_active: publish,
         };
         const res = await fetch("/api/admin/products", {
@@ -228,6 +230,36 @@ function Inner() {
               <span>원</span>
             </div>
           </div>
+          {mode === "solo" ? (
+            <div className="adm-field">
+              <label>상품 아이콘</label>
+              <p style={{ margin: 0, fontSize: 12, color: "#667085" }}>앱 구독 목록·검색에 쓰입니다. 없으면 이름과 맞는 기존 브랜드 아이콘, 그것도 없으면 틈 로고가 나갑니다.</p>
+              <div className="adm-icon-pick">
+                <img src={bundleIconSrc(icon)} alt="" />
+                <div>
+                  <label className="adm-btn" style={{ display: "inline-flex", alignItems: "center", height: 40 }}>
+                    사진 첨부
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file) return;
+                        void fileToBundleIcon(file).then(setIcon).catch((err: unknown) => {
+                          setErr(err instanceof Error ? err.message : "이미지를 읽지 못했어요.");
+                        });
+                      }}
+                    />
+                  </label>
+                  {icon ? (
+                    <button className="adm-btn" type="button" onClick={() => setIcon("")}>사진 빼기</button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
           {mode === "bundle" ? (
             <div className="adm-sum" style={{ marginBottom: 14 }}>
               <div>정상 합계 <span className="right">{sum.toLocaleString("ko-KR")}원</span></div>

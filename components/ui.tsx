@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { brandIcon } from "@/lib/brands";
+import { isImageIcon } from "@/lib/bundle-icon";
+import { catalogIcon } from "@/lib/catalog-icons";
 import { useStore } from "@/lib/store";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
@@ -328,9 +330,10 @@ export function Modal({
 }
 
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
-  const src = brandIcon(name) || "/brand/logo-mark.png";
+  const src = (isImageIcon(logo) ? logo : "") || catalogIcon(name) || brandIcon(name) || "/brand/logo-mark.png";
+  const custom = src !== "/brand/logo-mark.png";
   return (
-    <span className="brand" style={brandIcon(name) ? undefined : { background: "#eef3fb" }} aria-hidden>
+    <span className="brand" style={custom ? undefined : { background: "#eef3fb" }} aria-hidden>
       <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }} />
     </span>
   );

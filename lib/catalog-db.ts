@@ -19,6 +19,7 @@ export type ProductRow = {
   category: string;
   product_type: string;
   price_standard: number;
+  icon?: string;
   official_url: string;
   is_active: boolean;
   provider?: ProviderRow | null;

@@ -10,6 +10,7 @@ import { emptyDraft, searchServices, type ServiceHit } from "@/lib/catalog";
 import { useBenefits } from "@/lib/use-benefits";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
 import { dateLabel, uid, ymd } from "@/lib/format";
+import { catalogIcon } from "@/lib/catalog-icons";
 import { useStore } from "@/lib/store";
 import type { BillingCycle, DraftSub, ExtractSubItem, Subscription } from "@/lib/types";
 
@@ -192,7 +193,7 @@ export function SubForm({
         unused: existing?.unused ?? false,
         memo: local.memo,
         color,
-        logo: "",
+        logo: catalogIcon(local.name.trim()) || "",
         trialEnds,
         paused: local.status === "paused",
         alertDays: alertOn ? (local.alertDays || 3) : 0,

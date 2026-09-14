@@ -10,7 +10,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sql = fs.readFileSync(path.join(root, "supabase/schema.sql"), "utf8");
+const sqlPath = process.argv[2]
+  ? path.resolve(process.argv[2])
+  : path.join(root, "supabase/schema.sql");
+const sql = fs.readFileSync(sqlPath, "utf8");
 
 function loadEnv() {
   const envPath = path.join(root, ".env.local");
