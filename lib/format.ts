@@ -48,7 +48,7 @@ export function subscriptionPayDates(
   fromKey: string,
   toKey: string,
 ) {
-  if (!sub.nextPay || fromKey > toKey) return [] as string[];
+  if (!isValidYmd(sub.nextPay) || fromKey > toKey) return [] as string[];
   const out: string[] = [];
   if (sub.cycle === "weekly") {
     const d = parseYmd(sub.nextPay);
@@ -95,7 +95,7 @@ export function nextPayDate(payDay: number, from = new Date()) {
 }
 
 export function ensureFuturePay(nextPay: string, payDay: number, cycle: string, everyMonths?: number) {
-  if (!nextPay) return nextPayDate(payDay);
+  if (!isValidYmd(nextPay)) return nextPayDate(payDay);
   if (daysUntil(nextPay) >= 0) return nextPay;
   if (cycle === "weekly") {
     const d = parseYmd(nextPay);
@@ -154,6 +154,7 @@ export function dueLabel(s: string) {
 }
 
 export function dueBadge(s: string) {
+  if (!isValidYmd(s)) return "없음";
   const n = daysUntil(s);
   if (n === 0) return "D-Day";
   if (n > 0) return `D-${n}`;

@@ -76,8 +76,8 @@ export function kindOf(category: string): BenefitKind {
   return "commerce";
 }
 
-function splitLines(raw: string) {
-  return raw.split(/\r?\n/).map((s) => s.replace(/^\s*[-•\d.]+\s*/, "").trim()).filter(Boolean);
+function splitLines(raw: unknown) {
+  return String(raw ?? "").split(/\r?\n/).map((s) => s.replace(/^\s*[-•\d.]+\s*/, "").trim()).filter(Boolean);
 }
 
 function money(n: unknown) {
@@ -91,21 +91,22 @@ export function bundleToBenefit(
 ): Benefit {
   const primary = items.find((i) => i.item_role === "PRIMARY") ?? items[0];
   const perk = items.find((i) => i.item_role === "BENEFIT") ?? items[1];
+  const category = String(b.category ?? "");
   const provider = primary?.product?.provider?.provider_name
-    || b.category.replace(" 결합", "").replace(" 멤버십", "")
+    || category.replace(" 결합", "").replace(" 멤버십", "")
     || "틈";
   const color = primary?.product?.provider?.brand_color
     || PROVIDER_COLOR[provider]
     || "#2576f2";
   const solo = items.reduce((sum, i) => sum + money(i.product?.price_standard), 0);
-  const title = b.card_title || b.bundle_name;
-  const body = b.card_body || "";
+  const title = String(b.card_title || b.bundle_name || "");
+  const body = String(b.card_body || "");
   const steps = splitLines(b.apply_method);
   const terms = splitLines(b.requirement);
   const expires = b.expires && /^\d{4}-\d{2}-\d{2}/.test(b.expires) ? b.expires.slice(0, 10) : undefined;
   return {
     id: `b-${b.bundle_id}`,
-    kind: kindOf(b.category),
+    kind: kindOf(category),
     provider,
     providerColor: color,
     title,
@@ -159,6 +160,7 @@ export async function loadCatalog() {
   const sb = getSupabase();
   if (!sb) return { status: "off" as const, ...EMPTY_CATALOG };
 
+  try {
   const [providers, products, bundles, items, promotions] = await Promise.all([
     sb.from("provider").select("*").order("provider_id"),
     sb.from("product").select("*").order("product_id"),
@@ -200,4 +202,7 @@ export async function loadCatalog() {
     benefits,
     bundleProducts,
   };
+  } catch {
+    return { status: "error" as const, ...EMPTY_CATALOG };
+  }
 }

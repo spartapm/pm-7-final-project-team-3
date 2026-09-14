@@ -15,6 +15,6 @@ export function upcoming(subs: { nextPay: string; status: string; paused: boolea
   return subs
     .filter((s) => s.status !== "ended" && !s.paused)
     .slice()
-    .sort((a, b) => a.nextPay.localeCompare(b.nextPay))
+    .sort((a, b) => String(a.nextPay ?? "").localeCompare(String(b.nextPay ?? "")))
     .slice(0, n);
 }

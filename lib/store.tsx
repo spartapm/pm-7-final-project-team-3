@@ -63,18 +63,73 @@ function empty(): AppState {
   };
 }
 
+function cleanSub(raw: unknown): Subscription | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw as Subscription;
+  const id = String(s.id ?? "");
+  if (!id) return null;
+  const cycle = s.cycle === "yearly" || s.cycle === "weekly" ? s.cycle : "monthly";
+  const status = s.status === "trial" || s.status === "paused" || s.status === "ended" ? s.status : "active";
+  return {
+    ...s,
+    id,
+    name: String(s.name ?? ""),
+    plan: String(s.plan ?? ""),
+    amount: Number(s.amount) || 0,
+    cycle,
+    status,
+    payDay: Number(s.payDay) || 1,
+    nextPay: String(s.nextPay ?? ""),
+    autoRenew: Boolean(s.autoRenew),
+    unused: Boolean(s.unused),
+    memo: String(s.memo ?? ""),
+    color: String(s.color ?? "#2576f2"),
+    logo: String(s.logo ?? ""),
+    trialEnds: s.trialEnds ? String(s.trialEnds) : null,
+    paused: Boolean(s.paused) || status === "paused",
+    alertDays: Number(s.alertDays) || 0,
+    createdAt: Number(s.createdAt) || 0,
+  };
+}
+
+function cleanEvent(raw: unknown): LifeEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const e = raw as LifeEvent;
+  const id = String(e.id ?? "");
+  if (!id) return null;
+  return {
+    ...e,
+    id,
+    title: String(e.title ?? ""),
+    date: String(e.date ?? ""),
+    start: String(e.start ?? ""),
+    end: String(e.end ?? ""),
+    allDay: Boolean(e.allDay),
+    memo: String(e.memo ?? ""),
+    createdAt: Number(e.createdAt) || 0,
+    endDate: e.endDate ? String(e.endDate) : undefined,
+  };
+}
+
 function withNotices(s: AppState): AppState {
-  const subscriptions = s.subscriptions.map((sub) => {
-    if (sub.status === "trial" && sub.trialEnds) {
-      const nextPay = daysUntil(sub.trialEnds) >= 0
-        ? sub.trialEnds
-        : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle, sub.everyMonths);
+  const subscriptions = (Array.isArray(s.subscriptions) ? s.subscriptions : [])
+    .map(cleanSub)
+    .filter((x): x is Subscription => Boolean(x))
+    .map((sub) => {
+      if (sub.status === "trial" && sub.trialEnds) {
+        const nextPay = daysUntil(sub.trialEnds) >= 0
+          ? sub.trialEnds
+          : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle, sub.everyMonths);
+        return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
+      }
+      const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle, sub.everyMonths);
       return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
-    }
-    const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle, sub.everyMonths);
-    return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
-  });
-  return { ...s, subscriptions, notices: mergePayNotices(subscriptions, s.alerts, s.notices, s.events) };
+    });
+  const events = (Array.isArray(s.events) ? s.events : [])
+    .map(cleanEvent)
+    .filter((x): x is LifeEvent => Boolean(x));
+  const notices = (Array.isArray(s.notices) ? s.notices : []).filter((n) => n && typeof n === "object" && n.id);
+  return { ...s, subscriptions, events, notices: mergePayNotices(subscriptions, s.alerts, notices, events) };
 }
 
 function fillDemoGaps(
@@ -209,7 +264,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const rememberUser = useCallback((email: string, password: string) => {
     const key = email.trim().toLowerCase();
     setUsers((list) => {
-      const i = list.findIndex((u) => u.email.toLowerCase() === key);
+      const i = list.findIndex((u) => String(u.email ?? "").toLowerCase() === key);
       if (i >= 0) {
         const next = list.slice();
         next[i] = { email: list[i].email, password };
@@ -297,7 +352,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     else if (cloud.status === "error") setCloudStatus("error");
     else setCloudStatus("off");
 
-    const local = users.find((u) => u.email.toLowerCase() === trimmed);
+    const local = users.find((u) => String(u.email ?? "").toLowerCase() === trimmed);
     if (cloud.status === "ok") {
       if (cloud.mismatch) {
         return { ok: false, error: "가입되지 않았거나, 이메일 또는 비밀번호가 일치하지 않습니다." };
@@ -363,7 +418,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const signup: Store["signup"] = useCallback(async (email, password, marketing) => {
     const trimmed = email.trim().toLowerCase();
-    const localExists = users.some((u) => u.email.toLowerCase() === trimmed);
+    const localExists = users.some((u) => String(u.email ?? "").toLowerCase() === trimmed);
     if (localExists) return { ok: false, error: "이미 가입된 이메일입니다." };
     const accountId = uid("acc");
     const alerts = { ...defaultAlerts(), marketing };
@@ -397,7 +452,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const loginSocial: Store["loginSocial"] = useCallback(async (email, extra) => {
     const trimmed = email.trim().toLowerCase();
     const kakaoId = extra?.kakaoId ?? "";
-    const local = users.find((u) => u.email.toLowerCase() === trimmed);
+    const local = users.find((u) => String(u.email ?? "").toLowerCase() === trimmed);
     const found = await findAccountByEmail(trimmed);
     if (found.account) {
       const password = `TeumSoc1!${uid("pw").slice(-6)}`;
@@ -484,7 +539,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const trimmed = email.trim().toLowerCase();
     const cloud = await emailOnCloud(trimmed);
     if (cloud.status === "ok") return Boolean(cloud.found);
-    return users.some((u) => u.email.toLowerCase() === trimmed);
+    return users.some((u) => String(u.email ?? "").toLowerCase() === trimmed);
   }, [users]);
 
   const resetPassword: Store["resetPassword"] = useCallback(async (email, password) => {

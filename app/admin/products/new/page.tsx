@@ -44,15 +44,15 @@ function Inner() {
         if (!b) return;
         setMode("bundle");
         setBundleId(b.bundle_id);
-        setName(b.bundle_name);
+        setName(b.bundle_name ?? "");
         setCategory(b.category || "커머스 멤버십");
-        setTitle(b.card_title);
-        setBody(b.card_body);
+        setTitle(b.card_title ?? "");
+        setBody(b.card_body ?? "");
         setIcon(isImageIcon(b.icon) ? b.icon : "");
         setPrice(String(b.price_bundled || ""));
-        setApply(b.apply_method);
-        setReq(b.requirement);
-        setUrl(b.official_url);
+        setApply(b.apply_method ?? "");
+        setReq(b.requirement ?? "");
+        setUrl(b.official_url ?? "");
         setExpires(b.expires ? b.expires.slice(0, 10) : "");
         setActive(b.is_active);
         setPicked((d.items ?? []).filter((i) => String(i.bundle_id) === editBundle).map((i) => ({
@@ -65,11 +65,11 @@ function Inner() {
         if (!p) return;
         setMode("solo");
         setProductId(p.product_id);
-        setName(p.product_name);
+        setName(p.product_name ?? "");
         setProviderId(p.provider_id ? String(p.provider_id) : "");
-        setCategory(p.category);
+        setCategory(p.category || "커머스 멤버십");
         setPrice(String(p.price_standard || ""));
-        setUrl(p.official_url);
+        setUrl(p.official_url ?? "");
         setActive(p.is_active);
       }
     }).catch(() => undefined);
