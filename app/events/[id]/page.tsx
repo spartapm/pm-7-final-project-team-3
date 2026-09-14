@@ -24,27 +24,29 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
     );
   }
   const done = ev.date < ymd(new Date());
-  const when = ev.allDay
-    ? `${dateLabel(ev.date)} · 하루 종일`
-    : `${dateLabel(ev.date)} ${timeLabel(ev.start)} ~ ${dateLabel(ev.endDate || ev.date)} ${timeLabel(ev.end)}`;
+  const startText = ev.allDay ? "-" : `${dateLabel(ev.date)} ${timeLabel(ev.start)}`;
+  const endText = ev.allDay ? "-" : `${dateLabel(ev.endDate || ev.date)} ${timeLabel(ev.end)}`;
   return (
     <Gate>
       <PhoneShell>
         <div className="topbar"><Back href="/calendar" /><h1>일정 상세</h1><span style={{ width: 36 }} /></div>
         <div className="scroll">
-          <div className="card">
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <h2 style={{ margin: 0, flex: 1, fontSize: 22, fontWeight: 800 }}>{ev.title}</h2>
-              {done ? <span className="pill">완료</span> : null}
+          <div className="card sub-head" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="brand" aria-hidden>
+              <img src="/nav/cal-on.png" alt="" />
+            </span>
+            <div className="grow">
+              <div style={{ fontWeight: 800, fontSize: 18 }}>{ev.title}</div>
+              <div className="muted">개인 일정</div>
             </div>
-            <div className="row" style={{ marginTop: 16 }}>
-              <span className="muted">일시</span>
-              <span className="grow" style={{ textAlign: "right", fontWeight: 700 }}>{when}</span>
-            </div>
-            <div className="row">
-              <span className="muted">알림</span>
-              <span className="grow" style={{ textAlign: "right", fontWeight: 700 }}>30분 전</span>
-            </div>
+            <span className={`sub-badge ${done ? "on" : "pause"}`}>{done ? "완료" : "미완료"}</span>
+          </div>
+          <div className="card" style={{ marginTop: 12 }}>
+            <Row k="날짜" v={dateLabel(ev.date)} />
+            <Row k="하루 종일" v={ev.allDay ? "켜짐" : "꺼짐"} />
+            <Row k="시작" v={startText} />
+            <Row k="종료" v={endText} />
+            <Row k="캘린더" v="개인 캘린더" />
           </div>
           <img className="alert-banner" src="/banners/alarm.png" alt="일정 30분 전에 알려드려요" />
           <div className="card" style={{ marginTop: 12 }}>
@@ -72,5 +74,14 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         ) : null}
       </PhoneShell>
     </Gate>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="row">
+      <span className="muted">{k}</span>
+      <span className="grow" style={{ textAlign: "right", fontWeight: 700 }}>{v}</span>
+    </div>
   );
 }

@@ -45,8 +45,8 @@ export async function POST(req: Request) {
 
   const year = new Date().getFullYear();
   const eventPrompt = spoken
-    ? `다음 말에서 일정을 모두 찾아 JSON 배열만 답하세요. 올해는 ${year}년입니다. 월·일이 있으면 date를 ${year}-MM-DD로 채우세요. 시각은 24시간 HH:MM. 없는 값만 빈 문자열. 추측으로 일정을 만들지 마세요. [{"title":"","date":"YYYY-MM-DD","endDate":"","start":"HH:MM","end":"HH:MM"}]\n\n사용자 발화:\n`
-    : `이 이미지들에서 일정을 모두 찾아 JSON 배열만 답하세요. 올해는 ${year}년입니다. 월·일이 있으면 date를 ${year}-MM-DD로 채우세요. 시각은 24시간 HH:MM. 없는 값만 빈 문자열. 추측으로 일정을 만들지 마세요. [{"title":"","date":"YYYY-MM-DD","endDate":"","start":"HH:MM","end":"HH:MM"}]`;
+    ? `다음 말에서 캘린더 일정만 찾아 JSON 배열만 답하세요. 구독·결제·요금제 이야기는 일정이 아니므로 빈 배열 []만 답하세요. 올해는 ${year}년입니다. 월·일이 있으면 date를 ${year}-MM-DD로 채우세요. 시각은 24시간 HH:MM. 없는 값만 빈 문자열. 추측으로 일정을 만들지 마세요. 하루 종일이면 start와 end는 빈 문자열로 두세요. [{"title":"","date":"YYYY-MM-DD","endDate":"","start":"HH:MM","end":"HH:MM"}]\n\n사용자 발화:\n`
+    : `이 이미지가 구독 영수증, 결제 내역, 구독 앱 화면, 요금제 안내라면 빈 배열 []만 답하세요. 캘린더에 넣을 일정(회의, 약속, 공연, 예약, 수업, 행사)만 추출하세요. 서비스명·요금·결제일은 일정이 아닙니다. 올해는 ${year}년입니다. 월·일이 있으면 date를 ${year}-MM-DD로 채우세요. 시각은 24시간 HH:MM. 없는 값만 빈 문자열. 추측으로 일정을 만들지 마세요. 하루 종일이면 start와 end는 빈 문자열로 두세요. [{"title":"","date":"YYYY-MM-DD","endDate":"","start":"HH:MM","end":"HH:MM"}]`;
   const subPrompt = spoken
     ? '다음 말에서 구독을 모두 찾아 JSON 배열만 답하세요. 결제일이 불명확하면 day는 null, 금액이 불명확하면 amount는 빈 문자열. 추측하지 마세요. [{"name":"","plan":"","amount":"","day":1}]\n\n사용자 발화:\n'
     : '이 이미지들에서 구독을 모두 찾아 JSON 배열만 답하세요. 결제일이 불명확하면 day는 null, 금액이 불명확하면 amount는 빈 문자열. 추측하지 마세요. [{"name":"","plan":"","amount":"","day":1}]';
@@ -92,5 +92,14 @@ export async function POST(req: Request) {
   const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
   const items = parseItems(text);
   if (!items || items.length === 0) return NextResponse.json({ ok: false, error: "parse" }, { status: 422 });
-  return NextResponse.json({ ok: true, items, data: items[0] });
+  const cleaned = body.kind === "event"
+    ? items.filter((it: { title?: string; name?: string; date?: string; amount?: string; day?: number | null; plan?: string }) => {
+        if (it.amount || it.plan || (it.day != null && !it.date && !it.title)) return false;
+        const title = String(it.title || it.name || "").trim();
+        const date = String(it.date || "").trim();
+        return Boolean(title || date);
+      })
+    : items;
+  if (cleaned.length === 0) return NextResponse.json({ ok: false, error: "parse" }, { status: 422 });
+  return NextResponse.json({ ok: true, items: cleaned, data: cleaned[0] });
 }

@@ -133,7 +133,7 @@ function Inner() {
             endDate: ev.endDate || ev.date,
             start: ev.start || "00:00",
             end: ev.end || "23:59",
-            allDay: ev.allDay || !ev.start,
+            allDay: Boolean(ev.allDay),
             memo: ev.memo.slice(0, 50),
             createdAt: Date.now(),
             alertMin: ev.alertMin,

@@ -18,7 +18,7 @@ function stampOf(day: string, ids: string[]) {
 export default function InspectPage() {
   const router = useRouter();
   const { subscriptions, showToast } = useStore();
-  const { benefits, loaded } = useBenefits();
+  const { benefits, bundles, loaded } = useBenefits();
   const [waiting, setWaiting] = useState(true);
   const [fail, setFail] = useState(false);
   const [open, setOpen] = useState(false);
@@ -28,12 +28,12 @@ export default function InspectPage() {
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
   const shown = open ? ranked : ranked.slice(0, 3);
-  const tips = bundleTips(live, loaded ? benefits : []);
+  const tips = loaded ? bundleTips(live, benefits, bundles) : [];
   const today = ymd(new Date());
   const curStamp = stampOf(today, live.map((s) => s.id));
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !loaded) return;
     if (localStorage.getItem(INSPECT_KEY) === curStamp) {
       setWaiting(false);
       return;
@@ -43,7 +43,7 @@ export default function InspectPage() {
       setWaiting(false);
     }, 1400);
     return () => window.clearTimeout(t);
-  }, [curStamp]);
+  }, [curStamp, loaded]);
 
   const rerun = () => {
     if (localStorage.getItem(INSPECT_KEY) === curStamp) {
@@ -56,7 +56,7 @@ export default function InspectPage() {
     window.setTimeout(() => setWaiting(false), 1400);
   };
 
-  if (waiting) {
+  if (waiting || !loaded) {
     return (
       <Gate>
         <PhoneShell>

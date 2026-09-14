@@ -4,7 +4,6 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { bundleIconSrc } from "@/lib/bundle-icon";
-import { BENEFITS } from "@/lib/catalog";
 import { won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
 import { useStore } from "@/lib/store";
@@ -14,7 +13,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const { showToast } = useStore();
   const { benefits, loaded, error, reload } = useBenefits();
-  const b = benefits.find((x) => x.id === id) ?? (loaded ? BENEFITS.find((x) => x.id === id) : undefined);
+  const b = benefits.find((x) => x.id === id);
   const color = b?.brandColor || b?.providerColor || "#3182f6";
   const single = b?.priceSingle ?? 0;
   const bundle = b?.priceBundle ?? 0;

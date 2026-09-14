@@ -2,19 +2,15 @@
 
 import { StoreProvider } from "@/lib/store";
 import { CloudBanner } from "@/components/CloudBanner";
-import { useBenefits } from "@/lib/use-benefits";
-
-function CatalogBoot() {
-  useBenefits();
-  return null;
-}
+import { CatalogProvider } from "@/lib/use-benefits";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <StoreProvider>
-      <CatalogBoot />
-      <CloudBanner />
-      {children}
+      <CatalogProvider>
+        <CloudBanner />
+        {children}
+      </CatalogProvider>
     </StoreProvider>
   );
 }

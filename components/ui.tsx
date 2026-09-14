@@ -246,7 +246,13 @@ export function Fab({ children }: { children?: ReactNode }) {
         </div>
       ) : null}
       <button className={`fab ${open ? "open" : ""}`} type="button" aria-label="추가" onClick={() => setOpen((v) => !v)}>
-        +
+        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
+          {open ? (
+            <path d="M4 4l14 14M18 4 4 18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+          ) : (
+            <path d="M11 3.5v15M3.5 11h15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+          )}
+        </svg>
       </button>
       {children}
     </>
@@ -330,11 +336,16 @@ export function Modal({
 }
 
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
-  const src = (isImageIcon(logo) ? logo : "") || catalogIcon(name) || brandIcon(name) || "/brand/logo-mark.png";
-  const custom = src !== "/brand/logo-mark.png";
+  const src = (isImageIcon(logo) ? logo : "") || catalogIcon(name) || brandIcon(name) || "/brand/app-icon.png";
+  const custom = true;
   return (
     <span className="brand" style={custom ? undefined : { background: "#eef3fb" }} aria-hidden>
-      <img src={src} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }} />
+      <img src={src} alt="" onError={(e) => {
+        const el = e.currentTarget;
+        if (el.dataset.fb) return;
+        el.dataset.fb = "1";
+        el.src = "/brand/app-icon.png";
+      }} />
     </span>
   );
 }

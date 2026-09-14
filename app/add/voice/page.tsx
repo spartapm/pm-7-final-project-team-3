@@ -160,11 +160,22 @@ function Inner() {
         body: JSON.stringify({ text: text.trim(), kind }),
         signal: ctrl.signal,
       });
-      const json = await res.json() as {
+      if (goneRef.current || phaseRef.current !== "wait") return;
+      if (!res.ok) {
+        setPhase("fail");
+        return;
+      }
+      let json: {
         ok?: boolean;
         items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
         data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
       };
+      try {
+        json = await res.json() as typeof json;
+      } catch {
+        setPhase("fail");
+        return;
+      }
       if (goneRef.current || phaseRef.current !== "wait") return;
       const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
       if (!json.ok || rows.length === 0) {
@@ -177,7 +188,7 @@ function Inner() {
     } catch (e) {
       if (goneRef.current || phaseRef.current !== "wait") return;
       if (e instanceof DOMException && e.name === "AbortError") {
-        setPhase("idle");
+        setPhase("fail");
         return;
       }
       setPhase("fail");
@@ -206,8 +217,8 @@ function Inner() {
               return;
             }
             if (phase === "wait") {
-              abortRef.current?.abort();
               phaseRef.current = "idle";
+              abortRef.current?.abort();
               setPhase("idle");
               return;
             }
@@ -271,8 +282,8 @@ function Inner() {
         {phase === "wait" ? (
           <div className="wait">
             <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => {
-              abortRef.current?.abort();
               phaseRef.current = "idle";
+              abortRef.current?.abort();
               setPhase("idle");
             }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>

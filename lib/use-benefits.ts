@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { findBrand } from "@/lib/brands";
-import { BENEFITS, categoryFromAdmin, type ServiceHit } from "@/lib/catalog";
+import { categoryFromAdmin, type ServiceHit } from "@/lib/catalog";
 import type { BundleProduct } from "@/lib/bundles";
 import type { ProductRow, ProviderRow } from "@/lib/catalog-db";
 import { setCatalogIcons } from "@/lib/catalog-icons";
@@ -25,8 +25,20 @@ function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
     });
 }
 
-export function useBenefits() {
-  const [items, setItems] = useState<Benefit[]>(BENEFITS);
+type CatalogState = {
+  benefits: Benefit[];
+  bundles: BundleProduct[];
+  soloProducts: ServiceHit[];
+  source: "code" | "db";
+  loaded: boolean;
+  error: boolean;
+  reload: () => void;
+};
+
+const CatalogCtx = createContext<CatalogState | null>(null);
+
+export function CatalogProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<Benefit[]>([]);
   const [bundles, setBundles] = useState<BundleProduct[]>([]);
   const [soloProducts, setSoloProducts] = useState<ServiceHit[]>([]);
   const [source, setSource] = useState<"code" | "db">("code");
@@ -46,7 +58,7 @@ export function useBenefits() {
       .then((r) => r.json())
       .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db" }) => {
         if (!live) return;
-        if (d.benefits?.length) setItems(d.benefits);
+        setItems(d.benefits ?? []);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
         setCatalogIcons([
@@ -58,10 +70,22 @@ export function useBenefits() {
       })
       .catch(() => {
         if (!live) return;
+        setItems([]);
         setError(true);
         setLoaded(true);
       });
     return () => { live = false; };
   }, [nonce]);
-  return { benefits: items, bundles, soloProducts, source, loaded, error, reload };
+
+  const value = useMemo(
+    () => ({ benefits: items, bundles, soloProducts, source, loaded, error, reload }),
+    [items, bundles, soloProducts, source, loaded, error, reload],
+  );
+  return createElement(CatalogCtx.Provider, { value }, children);
+}
+
+export function useBenefits() {
+  const ctx = useContext(CatalogCtx);
+  if (!ctx) throw new Error("useBenefits");
+  return ctx;
 }

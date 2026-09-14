@@ -1,6 +1,7 @@
-import { BUNDLE_PRODUCTS, type BundleProduct } from "./bundles";
+import { type BundleProduct } from "./bundles";
 import { isBundleLike } from "./catalog";
 import { findBrand } from "./brands";
+import { monthlyAmount } from "./stats";
 import type { Benefit, Subscription } from "./types";
 
 function partsOf(included: string) {
@@ -42,6 +43,11 @@ function alreadyHasBundle(live: Subscription[], id: string, name: string) {
   return live.some((s) => s.bundleId === id || (isBundleLike(s) && (s.name === name || s.included === name)));
 }
 
+function capSave(save: number, live: Subscription[]) {
+  const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
+  return Math.min(Math.max(0, save), total);
+}
+
 export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, catalog?: BundleProduct[] | null): BundleTip[] {
   const live = subs.filter((s) => s.status !== "ended" && !s.paused);
   const names = live.map((s) => s.name);
@@ -56,7 +62,7 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
       if (hits.length === 0) continue;
       const solo = parts.reduce((sum, p) => sum + amountFor(live, p), 0) || b.priceSingle || 0;
       const bundle = b.priceBundle ?? 0;
-      const save = solo - bundle;
+      const save = capSave(solo - bundle, live);
       if (save <= 0) continue;
       const colors = parts.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
       out.push({
@@ -73,14 +79,14 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
     return out.sort((a, b) => b.save - a.save).slice(0, 6);
   }
 
-  const products = catalog === undefined ? BUNDLE_PRODUCTS : catalog ?? [];
+  const products = catalog ?? [];
   for (const product of products) {
     if (alreadyHasBundle(live, product.id, product.name)) continue;
     const parts = partsOf(product.included);
     const hits = parts.filter((p) => owns(names, p));
     if (hits.length === 0) continue;
     const solo = parts.reduce((sum, p) => sum + amountFor(live, p), 0);
-    const save = solo - product.amount;
+    const save = capSave(solo - product.amount, live);
     if (save <= 0) continue;
     out.push({
       id: product.id,

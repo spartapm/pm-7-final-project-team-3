@@ -51,6 +51,7 @@ export function EventForm({
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pick, setPick] = useState<"start" | "end" | null>(null);
+  const [pickFocus, setPickFocus] = useState<"date" | "time">("date");
 
   useEffect(() => {
     if (existing) return;
@@ -195,15 +196,25 @@ export function EventForm({
             </label>
             <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
               <span>시작</span>
-              <button type="button" className="when-bar" onClick={() => setPick("start")}>
-                {date ? `${dateLabel(date)}${allDay ? "" : (start ? `  ${timeLabel(start)}` : "")}` : "날짜"}
+              <button type="button" className="when-chip" onClick={() => { setPickFocus("date"); setPick("start"); }}>
+                {date ? dateLabel(date) : "날짜"}
               </button>
+              {allDay ? null : (
+                <button type="button" className="when-chip" onClick={() => { setPickFocus("time"); setPick("start"); }}>
+                  {start ? timeLabel(start) : "시간"}
+                </button>
+              )}
             </div>
             <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
               <span>종료</span>
-              <button type="button" className={`when-bar ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("end")}>
-                {endD ? `${dateLabel(endD)}${allDay ? "" : (end ? `  ${timeLabel(end)}` : "")}` : "날짜"}
+              <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("date"); setPick("end"); }}>
+                {endD ? dateLabel(endD) : "날짜"}
               </button>
+              {allDay ? null : (
+                <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("time"); setPick("end"); }}>
+                  {end ? timeLabel(end) : "시간"}
+                </button>
+              )}
             </div>
           </div>
           {!timeOk && date && endD ? <p className="err-msg">종료 시간은 시작 시간보다 늦어야 해요</p> : null}
@@ -225,6 +236,7 @@ export function EventForm({
         <WhenPick
           open={pick !== null}
           allDay={allDay}
+          startStep={pickFocus}
           date={pick === "end" ? (endD || date) : date}
           time={pick === "end" ? end : start}
           onCancel={() => setPick(null)}

@@ -14,7 +14,7 @@ function Inner() {
   const router = useRouter();
   const q = useSearchParams();
   const { subscriptions, events, showToast } = useStore();
-  const { benefits } = useBenefits();
+  const { benefits, loaded } = useBenefits();
   const now = new Date();
   const startDate = isValidYmd(q.get("date")) ? q.get("date")! : ymd(now);
   const [cursor, setCursor] = useState(() => {
@@ -59,7 +59,7 @@ function Inner() {
         }
       }
     }
-    if (filter === "all") {
+    if (filter === "all" && loaded) {
       for (const b of benefits) {
         if (!b.expires) continue;
         add(b.expires, {
@@ -75,7 +75,7 @@ function Inner() {
       for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
     }
     return map;
-  }, [live, events, filter, benefits, fromKey, toKey]);
+  }, [live, events, filter, benefits, loaded, fromKey, toKey]);
 
   const todayCount = (itemsByDay.get(ymd(now)) ?? []).length;
   const monthCount = [...itemsByDay.keys()].filter((k) => k.startsWith(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`)).reduce((a, k) => a + (itemsByDay.get(k)?.length ?? 0), 0);

@@ -30,7 +30,7 @@ export default function HomePage() {
   }, []);
   useEffect(() => {
     if (PROMOS.length < 2) return;
-    const t = setInterval(() => setPromo((p) => (p + 1) % PROMOS.length), 3000);
+    const t = setInterval(() => setPromo((p) => (p + 1 < PROMOS.length ? p + 1 : p)), 3000);
     return () => clearInterval(t);
   }, []);
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
@@ -94,11 +94,13 @@ export default function HomePage() {
               </button>
               {PROMOS.length > 1 ? (
                 <div className="promo-nav">
-                  <button type="button" onClick={() => setPromo((p) => (p + PROMOS.length - 1) % PROMOS.length)} aria-label="이전">‹</button>
+                  <button type="button" className={promo === 0 ? "off" : ""} disabled={promo === 0} onClick={() => setPromo((p) => Math.max(0, p - 1))} aria-label="이전">‹</button>
                   <span className="dots">
-                    {PROMOS.map((_, i) => <i key={i} className={i === promo ? "on" : ""} />)}
+                    {PROMOS.map((_, i) => (
+                      <button key={i} type="button" className={i === promo ? "on" : ""} aria-label={`${i + 1}번째 배너`} onClick={() => setPromo(i)} />
+                    ))}
                   </span>
-                  <button type="button" onClick={() => setPromo((p) => (p + 1) % PROMOS.length)} aria-label="다음">›</button>
+                  <button type="button" className={promo === PROMOS.length - 1 ? "off" : ""} disabled={promo === PROMOS.length - 1} onClick={() => setPromo((p) => Math.min(PROMOS.length - 1, p + 1))} aria-label="다음">›</button>
                 </div>
               ) : null}
             </div>
@@ -193,7 +195,7 @@ export default function HomePage() {
                       }
                       router.push(n.href);
                     }} onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
-                    <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : (n.brand ?? "틈").slice(0, 1)} />
+                    <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : ""} />
                     <div className="grow">
                       <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
                       <p>{n.body}</p>

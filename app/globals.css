@@ -129,9 +129,10 @@ img { display: block; max-width: 100%; }
   width: 58px; height: 58px; border-radius: 50%;
   background: var(--blue); color: #fff;
   box-shadow: 0 10px 24px rgba(37, 118, 242, 0.4);
-  display: grid; place-items: center; font-size: 32px; line-height: 1; font-weight: 400;
+  display: grid; place-items: center; padding: 0;
 }
-.fab.open { transform: rotate(45deg); z-index: 28; }
+.fab svg { display: block; }
+.fab.open { z-index: 28; }
 
 .topbar {
   display: flex; align-items: center; gap: 4px;
@@ -359,8 +360,25 @@ img { display: block; max-width: 100%; }
   position: relative; overflow: hidden;
   box-shadow: 0 10px 24px rgba(20, 47, 110, 0.12);
 }
-.promo.photo { padding: 0; background: transparent; box-shadow: none; min-height: 0; }
-.promo-full { width: 100%; height: 148px; object-fit: cover; border-radius: 16px; }
+.promo.photo { padding: 0 0 10px; background: transparent; box-shadow: none; min-height: 0; overflow: visible; }
+.promo-full { width: 100%; height: 148px; object-fit: cover; border-radius: 16px; display: block; }
+.promo-nav {
+  position: static; display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin: 10px 0 0; padding: 0; color: #5c6671; pointer-events: auto;
+}
+.promo-nav button {
+  width: 32px; height: 32px; border-radius: 0;
+  background: transparent; color: #4a525c;
+  font-size: 22px; font-weight: 700; line-height: 1;
+  display: grid; place-items: center; pointer-events: auto;
+  text-shadow: none;
+}
+.promo-nav button.off, .promo-nav button:disabled { color: #d0d5dd; }
+.promo-nav .dots { display: flex; gap: 6px; align-items: center; pointer-events: auto; }
+.promo-nav .dots button, .promo-nav .dots i {
+  width: 7px; height: 7px; padding: 0; border-radius: 50%; background: #d0d5dd;
+}
+.promo-nav .dots button.on, .promo-nav .dots i.on { background: #2f80ed; width: 7px; }
 .ok-leak {
   display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: 100%;
   margin-top: 8px; background: #eaf3ff; color: #2f80ed;
@@ -383,21 +401,6 @@ img { display: block; max-width: 100%; }
 .promo h2 { margin: 8px 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -0.04em; white-space: pre-line; line-height: 1.25; position: relative; z-index: 1; }
 .promo p { margin: 0; font-size: 12px; color: #5c6671; position: relative; z-index: 1; }
 .promo .new { position: relative; z-index: 1; }
-.promo-nav {
-  position: absolute; left: 0; right: 0; bottom: 8px; height: auto;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 10px; margin: 0; color: #fff; z-index: 2; pointer-events: none;
-}
-.promo-nav button {
-  width: 44px; height: 44px; border-radius: 0;
-  background: transparent; color: #fff;
-  font-size: 22px; font-weight: 800; line-height: 1;
-  display: grid; place-items: center; pointer-events: auto;
-  text-shadow: 0 1px 4px rgba(0,0,0,.4);
-}
-.promo-nav .dots { display: flex; gap: 5px; align-items: center; pointer-events: none; }
-.promo-nav .dots i { width: 6px; height: 6px; border-radius: 50%; background: #b9d2f5; }
-.promo-nav .dots i.on { background: var(--blue-2); width: 14px; border-radius: 99px; }
 
 .week-card {
   margin: -58px 20px 0; background: var(--blue); color: #fff;
@@ -458,7 +461,7 @@ img { display: block; max-width: 100%; }
 }
 .teum-note { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 8px; }
 .teum-note-ico { flex: none; margin-top: 1px; }
-.alert-banner { width: 100%; max-height: 72px; object-fit: contain; object-position: center; height: auto; margin-top: 12px; border-radius: 12px; }
+.alert-banner { width: 100%; max-height: none; object-fit: cover; object-position: center; height: auto; display: block; margin-top: 12px; border-radius: 12px; }
 .alert-banner-card {
   display: flex; align-items: center; gap: 10px;
   margin-top: 12px; padding: 12px 14px; border-radius: 12px;
@@ -550,7 +553,7 @@ img { display: block; max-width: 100%; }
   display: grid; place-items: center; font-size: 22px; flex: none;
   overflow: hidden;
 }
-.benefit-ico img { width: 32px; height: 32px; object-fit: contain; }
+.benefit-ico img { width: 24px; height: 24px; object-fit: contain; }
 .benefit-card .body { flex: 1; min-width: 0; }
 .tag {
   display: inline-flex; font-size: 11px; font-weight: 800; color: #fff;
@@ -723,7 +726,7 @@ img { display: block; max-width: 100%; }
   height: 44px; border-radius: 12px; border: 1px solid #e3e8f0; background: #f7f9fc;
   font-size: 14px; font-weight: 700; color: #171a21;
 }
-.field > .when-chip { width: 100%; }
+.field > .when-chip, .when-row .when-chip { width: 100%; }
 .when-sheet {
   background: #fff; border-radius: 20px; padding: 16px 14px 18px; width: 100%;
   box-shadow: 0 20px 48px rgba(20, 23, 28, 0.18);
@@ -971,11 +974,11 @@ img { display: block; max-width: 100%; }
 }
 .when-bar b { font-weight: 800; }
 .bnf-icons {
-  position: relative; width: 72px; height: 40px; margin: 8px auto 6px;
+  position: relative; width: 72px; height: 36px; margin: 8px auto 6px;
   display: grid; place-items: center;
 }
 .bnf-icons img, .bnf-icons .brand {
-  width: 40px; height: 40px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: 10px;
   box-shadow: 0 2px 8px rgba(20,23,28,.12); overflow: hidden;
   object-fit: contain; background: #eef3fb;
 }

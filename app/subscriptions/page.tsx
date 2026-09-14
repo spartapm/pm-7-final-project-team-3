@@ -34,7 +34,7 @@ function catLabel(id: Category | "all") {
 export default function SubListPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits } = useBenefits();
+  const { benefits, loaded } = useBenefits();
   const [cat, setCat] = useState<Category | "all">("all");
   const [sort, setSort] = useState<SortKey>("pay");
   const [sortOpen, setSortOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function SubListPage() {
       return statusRank(a) - statusRank(b);
     });
   const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
-  const benefitCheck = benefits.filter((b) => benefitStatus(b, live) !== "owned").length;
+  const benefitCheck = loaded ? benefits.filter((b) => benefitStatus(b, live) !== "owned").length : null;
   const cats = useMemo(() => {
     const used = new Set(live.map((s) => s.category));
     return [{ id: "all" as const, label: "전체" }, ...CATEGORY_OPTIONS.filter((c) => used.has(c.id))];
@@ -111,7 +111,7 @@ export default function SubListPage() {
                 <button className="card tight" type="button" onClick={() => router.push("/benefits")} style={{ textAlign: "left" }}>
                   <div className="muted">확인할 혜택</div>
                   <div className="sum-row">
-                    <span className="sum-num" style={{ color: "#2576f2" }}>{benefitCheck}개</span>
+                    <span className="sum-num" style={{ color: "#2576f2" }}>{benefitCheck === null ? "" : `${benefitCheck}개`}</span>
                     <span className="sum-link">확인하기</span>
                   </div>
                 </button>

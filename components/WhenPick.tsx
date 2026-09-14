@@ -13,6 +13,7 @@ export function WhenPick({
   date,
   time,
   minDate,
+  startStep = "date",
   onCancel,
   onPick,
 }: {
@@ -21,6 +22,7 @@ export function WhenPick({
   date: string;
   time: string;
   minDate?: string;
+  startStep?: "date" | "time";
   onCancel: () => void;
   onPick: (date: string, time: string) => void;
 }) {
@@ -38,10 +40,10 @@ export function WhenPick({
     const d = date ? parseYmd(date) : new Date();
     setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
     setSel(date);
-    setStep("date");
+    setStep(startStep === "time" && (date || allDay) ? "time" : "date");
     setHour(Number((time || "00:00").slice(0, 2)) || 0);
     setMin(Number((time || "00:00").slice(3, 5)) || 0);
-  }, [open, date, time]);
+  }, [open, date, time, startStep, allDay]);
 
   useEffect(() => {
     if (step !== "time") return;

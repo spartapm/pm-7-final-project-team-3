@@ -29,7 +29,7 @@ const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg:
 export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits } = useBenefits();
+  const { benefits, loaded } = useBenefits();
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
   const leak = leaksOf(subscriptions);
   const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
@@ -70,7 +70,7 @@ export default function BenefitsPage() {
             ))}
           </ChipScroller>
           <div className="section-title" style={{ marginTop: 4 }}>인기 구독 혜택</div>
-          {list.length === 0 ? (
+          {!loaded ? null : list.length === 0 ? (
             <div className="empty">
               <img className="teumki-illust" src="/teumki/card.png" alt="" />
               <p>{kindLabel}으로 받을 수 있는 등록된 구독이 없어요.</p>

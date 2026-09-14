@@ -140,7 +140,7 @@ export function eventItemFromRaw(raw: {
     endDate,
     start,
     end,
-    allDay: !start && !end,
+    allDay: false,
     needConfirm: !title || !date,
   };
 }
