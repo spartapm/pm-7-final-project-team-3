@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
-import { dateLabel, monthLabel, relativeTime, thisWeek, won, ymd } from "@/lib/format";
+import { dateLabel, monthLabel, relativeTime, subscriptionPayDates, thisWeek, won, ymd } from "@/lib/format";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 
@@ -42,26 +42,27 @@ export default function HomePage() {
   const unread = notices.filter((n) => !n.read).length;
   const marked = useMemo(() => {
     const map = new Map<string, string[]>();
-    const todayKey = ymd(new Date());
-    const subDot = (key: string) => (key === todayKey ? "#2F80ED" : "#E3EDFF");
-    const lifeDot = (key: string) => (key === todayKey ? "#FF6B7A" : "#FF9CA6");
+    const fromKey = week[0]?.key ?? ymd(new Date());
+    const toKey = week[6]?.key ?? fromKey;
     for (const s of live) {
-      const arr = map.get(s.nextPay) ?? [];
-      arr.push(subDot(s.nextPay));
-      map.set(s.nextPay, arr);
-      if (s.trialEnds && s.trialEnds !== s.nextPay) {
+      for (const key of subscriptionPayDates(s, fromKey, toKey)) {
+        const arr = map.get(key) ?? [];
+        arr.push("#E3EDFF");
+        map.set(key, arr);
+      }
+      if (s.trialEnds && s.trialEnds >= fromKey && s.trialEnds <= toKey) {
         const t = map.get(s.trialEnds) ?? [];
-        t.push(subDot(s.trialEnds));
+        t.push("#E3EDFF");
         map.set(s.trialEnds, t);
       }
     }
     for (const e of events) {
       const arr = map.get(e.date) ?? [];
-      arr.push(lifeDot(e.date));
+      arr.push("#FF919C");
       map.set(e.date, arr);
     }
     return map;
-  }, [live, events]);
+  }, [live, events, week]);
 
   if (!hydrated) return <PhoneShell><div className="scroll" /></PhoneShell>;
 
@@ -73,7 +74,10 @@ export default function HomePage() {
             <div className="home-hero-top">
               <Logo light />
               <button className="bell" type="button" aria-label="알림" onClick={() => setSheet(true)}>
-                <img src="/icons/bell.png" alt="" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M6.2 9.2a5.8 5.8 0 0 1 11.6 0c0 3.4.84 5.3 1.7 6.7.3.48-.05 1.1-.6 1.1H5.1c-.55 0-.9-.62-.6-1.1.86-1.4 1.7-3.3 1.7-6.7Z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M9.4 18.6a2.6 2.6 0 0 0 5.2 0" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
                 {unread ? <span className="badge">{unread > 9 ? "9+" : unread}</span> : null}
               </button>
             </div>
@@ -172,41 +176,45 @@ export default function HomePage() {
                 <h2>알림</h2>
                 <button className="icon-btn round" type="button" onClick={() => setSheet(false)} aria-label="닫기">✕</button>
               </div>
-              {notices.filter((n) => !n.read).length === 0 ? (
-                <div className="empty" style={{ textAlign: "center", padding: 24 }}>
-                  <img className="teumki-illust" src="/teumki/alert.png" alt="" />
-                  <h3 style={{ margin: "0 0 6px" }}>새로운 알림이 없어요</h3>
-                  <p className="muted">모든 알림을 확인했어요</p>
-                </div>
-              ) : notices.filter((n) => !n.read).map((n) => (
-                <div key={n.id} className={`notice-item ${n.read ? "" : "unread"}`} role="button" tabIndex={0} onClick={() => {
-                    markNotice(n.id);
-                    if (n.id === "nt_invite" || n.href.includes("invite")) {
-                      setSheet(false);
-                      setInvite(true);
-                      return;
-                    }
-                    router.push(n.href);
-                  }} onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
-                  <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : (n.brand ?? "틈").slice(0, 1)} />
-                  <div className="grow">
-                    <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
-                    <p>{n.body}</p>
+              <div className="sheet-body">
+                {notices.filter((n) => !n.read).length === 0 ? (
+                  <div className="empty" style={{ textAlign: "center", padding: 24 }}>
+                    <img className="teumki-illust" src="/teumki/alert.png" alt="" />
+                    <h3 style={{ margin: "0 0 6px" }}>새로운 알림이 없어요</h3>
+                    <p className="muted">모든 알림을 확인했어요</p>
                   </div>
-                  <button className="mini" type="button" onClick={(e) => {
-                    e.stopPropagation();
-                    markNotice(n.id);
-                    if (n.id === "nt_invite" || n.href.includes("invite")) {
-                      setSheet(false);
-                      setInvite(true);
-                      return;
-                    }
-                    router.push(n.href);
-                  }}>확인</button>
-                </div>
-              ))}
+                ) : notices.filter((n) => !n.read).map((n) => (
+                  <div key={n.id} className="notice-item" role="button" tabIndex={0} onClick={() => {
+                      markNotice(n.id);
+                      if (n.id === "nt_invite" || n.href.includes("invite")) {
+                        setSheet(false);
+                        setInvite(true);
+                        return;
+                      }
+                      router.push(n.href);
+                    }} onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
+                    <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : (n.brand ?? "틈").slice(0, 1)} />
+                    <div className="grow">
+                      <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
+                      <p>{n.body}</p>
+                    </div>
+                    <button className="mini" type="button" onClick={(e) => {
+                      e.stopPropagation();
+                      markNotice(n.id);
+                      if (n.id === "nt_invite" || n.href.includes("invite")) {
+                        setSheet(false);
+                        setInvite(true);
+                        return;
+                      }
+                      router.push(n.href);
+                    }}>확인</button>
+                  </div>
+                ))}
+              </div>
               {notices.some((n) => !n.read) ? (
-                <button className="btn primary" type="button" onClick={() => markAllNotices()}>일괄 삭제</button>
+                <div className="sheet-foot">
+                  <button className="btn primary" type="button" onClick={() => markAllNotices()}>일괄 삭제</button>
+                </div>
               ) : null}
             </div>
           </>

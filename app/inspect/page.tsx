@@ -9,40 +9,48 @@ import { cycleEvery, won, ymd } from "@/lib/format";
 import { bundleTips } from "@/lib/recommend";
 import { useBenefits } from "@/lib/use-benefits";
 
+const INSPECT_KEY = "teum:inspect-stamp";
+
+function stampOf(day: string, ids: string[]) {
+  return `${day}|${ids.slice().sort().join(",")}`;
+}
+
 export default function InspectPage() {
   const router = useRouter();
-  const { subscriptions } = useStore();
-  const { bundles, source, loaded } = useBenefits();
+  const { subscriptions, showToast } = useStore();
+  const { benefits, loaded } = useBenefits();
   const [waiting, setWaiting] = useState(true);
   const [fail, setFail] = useState(false);
   const [open, setOpen] = useState(false);
-  const [usedToday, setUsedToday] = useState(false);
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const cold = live.length === 0;
   const leak = leaksOf(live);
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
   const shown = open ? ranked : ranked.slice(0, 3);
-  const tips = bundleTips(live, loaded ? (source === "db" ? bundles : undefined) : []);
+  const tips = bundleTips(live, loaded ? benefits : []);
   const today = ymd(new Date());
+  const curStamp = stampOf(today, live.map((s) => s.id));
 
   useEffect(() => {
-    if (localStorage.getItem("teum:inspect-day") === today) {
-      setUsedToday(true);
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(INSPECT_KEY) === curStamp) {
       setWaiting(false);
       return;
     }
     const t = window.setTimeout(() => {
-      localStorage.setItem("teum:inspect-day", today);
-      setUsedToday(true);
+      localStorage.setItem(INSPECT_KEY, curStamp);
       setWaiting(false);
     }, 1400);
     return () => window.clearTimeout(t);
-  }, [today]);
+  }, [curStamp]);
 
   const rerun = () => {
-    if (localStorage.getItem("teum:inspect-day") === today) return;
-    localStorage.setItem("teum:inspect-day", today);
+    if (localStorage.getItem(INSPECT_KEY) === curStamp) {
+      showToast("구독 점검은 하루에 한 번만 가능합니다. 내일 다시 점검해주세요.");
+      return;
+    }
+    localStorage.setItem(INSPECT_KEY, curStamp);
     setWaiting(true);
     setFail(false);
     window.setTimeout(() => setWaiting(false), 1400);
@@ -107,8 +115,7 @@ export default function InspectPage() {
                   ? `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
                   : "구독을 잘 관리하고 계시네요."}
             </p>
-            <button className="btn" type="button" disabled={cold || usedToday} onClick={rerun}>다시 점검하기</button>
-            {usedToday ? <p className="muted" style={{ marginTop: 8, fontSize: 12 }}>오늘은 이미 점검했어요. 내일 다시 할 수 있어요.</p> : null}
+            <button className="btn" type="button" disabled={cold} onClick={rerun}>다시 점검하기</button>
           </div>
           <div className="card">
             <div style={{ fontWeight: 800, marginBottom: 8 }}>현재 구독 중인 서비스</div>
@@ -143,20 +150,39 @@ export default function InspectPage() {
           <p className="muted" style={{ marginTop: -6, marginBottom: 8 }}>지금 가진 구독 기준으로 결합할 수 있는 상품만 보여요.</p>
           {tips.length === 0 ? (
             <div className="empty" style={{ background: "transparent" }}>지금 결합할 수 있는 상품이 없어요.</div>
-          ) : tips.map((t) => (
-            <div key={t.product.id} className="bundle">
-              <div className="bundle-head">
-                <span>+ 결합상품</span>
-                {t.save > 0 ? <span className="save">-{won(t.save)}</span> : null}
-              </div>
-              <div style={{ fontWeight: 800 }}>{t.product.name}</div>
-              <div className="muted" style={{ marginTop: 4 }}>포함: {t.product.included}</div>
-              <div className="bundle-cmp">
-                <span>보유 서비스와 맞음: {t.hits.join(", ")}</span>
-                <span className="good">{won(t.product.amount)}</span>
-              </div>
-            </div>
-          ))}
+          ) : tips.map((t) => {
+            const c1 = t.colors[0] || "#2576f2";
+            const c2 = t.colors[1] || c1;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className="rec-card"
+                style={{ ["--c1" as string]: c1, ["--c2" as string]: c2 }}
+                onClick={() => router.push(t.href)}
+              >
+                <div className="rec-top">
+                  <span className="rec-logos">
+                    {t.names.map((name, i) => (
+                      <span key={`${t.id}-${name}`} className="rec-logo-wrap">
+                        {i > 0 ? <span className="rec-plus">+</span> : null}
+                        <Brand name={name} color={t.colors[i] || "#2576f2"} logo="" />
+                      </span>
+                    ))}
+                  </span>
+                  <span className="rec-tag">결합상품</span>
+                  <span className="rec-save">-{won(t.save)}</span>
+                </div>
+                <div className="rec-title">{t.headline}</div>
+                <div className="rec-cmp">
+                  <span className="old">개별 구독 시<br />{won(t.solo)}</span>
+                  <span className="arrow">→</span>
+                  <span className="new" style={{ color: c2 }}>결합 이용 시<br />{won(t.bundle)}</span>
+                </div>
+                <div className="rec-more">자세히 보기 ›</div>
+              </button>
+            );
+          })}
         </div>
         <TabBar />
       </PhoneShell>

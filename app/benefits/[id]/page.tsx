@@ -2,7 +2,8 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { bundleIconSrc } from "@/lib/bundle-icon";
 import { BENEFITS } from "@/lib/catalog";
 import { won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
@@ -12,8 +13,8 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
   const { id } = use(params);
   const router = useRouter();
   const { showToast } = useStore();
-  const { benefits } = useBenefits();
-  const b = benefits.find((x) => x.id === id) ?? BENEFITS.find((x) => x.id === id);
+  const { benefits, loaded, error, reload } = useBenefits();
+  const b = benefits.find((x) => x.id === id) ?? (loaded ? BENEFITS.find((x) => x.id === id) : undefined);
   const color = b?.brandColor || b?.providerColor || "#3182f6";
   const single = b?.priceSingle ?? 0;
   const bundle = b?.priceBundle ?? 0;
@@ -21,6 +22,43 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
   const steps = b?.steps ?? (b?.howTo ? [b.howTo] : []);
   const terms = b?.termsList ?? (b?.terms ? [b.terms] : []);
   const official = b?.officialUrl || b?.href;
+  if (!loaded) {
+    return (
+      <Gate>
+        <PhoneShell>
+          <div className="topbar">
+            <span className="logo-mark" aria-hidden><i className="bar" /><i className="gap" /><i className="bar" /></span>
+            <span style={{ flex: 1 }} />
+            <button className="icon-btn" type="button" aria-label="닫기" onClick={() => router.push("/benefits")}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
+          <div className="wait">
+            <img className="teumki-illust" src="/teumki/loading.png" alt="" />
+            <h2>혜택을 불러오는 중이에요</h2>
+            <p className="muted">자세한 혜택 내용을 불러오고 있어요.<br />잠시만 기다려주세요.</p>
+            <p className="inspect-note">ⓘ 분석 결과는 등록된 정보와 공개된 요금제를 기준으로 계산한 예상치예요.</p>
+          </div>
+        </PhoneShell>
+      </Gate>
+    );
+  }
+  if (!b || error) {
+    return (
+      <Gate>
+        <PhoneShell>
+          <div className="wait">
+            <img className="teumki-illust" src="/teumki/sad.png" alt="" />
+            <h2>혜택을 불러오지 못했어요</h2>
+            <p className="muted">일시적인 오류로 혜택 상세 내용을 불러오지 못했어요.<br />잠시 후 다시 시도해 주세요.</p>
+            <button className="btn primary" type="button" onClick={() => reload()}>다시 시도하기</button>
+            <div style={{ height: 8 }} />
+            <button className="btn outline" type="button" onClick={() => router.push("/benefits")}>혜택 홈으로 돌아가기</button>
+          </div>
+        </PhoneShell>
+      </Gate>
+    );
+  }
   return (
     <Gate>
       <PhoneShell>
@@ -30,19 +68,17 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
           <span style={{ width: 36 }} />
         </div>
         <div className="scroll tabbed bnf-detail">
-          {!b ? (
-            <div className="empty">혜택을 찾을 수 없어요.</div>
-          ) : (
-            <>
+          <>
               <div className="bnf-k">현재 선택한 결합상품</div>
               <div className="bnf-card" style={{ borderColor: color }}>
                 {off > 0 ? <span className="bnf-off">{won(off)} 할인</span> : null}
-                {(b.parent || b.perk) ? (
-                  <div className="bnf-icons">
-                    {b.parent ? <span className="a"><Brand name={b.parent.name} color={color} logo="" /></span> : null}
-                    {b.perk ? <span className="b"><Brand name={b.perk.name} color={color} logo="" /></span> : null}
-                  </div>
-                ) : null}
+                <div className="bnf-icons">
+                  <img
+                    src={bundleIconSrc(b.icon)}
+                    alt=""
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }}
+                  />
+                </div>
                 {b.copy ? (
                   <p className="bnf-copy">
                     {b.copy.prefix}
@@ -124,8 +160,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
               </button>
               <div style={{ height: 8 }} />
               <button className="btn outline" type="button" onClick={() => router.push("/benefits")}>메인으로 돌아가기</button>
-            </>
-          )}
+          </>
         </div>
         <TabBar />
       </PhoneShell>

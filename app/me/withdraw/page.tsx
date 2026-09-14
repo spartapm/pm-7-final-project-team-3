@@ -68,11 +68,11 @@ export default function WithdrawPage() {
           ))}
         </div>
         <p className="legal-brand">TRI:ON · 틈</p>
+        <label className="agree-row withdraw-ack">
+          <input type="checkbox" checked={acked} onChange={(e) => setAcked(e.target.checked)} />
+          <span>데이터가 영구 삭제되고 복구할 수 없음을 확인했습니다.</span>
+        </label>
         <div className="withdraw-foot">
-          <label className="agree-row" style={{ marginBottom: 12 }}>
-            <input type="checkbox" checked={acked} onChange={(e) => setAcked(e.target.checked)} />
-            <span>데이터가 영구 삭제되고 복구할 수 없음을 확인했습니다.</span>
-          </label>
           <button className="btn ghost" type="button" onClick={() => router.push("/me")}>취소</button>
           <button className="btn primary" type="button" disabled={!acked} onClick={() => setSheet("reason")}>탈퇴하기</button>
         </div>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, ChipScroller, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { CATEGORY_OPTIONS, benefitStatus, isBundleLike } from "@/lib/catalog";
-import { cycleEvery, dateLabel, dueBadge, dueLabel, won } from "@/lib/format";
+import { cycleEvery, dateLabel, dueBadge, won } from "@/lib/format";
 import { monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
@@ -105,8 +105,7 @@ export default function SubListPage() {
                 <div className="card tight">
                   <div className="muted">다음 결제</div>
                   <div className="sum-row">
-                    <span className="sum-num">{next ? dueLabel(next.nextPay) : "없음"}</span>
-                    <span className="sum-link">{next ? next.name : ""}</span>
+                    <span className="sum-num dday">{next ? dueBadge(next.nextPay) : "없음"}</span>
                   </div>
                 </div>
                 <button className="card tight" type="button" onClick={() => router.push("/benefits")} style={{ textAlign: "left" }}>

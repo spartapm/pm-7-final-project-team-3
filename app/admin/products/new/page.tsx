@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { BundleItemRow, BundleRow, ProductRow, ProviderRow } from "@/lib/catalog-db";
+import { bundleIconSrc, fileToBundleIcon, isImageIcon } from "@/lib/bundle-icon";
 
 const CATS = ["통신사 결합", "커머스 멤버십", "카드 혜택", "OTT", "음악", "기타"];
 
@@ -47,7 +48,7 @@ function Inner() {
         setCategory(b.category || "커머스 멤버십");
         setTitle(b.card_title);
         setBody(b.card_body);
-        setIcon(b.icon);
+        setIcon(isImageIcon(b.icon) ? b.icon : "");
         setPrice(String(b.price_bundled || ""));
         setApply(b.apply_method);
         setReq(b.requirement);
@@ -248,8 +249,32 @@ function Inner() {
                 <span style={{ fontSize: 11, color: "#98a2b3", textAlign: "right" }}>{body.length}/200</span>
               </div>
               <div className="adm-field">
-                <label>아이콘</label>
-                <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🎵" />
+                <label>상세 아이콘</label>
+                <p style={{ margin: 0, fontSize: 12, color: "#667085" }}>결합 상세에 띄울 사진입니다. 첨부하지 않으면 틈 로고가 나갑니다.</p>
+                <div className="adm-icon-pick">
+                  <img src={bundleIconSrc(icon)} alt="" />
+                  <div>
+                    <label className="adm-btn" style={{ display: "inline-flex", alignItems: "center", height: 40 }}>
+                      사진 첨부
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!file) return;
+                          void fileToBundleIcon(file).then(setIcon).catch((err: unknown) => {
+                            setErr(err instanceof Error ? err.message : "이미지를 읽지 못했어요.");
+                          });
+                        }}
+                      />
+                    </label>
+                    {icon ? (
+                      <button className="adm-btn" type="button" onClick={() => setIcon("")}>사진 빼기</button>
+                    ) : null}
+                  </div>
+                </div>
               </div>
               <div className="adm-field">
                 <label>적용 방법 <i>*</i></label>

@@ -106,7 +106,7 @@ export function bundleToBenefit(
     title,
     body,
     href: b.official_url || "",
-    icon: b.icon || "🎁",
+    icon: b.icon || "",
     expires,
     howTo: steps.join(" "),
     terms: terms.join(" "),

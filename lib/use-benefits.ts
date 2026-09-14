@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BENEFITS } from "@/lib/catalog";
 import type { BundleProduct } from "@/lib/bundles";
 import type { Benefit } from "@/lib/types";
@@ -10,6 +10,15 @@ export function useBenefits() {
   const [bundles, setBundles] = useState<BundleProduct[]>([]);
   const [source, setSource] = useState<"code" | "db">("code");
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const [nonce, setNonce] = useState(0);
+
+  const reload = useCallback(() => {
+    setLoaded(false);
+    setError(false);
+    setNonce((n) => n + 1);
+  }, []);
+
   useEffect(() => {
     let live = true;
     fetch("/api/catalog")
@@ -22,9 +31,11 @@ export function useBenefits() {
         setLoaded(true);
       })
       .catch(() => {
-        if (live) setLoaded(true);
+        if (!live) return;
+        setError(true);
+        setLoaded(true);
       });
     return () => { live = false; };
-  }, []);
-  return { benefits: items, bundles, source, loaded };
+  }, [nonce]);
+  return { benefits: items, bundles, source, loaded, error, reload };
 }

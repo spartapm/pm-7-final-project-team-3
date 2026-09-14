@@ -140,7 +140,7 @@ function Inner() {
           });
         }
         clearExtract();
-        router.replace("/events/saved");
+        router.replace("/calendar");
         return;
       }
       const subs = state.items.filter((x): x is ExtractSubItem => x.kind === "subscription");
@@ -183,7 +183,7 @@ function Inner() {
         }));
       }
       clearExtract();
-      router.replace("/subscriptions/saved");
+      router.replace("/subscriptions");
     } catch {
       showToast("⚠️ 저장에 실패했어요. 다시 시도해주세요.", "err");
     }

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { dateLabel, fullDateLabel, isValidYmd, monthGrid, monthLabel, timeLabel, won, ymd } from "@/lib/format";
+import { dateLabel, fullDateLabel, isValidYmd, monthGrid, monthLabel, subscriptionPayDates, timeLabel, won, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
 import type { CalendarFilter } from "@/lib/types";
@@ -26,7 +26,8 @@ function Inner() {
   useEffect(() => { sessionStorage.setItem("teum:cal-date", sel); }, [sel]);
   const cells = monthGrid(cursor.getFullYear(), cursor.getMonth());
   const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
-  const todayKey = ymd(new Date());
+  const fromKey = cells[0]?.key ?? ymd(now);
+  const toKey = cells[cells.length - 1]?.key ?? fromKey;
 
   const itemsByDay = useMemo(() => {
     const map = new Map<string, CalItem[]>();
@@ -37,20 +38,23 @@ function Inner() {
     };
     if (filter !== "life") {
       for (const s of live) {
-        add(s.nextPay, {
-          type: "sub",
-          title: s.autoRenew ? `${s.name} 갱신` : `${s.name} 결제`,
-          right: won(s.amount),
-          href: `/subscriptions/${s.id}`,
-          color: s.nextPay === todayKey ? "#2F80ED" : "#E3EDFF",
-        });
-        if (s.trialEnds && s.trialEnds !== s.nextPay) {
+        const dates = subscriptionPayDates(s, fromKey, toKey);
+        for (const pay of dates) {
+          add(pay, {
+            type: "sub",
+            title: s.autoRenew ? `${s.name} 갱신` : `${s.name} 결제`,
+            right: won(s.amount),
+            href: `/subscriptions/${s.id}`,
+            color: "#2F80ED",
+          });
+        }
+        if (s.trialEnds && s.trialEnds >= fromKey && s.trialEnds <= toKey && !dates.includes(s.trialEnds)) {
           add(s.trialEnds, {
             type: "sub",
             title: `${s.name} 무료체험 종료`,
             right: dateLabel(s.trialEnds),
             href: `/subscriptions/${s.id}`,
-            color: s.trialEnds === todayKey ? "#2F80ED" : "#E3EDFF",
+            color: "#2F80ED",
           });
         }
       }
@@ -63,15 +67,15 @@ function Inner() {
           title: `${b.provider} 혜택 만료`,
           right: b.title,
           href: `/benefits/${b.id}`,
-          color: b.expires === todayKey ? "#2F80ED" : "#E3EDFF",
+          color: "#2F80ED",
         });
       }
     }
     if (filter !== "sub") {
-      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: e.date === todayKey ? "#FF6B7A" : "#FF9CA6" });
+      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
     }
     return map;
-  }, [live, events, filter, todayKey, benefits]);
+  }, [live, events, filter, benefits, fromKey, toKey]);
 
   const todayCount = (itemsByDay.get(ymd(now)) ?? []).length;
   const monthCount = [...itemsByDay.keys()].filter((k) => k.startsWith(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`)).reduce((a, k) => a + (itemsByDay.get(k)?.length ?? 0), 0);

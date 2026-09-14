@@ -1,7 +1,7 @@
 import { BUNDLE_PRODUCTS, type BundleProduct } from "./bundles";
 import { isBundleLike } from "./catalog";
 import { findBrand } from "./brands";
-import type { Subscription } from "./types";
+import type { Benefit, Subscription } from "./types";
 
 function partsOf(included: string) {
   return included.split(/[·+,/]/).map((s) => s.trim()).filter((s) => s.length >= 2);
@@ -21,25 +21,79 @@ function owns(names: string[], token: string) {
   });
 }
 
-export function bundleTips(subs: Subscription[], catalog?: BundleProduct[] | null) {
-  const products = catalog === undefined ? BUNDLE_PRODUCTS : catalog ?? [];
+export type BundleTip = {
+  id: string;
+  href: string;
+  headline: string;
+  names: string[];
+  colors: string[];
+  solo: number;
+  bundle: number;
+  save: number;
+};
+
+function amountFor(live: Subscription[], token: string) {
+  const sub = live.find((s) => owns([s.name], token));
+  if (sub) return sub.amount;
+  return findBrand(token)?.amount ?? 0;
+}
+
+function alreadyHasBundle(live: Subscription[], id: string, name: string) {
+  return live.some((s) => s.bundleId === id || (isBundleLike(s) && (s.name === name || s.included === name)));
+}
+
+export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, catalog?: BundleProduct[] | null): BundleTip[] {
   const live = subs.filter((s) => s.status !== "ended" && !s.paused);
   const names = live.map((s) => s.name);
-  const out: { product: BundleProduct; hits: string[]; save: number }[] = [];
+  const out: BundleTip[] = [];
+
+  if (benefits?.length) {
+    for (const b of benefits) {
+      if (alreadyHasBundle(live, b.id, b.title)) continue;
+      const parts = [b.parent?.name, b.perk?.name].filter((n): n is string => Boolean(n));
+      if (parts.length === 0) continue;
+      const hits = parts.filter((p) => owns(names, p));
+      if (hits.length === 0) continue;
+      const solo = parts.reduce((sum, p) => sum + amountFor(live, p), 0) || b.priceSingle || 0;
+      const bundle = b.priceBundle ?? 0;
+      const save = solo - bundle;
+      if (save <= 0) continue;
+      const colors = parts.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
+      out.push({
+        id: b.id,
+        href: `/benefits/${b.id}`,
+        headline: b.title,
+        names: parts,
+        colors,
+        solo,
+        bundle,
+        save,
+      });
+    }
+    return out.sort((a, b) => b.save - a.save).slice(0, 6);
+  }
+
+  const products = catalog === undefined ? BUNDLE_PRODUCTS : catalog ?? [];
   for (const product of products) {
-    if (live.some((s) => s.bundleId === product.id || s.name === product.name)) continue;
+    if (alreadyHasBundle(live, product.id, product.name)) continue;
     const parts = partsOf(product.included);
     const hits = parts.filter((p) => owns(names, p));
     if (hits.length === 0) continue;
-    const solo = hits.reduce((sum, h) => {
-      const brand = findBrand(h);
-      const sub = live.find((s) => owns([s.name], h));
-      return sum + (sub?.amount || brand?.amount || 0);
-    }, 0);
-    const save = Math.max(0, solo - product.amount);
-    out.push({ product, hits, save });
+    const solo = parts.reduce((sum, p) => sum + amountFor(live, p), 0);
+    const save = solo - product.amount;
+    if (save <= 0) continue;
+    out.push({
+      id: product.id,
+      href: `/benefits/${product.id}`,
+      headline: product.name,
+      names: parts.slice(0, 2),
+      colors: parts.slice(0, 2).map((p) => findBrand(p)?.color || "#2576f2"),
+      solo,
+      bundle: product.amount,
+      save,
+    });
   }
-  return out.sort((a, b) => b.hits.length - a.hits.length || b.save - a.save).slice(0, 4);
+  return out.sort((a, b) => b.save - a.save).slice(0, 6);
 }
 
 export function relevantBenefits(subs: Subscription[], benefitIds: string[]) {

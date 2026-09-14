@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
-const MODEL = "gemini-3.5-flash-lite";
+const MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+].filter((k): k is string => Boolean(k?.trim()));
 
 function geminiKeys() {
   return [
@@ -54,28 +59,31 @@ export async function POST(req: Request) {
 
   let res: Response | null = null;
   const started = Date.now();
-  for (const key of keys) {
-    const left = 16000 - (Date.now() - started);
-    if (left < 2000) break;
-    try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: {
-            temperature: 0,
-            maxOutputTokens: 2048,
-            responseMimeType: "application/json",
-          },
-        }),
-        signal: AbortSignal.timeout(Math.min(12000, left)),
-      });
-    } catch {
-      continue;
+  outer: for (const model of MODELS) {
+    for (const key of keys) {
+      const left = 16000 - (Date.now() - started);
+      if (left < 2000) break outer;
+      try {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 2048,
+              responseMimeType: "application/json",
+            },
+          }),
+          signal: AbortSignal.timeout(Math.min(12000, left)),
+        });
+      } catch {
+        continue;
+      }
+      if (res.ok) break outer;
+      if (res.status === 404) break;
+      if (res.status !== 429 && res.status !== 403) break outer;
     }
-    if (res.ok) break;
-    if (res.status !== 429 && res.status !== 403 && res.status !== 404) break;
   }
   if (!res || !res.ok) {
     return NextResponse.json({ ok: false, error: "gemini" }, { status: 502 });

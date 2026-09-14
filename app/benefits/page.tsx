@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { bundleIconSrc } from "@/lib/bundle-icon";
 import { benefitStatus } from "@/lib/catalog";
 import { daysUntil, won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
@@ -79,7 +80,13 @@ export default function BenefitsPage() {
             const tag = STATE_TAG[st];
             return (
               <button key={b.id} className="benefit-card" type="button" onClick={() => router.push(`/benefits/${b.id}`)} style={{ width: "100%", textAlign: "left" }}>
-                <span className="benefit-ico" aria-hidden>{b.icon}</span>
+                <span className="benefit-ico" aria-hidden>
+                  <img
+                    src={bundleIconSrc(b.icon)}
+                    alt=""
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }}
+                  />
+                </span>
                 <span className="body">
                   <span className="tag" style={{ background: b.providerColor }}>{b.provider}</span>
                   <span className="tag" style={{ background: tag.bg, marginLeft: 6 }}>{tag.label}</span>

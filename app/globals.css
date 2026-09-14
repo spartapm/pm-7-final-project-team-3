@@ -163,7 +163,7 @@ img { display: block; max-width: 100%; }
 .home-hero .home-brand { gap: 20px; }
 .home-hero .home-logo-img { width: auto; height: 28px; object-fit: contain; }
 .home-hero .logo-word { font-size: 50px; line-height: 1; }
-.bell img { width: 26px; height: 26px; object-fit: contain; }
+.bell svg { width: 22px; height: 22px; display: block; }
 .teum-note-ico img { width: 18px; height: 18px; object-fit: contain; display: block; }
 
 .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
@@ -275,9 +275,14 @@ img { display: block; max-width: 100%; }
   background: #d5dbe6; margin: 4px auto 12px;
 }
 .sheet.side {
-  top: 48px; left: 36px; right: 0; bottom: 0; border-radius: 24px 0 0 0; max-height: none;
-  padding-top: 20px;
+  top: 0; left: 33%; right: 0; bottom: 0; border-radius: 0;
+  max-height: none; padding: 12px 16px 16px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
+.sheet.side::before { display: none; }
+.sheet.side .sheet-body { flex: 1; min-height: 0; overflow: auto; }
+.sheet.side .sheet-foot { flex: none; padding-top: 12px; }
 .sheet.side::before { display: none; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sheet-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
@@ -300,7 +305,7 @@ img { display: block; max-width: 100%; }
 .chip.sm { height: 28px; padding: 0 10px; font-size: 12px; font-weight: 600; }
 .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .dot.sub { background: var(--blue); }
-.dot.life { background: #ff7aa2; }
+.dot.life { background: #FF6B7F; }
 
 .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
 .row {
@@ -357,15 +362,15 @@ img { display: block; max-width: 100%; }
 .promo.photo { padding: 0; background: transparent; box-shadow: none; min-height: 0; }
 .promo-full { width: 100%; height: 148px; object-fit: cover; border-radius: 16px; }
 .ok-leak {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%;
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: 100%;
   margin-top: 8px; background: #eaf3ff; color: #2f80ed;
   border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700; text-align: left;
 }
 .ok-leak, .leak {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%;
+  display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; width: 100%;
 }
-.ok-leak .cta, .leak .cta { margin-left: 0; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; }
-.leak-copy { min-width: 0; flex: 1 1 180px; white-space: normal; overflow: visible; font-size: 12px; line-height: 1.4; }
+.ok-leak .cta, .leak .cta { margin-left: auto; align-self: center; min-height: 0; display: inline-flex; align-items: center; white-space: nowrap; }
+.leak-copy { min-width: 0; flex: 1; white-space: normal; overflow: visible; font-size: 12px; line-height: 1.4; }
 .promo-deco {
   position: absolute; right: -12px; top: 10px; width: 96px; height: 96px; border-radius: 50%;
   background: rgba(37, 118, 242, 0.14); pointer-events: none;
@@ -428,7 +433,6 @@ img { display: block; max-width: 100%; }
 .leak {
   background: var(--leak-bg); color: var(--leak); border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700;
 }
-.leak .cta { margin-left: 0; }
 .btn.primary.inspect-cta {
   position: absolute;
   left: 20px;
@@ -532,6 +536,7 @@ img { display: block; max-width: 100%; }
   position: absolute; right: 8px; bottom: 8px; width: 48px; height: 48px;
   object-fit: contain; pointer-events: none;
 }
+.insp-hero .btn { opacity: 1; }
 .insp-hero .btn[disabled] { opacity: .45; pointer-events: none; }
 
 .benefit-card {
@@ -543,7 +548,9 @@ img { display: block; max-width: 100%; }
 .benefit-ico {
   width: 48px; height: 48px; border-radius: 14px; background: #f4f6fa;
   display: grid; place-items: center; font-size: 22px; flex: none;
+  overflow: hidden;
 }
+.benefit-ico img { width: 32px; height: 32px; object-fit: contain; }
 .benefit-card .body { flex: 1; min-width: 0; }
 .tag {
   display: inline-flex; font-size: 11px; font-weight: 800; color: #fff;
@@ -590,6 +597,29 @@ img { display: block; max-width: 100%; }
 .bundle-cmp .good { color: #128a4b; font-weight: 800; }
 .bundle.pink .bundle-cmp .good { color: var(--danger); }
 .save { display: inline-flex; background: var(--blue); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 8px; }
+.rec-card {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  margin-top: 10px; padding: 14px; border-radius: 16px; background: #fff;
+  border: 1.5px solid transparent;
+  background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, var(--c1, #03C75A), var(--c2, #1ED760));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 4px 14px rgba(20, 23, 28, .04);
+}
+.rec-top { display: flex; align-items: center; gap: 6px; }
+.rec-logos { display: flex; align-items: center; min-width: 0; }
+.rec-logo-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.rec-logos .brand { width: 22px; height: 22px; border-radius: 6px; }
+.rec-plus { font-weight: 800; color: #98a2b3; font-size: 13px; margin: 0 2px; }
+.rec-tag { font-size: 12px; font-weight: 700; color: #667085; }
+.rec-save { margin-left: auto; font-size: 13px; font-weight: 800; color: #2f80ed; white-space: nowrap; }
+.rec-title { margin: 10px 0 12px; font-size: 15px; font-weight: 800; line-height: 1.35; }
+.rec-cmp { display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; font-size: 11px; color: #98a2b3; }
+.rec-cmp .old { text-align: right; line-height: 1.35; }
+.rec-cmp .arrow { font-size: 14px; color: #c5cad3; padding-bottom: 2px; }
+.rec-cmp .new { text-align: right; line-height: 1.35; font-weight: 800; }
+.rec-cmp .new { font-size: 14px; }
+.rec-more { text-align: right; color: #2f80ed; font-size: 12px; font-weight: 700; margin-top: 8px; }
 .expand-link {
   display: flex; align-items: center; justify-content: center; gap: 4px;
   width: 100%; padding: 10px 0 4px; color: var(--blue); font-size: 13px; font-weight: 700;
@@ -748,11 +778,6 @@ img { display: block; max-width: 100%; }
 .notice-item .meta { color: var(--muted); font-size: 11px; margin-left: 6px; font-weight: 600; }
 .notice-item p { margin: 4px 0 8px; font-size: 12px; color: var(--muted); line-height: 1.4; }
 .notice-item .mini { margin-left: auto; align-self: flex-end; }
-.notice-item.unread .brand { position: relative; }
-.notice-item.unread .brand::after {
-  content: ""; position: absolute; top: -3px; left: -3px;
-  width: 8px; height: 8px; border-radius: 50%; background: #ff3b30; border: 2px solid #fff;
-}
 .mini { height: 30px; padding: 0 12px; border-radius: 10px; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; }
 
 .menu-group { margin: 16px 0; }
@@ -848,7 +873,8 @@ img { display: block; max-width: 100%; }
 .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .card.tight { padding: 14px; }
 .sum-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 4px; }
-.sum-num { font-weight: 800; font-size: 20px; }
+.sum-num { font-weight: 800; font-size: 20px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sum-num.dday { letter-spacing: -0.02em; }
 .sum-link { font-size: 12px; font-weight: 700; color: #2576f2; white-space: nowrap; }
 .list-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -946,10 +972,12 @@ img { display: block; max-width: 100%; }
 .when-bar b { font-weight: 800; }
 .bnf-icons {
   position: relative; width: 72px; height: 40px; margin: 8px auto 6px;
+  display: grid; place-items: center;
 }
 .bnf-icons img, .bnf-icons .brand {
-  width: 36px; height: 36px; border-radius: 10px; position: absolute; top: 2px;
+  width: 40px; height: 40px; border-radius: 10px;
   box-shadow: 0 2px 8px rgba(20,23,28,.12); overflow: hidden;
+  object-fit: contain; background: #eef3fb;
 }
 .bnf-icons .a { left: 8px; z-index: 1; }
 .bnf-icons .b { left: 28px; z-index: 2; }
@@ -1017,6 +1045,7 @@ img { display: block; max-width: 100%; }
 .withdraw-card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
 .withdraw-card p { margin: 0; font-size: 13px; color: #4b4e58; line-height: 1.55; }
 .withdraw-card hr { border: 0; border-top: 1px solid #e8ebf0; margin: 14px 0; }
+.withdraw-ack { display: flex; align-items: flex-start; gap: 8px; width: 100%; margin: 16px 0 12px; font-size: 13px; font-weight: 600; }
 .withdraw-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .reason-title { margin: 8px 0 16px; font-size: 18px; font-weight: 800; text-align: center; }
 .reason-done { color: #4b4e58; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 8px 20px; }

@@ -77,6 +77,7 @@ export function SubForm({
   const [saving, setSaving] = useState(false);
   const [tried, setTried] = useState(false);
   const [dup, setDup] = useState(false);
+  const [cycleText, setCycleText] = useState(() => String((existing ? fromSub(existing) : emptyDraft()).everyMonths ?? 1));
   const mode = local.mode === "bundle" ? "bundle" : "solo";
 
   useEffect(() => {
@@ -88,11 +89,13 @@ export function SubForm({
         setTrialOn(item.status === "trial");
         setAlertOn(item.alertDays > 0);
         setPicked(Boolean(item.name));
+        setCycleText(String(item.cycle === "yearly" ? 12 : 1));
       } else {
         setLocal({ ...emptyDraft(), fromAi: true });
         setTrialOn(false);
         setAlertOn(false);
         setPicked(false);
+        setCycleText("1");
       }
       return;
     }
@@ -101,6 +104,7 @@ export function SubForm({
     setTrialOn(false);
     setAlertOn(false);
     setPicked(false);
+    setCycleText("1");
   }, [draft, existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name), [local.name]);
@@ -112,7 +116,8 @@ export function SubForm({
   const dateOk = Boolean(local.nextPay);
   const trialOk = !trialOn || (/^\d{1,2}$/.test(local.trialDays) && Number(local.trialDays) >= 1 && Number(local.trialDays) <= 99);
   const bundleOk = mode === "solo" || Boolean(local.bundleProvider && local.name.trim());
-  const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk;
+  const cycleOk = /^[1-9]\d?$/.test(cycleText) && Number(cycleText) >= 1 && Number(cycleText) <= 99;
+  const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk && cycleOk;
   const bundleList = local.bundleProvider ? productsOf(local.bundleProvider) : [];
 
   const pick = (name: string) => {
@@ -166,7 +171,7 @@ export function SubForm({
     const payDay = Number(local.nextPay.slice(8, 10)) || 1;
     const color = known?.color ?? "#2576f2";
     const trialEnds = trialOn ? addDays(local.nextPay, Number(local.trialDays) || 14) : null;
-    const months = local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1);
+    const months = Number(cycleText);
     setSaving(true);
     try {
       const id = existing?.id ?? uid("sub");
@@ -204,7 +209,7 @@ export function SubForm({
         months,
         alert: alertOn,
       }));
-      router.replace("/subscriptions/saved");
+      router.replace(fromResult ? "/subscriptions" : "/subscriptions/saved");
     } catch {
       setSaving(false);
       showToast("⚠️ 저장에 실패했어요. 다시 시도해주세요.", "err");
@@ -318,14 +323,23 @@ export function SubForm({
                 id="sub-cycle"
                 aria-required="true"
                 inputMode="numeric"
-                value={String(local.everyMonths ?? (local.cycle === "yearly" ? 12 : 1))}
+                value={cycleText}
                 onChange={(e) => {
-                  const n = Math.min(99, Math.max(1, Number(e.target.value.replace(/[^0-9]/g, "")) || 1));
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  if (raw === "") {
+                    setCycleText("");
+                    return;
+                  }
+                  if (raw === "0") return;
+                  const n = Math.min(99, Number(raw));
+                  if (!n) return;
+                  setCycleText(String(n));
                   setLocal((p) => ({ ...p, everyMonths: n, cycle: (n === 12 ? "yearly" : "monthly") as BillingCycle }));
                 }}
               />
               <span>개월</span>
             </div>
+            {tried && !cycleOk ? <p className="err-msg">결제 주기는 1~99개월만 입력할 수 있어요.</p> : null}
           </div>
           <div className={`field ${tried && (!amountOk || !amountRangeOk) ? "err" : ""}`}>
             <label htmlFor="sub-amount">{mode === "bundle" ? "결합상품 결제금액" : "결제 금액"} <i className="req">*</i></label>

@@ -71,6 +71,12 @@
 }
 .adm-login .box { width: 360px; background: #fff; border-radius: 16px; padding: 28px; }
 .adm-err { color: #d92d20; font-size: 13px; margin: 0 0 8px; }
+.adm-icon-pick { display: flex; align-items: center; gap: 12px; }
+.adm-icon-pick img {
+  width: 56px; height: 56px; object-fit: contain; border-radius: 12px;
+  background: #eef3fb; border: 1px solid #e6eef8;
+}
+.adm-icon-pick > div { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 1100px) {
   .adm-root { grid-template-columns: 1fr; }
   .adm-side { display: none; }

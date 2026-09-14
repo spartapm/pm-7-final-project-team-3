@@ -68,10 +68,10 @@ function withNotices(s: AppState): AppState {
     if (sub.status === "trial" && sub.trialEnds) {
       const nextPay = daysUntil(sub.trialEnds) >= 0
         ? sub.trialEnds
-        : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle);
+        : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle, sub.everyMonths);
       return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
     }
-    const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle);
+    const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle, sub.everyMonths);
     return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
   });
   return { ...s, subscriptions, notices: mergePayNotices(subscriptions, s.alerts, s.notices, s.events) };

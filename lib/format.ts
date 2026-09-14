@@ -28,6 +28,62 @@ export function addMonths(date: Date, n: number) {
   return d;
 }
 
+export function addMonthsClamped(iso: string, months: number, day = parseYmd(iso).getDate()) {
+  const d = parseYmd(iso);
+  const total = d.getFullYear() * 12 + d.getMonth() + months;
+  const y = Math.floor(total / 12);
+  const m = ((total % 12) + 12) % 12;
+  const last = new Date(y, m + 1, 0).getDate();
+  return ymd(new Date(y, m, Math.min(Math.max(1, day), last)));
+}
+
+export function cycleStepMonths(cycle: string, everyMonths?: number) {
+  if (cycle === "weekly") return 0;
+  if (cycle === "yearly") return Math.min(99, Math.max(1, everyMonths ?? 12));
+  return Math.min(99, Math.max(1, everyMonths ?? 1));
+}
+
+export function subscriptionPayDates(
+  sub: { nextPay: string; payDay: number; cycle: string; everyMonths?: number },
+  fromKey: string,
+  toKey: string,
+) {
+  if (!sub.nextPay || fromKey > toKey) return [] as string[];
+  const out: string[] = [];
+  if (sub.cycle === "weekly") {
+    const d = parseYmd(sub.nextPay);
+    let guard = 0;
+    while (ymd(d) > fromKey && guard++ < 80) d.setDate(d.getDate() - 7);
+    guard = 0;
+    while (ymd(d) < fromKey && guard++ < 80) d.setDate(d.getDate() + 7);
+    guard = 0;
+    while (ymd(d) <= toKey && guard++ < 80) {
+      out.push(ymd(d));
+      d.setDate(d.getDate() + 7);
+    }
+    return out;
+  }
+  const step = cycleStepMonths(sub.cycle, sub.everyMonths);
+  const day = sub.payDay || parseYmd(sub.nextPay).getDate();
+  let cur = sub.nextPay;
+  let guard = 0;
+  while (cur > fromKey && guard++ < 48) {
+    const prev = addMonthsClamped(cur, -step, day);
+    if (prev >= cur) break;
+    cur = prev;
+  }
+  guard = 0;
+  while (cur < fromKey && guard++ < 48) cur = addMonthsClamped(cur, step, day);
+  guard = 0;
+  while (cur <= toKey && guard++ < 48) {
+    out.push(cur);
+    const next = addMonthsClamped(cur, step, day);
+    if (next <= cur) break;
+    cur = next;
+  }
+  return out;
+}
+
 export function nextPayDate(payDay: number, from = new Date()) {
   const d = new Date(from.getFullYear(), from.getMonth(), payDay);
   if (d < new Date(from.getFullYear(), from.getMonth(), from.getDate())) {
@@ -38,7 +94,7 @@ export function nextPayDate(payDay: number, from = new Date()) {
   return ymd(d);
 }
 
-export function ensureFuturePay(nextPay: string, payDay: number, cycle: string) {
+export function ensureFuturePay(nextPay: string, payDay: number, cycle: string, everyMonths?: number) {
   if (!nextPay) return nextPayDate(payDay);
   if (daysUntil(nextPay) >= 0) return nextPay;
   if (cycle === "weekly") {
@@ -46,12 +102,11 @@ export function ensureFuturePay(nextPay: string, payDay: number, cycle: string) 
     while (daysUntil(ymd(d)) < 0) d.setDate(d.getDate() + 7);
     return ymd(d);
   }
-  if (cycle === "yearly") {
-    const d = parseYmd(nextPay);
-    while (daysUntil(ymd(d)) < 0) d.setFullYear(d.getFullYear() + 1);
-    return ymd(d);
-  }
-  return nextPayDate(payDay);
+  const step = cycleStepMonths(cycle, everyMonths);
+  let cur = nextPay;
+  let guard = 0;
+  while (daysUntil(cur) < 0 && guard++ < 48) cur = addMonthsClamped(cur, step, payDay);
+  return cur;
 }
 
 export function won(n: number) {
@@ -100,7 +155,7 @@ export function dueLabel(s: string) {
 
 export function dueBadge(s: string) {
   const n = daysUntil(s);
-  if (n === 0) return "오늘";
+  if (n === 0) return "D-Day";
   if (n > 0) return `D-${n}`;
   return `D+${-n}`;
 }

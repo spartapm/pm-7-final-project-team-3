@@ -29,10 +29,13 @@ function Inner() {
   phaseRef.current = phase;
 
   const stopMic = () => {
-    const rec = recRef.current as { stop?: () => void; abort?: () => void; onresult?: null } | null;
+    const rec = recRef.current as { stop?: () => void; abort?: () => void; onresult?: null; onerror?: null } | null;
+    if (rec) {
+      rec.onresult = null;
+      rec.onerror = null;
+    }
     rec?.abort?.();
     rec?.stop?.();
-    if (rec) rec.onresult = null;
     recRef.current = null;
     stream?.getTracks().forEach((t) => t.stop());
     setStream(null);
@@ -88,7 +91,9 @@ function Inner() {
         for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
         setText(t);
       };
-      rec.onerror = () => {
+      rec.onerror = (ev?: { error?: string }) => {
+        const err = ev?.error ?? "";
+        if (err === "aborted" || err === "no-speech" || phaseRef.current !== "listen") return;
         stopMic();
         setPhase("fail");
       };
@@ -169,11 +174,16 @@ function Inner() {
       const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
       beginExtract(kind, "voice", items);
       router.push(afterExtractPath(kind, "voice"));
-    } catch {
+    } catch (e) {
       if (goneRef.current || phaseRef.current !== "wait") return;
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setPhase("idle");
+        return;
+      }
       setPhase("fail");
     } finally {
       window.clearTimeout(timer);
+      if (abortRef.current === ctrl) abortRef.current = null;
     }
   };
 
@@ -260,7 +270,11 @@ function Inner() {
         ) : null}
         {phase === "wait" ? (
           <div className="wait">
-            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => { phaseRef.current = "idle"; setPhase("idle"); }}>
+            <button className="icon-btn wait-close" type="button" aria-label="닫기" onClick={() => {
+              abortRef.current?.abort();
+              phaseRef.current = "idle";
+              setPhase("idle");
+            }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
             <img className="teumki-illust" src="/teumki/loading.png" alt="" />
@@ -278,14 +292,14 @@ function Inner() {
           </div>
         ) : null}
         {phase === "exit" ? (
-          <div className="modal-back" onClick={() => setPhase("listen")}>
+          <div className="modal-back" onClick={() => void start()}>
             <div className="modal voice-perm" onClick={(e) => e.stopPropagation()}>
               <img className="modal-mascot" src="/teumki/curious.png" alt="" />
               <h3>음성 분석을 그만할까요?</h3>
               <p>분석 중인 내용은 저장되지 않아요.</p>
               <div className="modal-actions">
                 <button className="btn cancel" type="button" onClick={() => { stopMic(); setText(""); setSec(0); setPhase("idle"); }}>분석 그만하기</button>
-                <button className="btn primary" type="button" onClick={() => setPhase("listen")}>계속 진행하기</button>
+                <button className="btn primary" type="button" onClick={() => void start()}>계속 진행하기</button>
               </div>
             </div>
           </div>
@@ -320,5 +334,5 @@ type Rec = {
   stop: () => void;
   abort?: () => void;
   onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((ev?: { error?: string }) => void) | null;
 };
