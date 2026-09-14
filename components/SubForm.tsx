@@ -6,7 +6,8 @@ import { WhenPick } from "@/components/WhenPick";
 import { Back, Brand, Gate, Modal, PhoneShell } from "@/components/ui";
 import { BUNDLE_PROVIDERS, findBundle, productsOf } from "@/lib/bundles";
 import { findBrand, findBrandExact } from "@/lib/brands";
-import { emptyDraft, searchServices } from "@/lib/catalog";
+import { emptyDraft, searchServices, type ServiceHit } from "@/lib/catalog";
+import { useBenefits } from "@/lib/use-benefits";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
 import { dateLabel, uid, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
@@ -66,6 +67,7 @@ export function SubForm({
 }) {
   const router = useRouter();
   const { subscriptions, upsertSub, draft, setDraft, resetDraft, showToast } = useStore();
+  const { soloProducts } = useBenefits();
   const existing = existingId ? subscriptions.find((s) => s.id === existingId) : null;
   const [local, setLocal] = useState<DraftSub>(existing ? fromSub(existing) : emptyDraft());
   const [open, setOpen] = useState(false);
@@ -107,7 +109,7 @@ export function SubForm({
     setCycleText("1");
   }, [draft, existingId, extractId, fromResult]);
 
-  const hits = useMemo(() => searchServices(local.name), [local.name]);
+  const hits = useMemo(() => searchServices(local.name, soloProducts), [local.name, soloProducts]);
   const known = findBrandExact(local.name) ?? (picked ? findBrand(local.name) : undefined);
   const amountNum = Number(digitsOf(local.amount));
   const amountRangeOk = digitsOf(local.amount) === "" || (/^\d+$/.test(digitsOf(local.amount)) && amountNum >= 0 && amountNum <= 99999999);
@@ -120,13 +122,13 @@ export function SubForm({
   const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk && cycleOk;
   const bundleList = local.bundleProvider ? productsOf(local.bundleProvider) : [];
 
-  const pick = (name: string) => {
-    const hit = findBrand(name);
+  const pick = (hit: ServiceHit) => {
+    const brand = findBrand(hit.name);
     setLocal((p) => ({
       ...p,
-      name,
-      category: hit?.category ?? p.category,
-      amount: hit?.amount ? String(hit.amount) : p.amount,
+      name: hit.name,
+      category: hit.category || brand?.category || p.category,
+      amount: hit.amount ? String(hit.amount) : (brand?.amount ? String(brand.amount) : p.amount),
     }));
     setPicked(true);
     setOpen(false);
@@ -298,7 +300,7 @@ export function SubForm({
             {mode === "solo" && open && hits.length > 0 && !picked ? (
               <div className="svc-suggest">
                 {hits.map((s) => (
-                  <button key={s.name} type="button" onClick={() => pick(s.name)}>
+                  <button key={s.id ?? s.name} type="button" onClick={() => pick(s)}>
                     <Brand name={s.name} color={s.color} logo={s.logo} />
                     {s.name}
                   </button>

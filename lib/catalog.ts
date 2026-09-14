@@ -187,23 +187,54 @@ export function emptyDraft(kind: "subscription" | "event" = "subscription"): Dra
   };
 }
 
-export function searchServices(q: string) {
+export type ServiceHit = {
+  id?: string;
+  name: string;
+  category: Category;
+  amount: number;
+  color: string;
+  logo: string;
+};
+
+export function categoryFromAdmin(raw: string | null | undefined): Category {
+  const s = String(raw ?? "").trim();
+  if (CATEGORIES.some((c) => c.id === s)) return s as Category;
+  const n = s.toLowerCase();
+  if (/ott|영상/.test(n)) return "ott";
+  if (/음악|뮤직|오디오/.test(n)) return "music";
+  if (/ai|생성/.test(n)) return "ai";
+  if (/쇼핑/.test(n)) return "shopping";
+  if (/멤버/.test(n)) return "membership";
+  if (/배달/.test(n)) return "delivery";
+  if (/디자인/.test(n)) return "design";
+  if (/교육/.test(n)) return "edu";
+  if (/게임/.test(n)) return "game";
+  if (/클라우드/.test(n)) return "cloud";
+  if (/웹툰|전자책/.test(n)) return "webtoon";
+  return "other";
+}
+
+export function searchServices(q: string, catalog: ServiceHit[] = []): ServiceHit[] {
   const n = q.trim().toLowerCase();
   if (n.length < 1) return [];
-  return BRANDS.filter((b) => {
-    const keys = [b.name, b.file.replace("+", ""), ...b.aliases];
+  const matched = (name: string, extra: string[] = []) => {
+    const keys = [name, ...extra];
     return keys.some((k) => {
       const kl = k.toLowerCase();
       if (kl.includes(n)) return true;
       return n.length >= 2 && kl.length >= 2 && n.includes(kl);
     });
-  }).slice(0, 8).map((b) => ({
+  };
+  const fromDb = catalog.filter((p) => matched(p.name));
+  const seen = new Set(fromDb.map((p) => p.name.replace(/\s/g, "").toLowerCase()));
+  const fromBrands = BRANDS.filter((b) => matched(b.name, [b.file.replace("+", ""), ...b.aliases])).map((b) => ({
     name: b.name,
     category: b.category,
     amount: b.amount ?? 0,
     color: b.color,
     logo: "",
-  }));
+  })).filter((b) => !seen.has(b.name.replace(/\s/g, "").toLowerCase()));
+  return [...fromDb, ...fromBrands].slice(0, 8);
 }
 
 export function seedSubscriptions(): Subscription[] {
