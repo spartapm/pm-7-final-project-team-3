@@ -110,7 +110,7 @@ export function ensureFuturePay(nextPay: string, payDay: number, cycle: string, 
 }
 
 export function won(n: number) {
-  return `${n.toLocaleString("ko-KR")}원`;
+  return `${(Number(n) || 0).toLocaleString("ko-KR")}원`;
 }
 
 export function monthLabel(d: Date) {

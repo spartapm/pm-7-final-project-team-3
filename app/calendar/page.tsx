@@ -111,7 +111,7 @@ function Inner() {
             </div>
             <p>{filter === "all" ? "전체" : filter === "sub" ? "구독" : "일상"} 일정 {monthCount}개 · 오늘 {todayCount}개</p>
             <div className="chip-row">
-              <button className={`chip ${filter === "sub" ? "on" : ""}`} type="button" onClick={() => setFilter("sub")}><i className="dot sub" />구독</button>
+              <button className={`chip ${filter === "sub" ? "on" : ""}`} type="button" onClick={() => setFilter("sub")}><i className="dot" style={{ background: "#2F80ED" }} />구독</button>
               <button className={`chip ${filter === "life" ? "on" : ""}`} type="button" onClick={() => setFilter("life")}><i className="dot life" />일상</button>
               <button className={`chip ${filter === "all" ? "on" : ""}`} type="button" onClick={() => setFilter("all")}><i className="dot" style={{ background: filter === "all" ? "#fff" : "#9aa3b2" }} />전체</button>
             </div>

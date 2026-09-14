@@ -363,7 +363,7 @@ export function seedNotices(subs: Subscription[]): Notice[] {
     {
       id: "nt_price_gpt",
       title: "ChatGPT 가격변동 예정",
-      body: `${gpt ? gpt.nextPay.slice(5).replace("-", "월 ") + "일" : "갱신일"}에 ${gpt?.amount.toLocaleString("ko-KR")}원으로 갱신돼요.`,
+      body: `${gpt ? gpt.nextPay.slice(5).replace("-", "월 ") + "일" : "갱신일"}에 ${(gpt?.amount ?? 0).toLocaleString("ko-KR")}원으로 갱신돼요.`,
       at: now - 10800000,
       read: false,
       href: gpt ? `/subscriptions/${gpt.id}` : "/home",
@@ -451,7 +451,7 @@ export function mergePayNotices(
       generated.push({
         id: `pay_${s.id}_${s.nextPay}`,
         title: `${s.name} 자동결제 예정`,
-        body: `${payLabel(s.nextPay)}에 ${s.amount.toLocaleString("ko-KR")}원이 결제될 예정이에요.`,
+        body: `${payLabel(s.nextPay)}에 ${(Number(s.amount) || 0).toLocaleString("ko-KR")}원이 결제될 예정이에요.`,
         at: Date.now(),
         read: false,
         href: `/subscriptions/${s.id}`,

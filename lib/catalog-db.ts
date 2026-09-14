@@ -80,6 +80,11 @@ function splitLines(raw: string) {
   return raw.split(/\r?\n/).map((s) => s.replace(/^\s*[-•\d.]+\s*/, "").trim()).filter(Boolean);
 }
 
+function money(n: unknown) {
+  const v = Number(n);
+  return Number.isFinite(v) ? v : 0;
+}
+
 export function bundleToBenefit(
   b: BundleRow,
   items: BundleItemRow[],
@@ -92,7 +97,7 @@ export function bundleToBenefit(
   const color = primary?.product?.provider?.brand_color
     || PROVIDER_COLOR[provider]
     || "#2576f2";
-  const solo = items.reduce((sum, i) => sum + (i.product?.price_standard ?? 0), 0);
+  const solo = items.reduce((sum, i) => sum + money(i.product?.price_standard), 0);
   const title = b.card_title || b.bundle_name;
   const body = b.card_body || "";
   const steps = splitLines(b.apply_method);
@@ -114,8 +119,8 @@ export function bundleToBenefit(
     brandColor: color,
     parent: primary?.product ? { name: primary.product.product_name, sub: "월 자동결제" } : undefined,
     perk: perk?.product ? { name: perk.product.product_name, sub: perk.item_role === "BENEFIT" ? "혜택상품" : "월 정기결제" } : undefined,
-    priceSingle: solo || b.price_bundled,
-    priceBundle: b.price_bundled,
+    priceSingle: solo || money(b.price_bundled),
+    priceBundle: money(b.price_bundled),
     steps: steps.length ? steps : undefined,
     termsList: terms.length ? terms : undefined,
     source: "제공사 공식 안내 · 틈 어드민",
@@ -134,7 +139,7 @@ export function bundleRowsToProducts(bundles: BundleRow[], items: BundleItemRow[
       providerId: b.category,
       name: b.bundle_name,
       included: names.join(", ") || b.card_title || b.bundle_name,
-      amount: b.price_bundled,
+      amount: money(b.price_bundled),
       everyMonths: 1,
     };
   });

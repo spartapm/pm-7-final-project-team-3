@@ -75,7 +75,11 @@ function Inner() {
     }).catch(() => undefined);
   }, [editBundle, editSolo]);
 
-  const sum = picked.reduce((a, i) => a + (products.find((p) => p.product_id === i.product_id)?.price_standard ?? 0), 0);
+  const priceOf = (n: unknown) => {
+    const v = Number(n);
+    return Number.isFinite(v) ? v : 0;
+  };
+  const sum = picked.reduce((a, i) => a + priceOf(products.find((p) => p.product_id === i.product_id)?.price_standard), 0);
   const bundled = Number(String(price).replace(/[^\d]/g, "")) || 0;
   const saveAmt = Math.max(0, sum - bundled);
   const unused = products.filter((p) => !picked.some((x) => x.product_id === p.product_id));
@@ -195,7 +199,7 @@ function Inner() {
                   <div key={row.product_id} className="adm-item">
                     <div>
                       <b>{p?.product_name}</b>
-                      <div style={{ fontSize: 12, color: "#667085" }}>{providerName(row.product_id)} · {(p?.price_standard ?? 0).toLocaleString("ko-KR")}원</div>
+                      <div style={{ fontSize: 12, color: "#667085" }}>{providerName(row.product_id)} · {priceOf(p?.price_standard).toLocaleString("ko-KR")}원</div>
                     </div>
                     <span className="role">{row.item_role === "PRIMARY" ? "주상품 (PRIMARY)" : "부가 상품 (BENEFIT)"}</span>
                     <button className="adm-btn" type="button" onClick={() => setPicked((xs) => xs.filter((_, i) => i !== idx))}>×</button>
@@ -230,7 +234,7 @@ function Inner() {
               <div style={{ color: "#667085", fontSize: 12, clear: "both" }}>
                 ({picked.map((i) => {
                   const p = products.find((x) => x.product_id === i.product_id);
-                  return p ? `${p.product_name} ${(p.price_standard ?? 0).toLocaleString("ko-KR")}원` : "";
+                  return p ? `${p.product_name} ${priceOf(p.price_standard).toLocaleString("ko-KR")}원` : "";
                 }).filter(Boolean).join(" + ") || "구성 상품 없음"})
               </div>
               <div>사용자 절약액 <b className="good">-{saveAmt.toLocaleString("ko-KR")}원</b></div>
