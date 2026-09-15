@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const MODELS = [
   process.env.GEMINI_MODEL,
-  "gemini-3.5-flash-lite",
+  "gemini-3.6-flash",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
 ].filter((k): k is string => Boolean(k?.trim()));
@@ -73,6 +73,9 @@ export async function POST(req: Request) {
               temperature: 0,
               maxOutputTokens: 2048,
               responseMimeType: "application/json",
+              ...(model.startsWith("gemini-3")
+                ? { thinkingConfig: { thinkingLevel: "MINIMAL" } }
+                : {}),
             },
           }),
           signal: AbortSignal.timeout(Math.min(12000, left)),
@@ -81,7 +84,7 @@ export async function POST(req: Request) {
         continue;
       }
       if (res.ok) break outer;
-      if (res.status === 404) break;
+      if (res.status === 404 || res.status === 400) break;
       if (res.status !== 429 && res.status !== 403) break outer;
     }
   }
