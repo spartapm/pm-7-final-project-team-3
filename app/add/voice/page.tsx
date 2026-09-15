@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { VoiceWave } from "@/components/VoiceWave";
-import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
+import { afterExtractPath, beginExtract, eventItemFromRaw, parseVoiceItems, subItemFromRaw } from "@/lib/extract";
 import { useStore } from "@/lib/store";
 
 type Phase = "idle" | "listen" | "save" | "wait" | "fail" | "exit";
@@ -21,23 +21,27 @@ function Inner() {
   const [perm, setPerm] = useState(false);
   const [text, setText] = useState("");
   const [sec, setSec] = useState(0);
-  const recRef = useRef<{ stop: () => void } | null>(null);
+  const recRef = useRef<Rec | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const goneRef = useRef(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  streamRef.current = stream;
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
   const stopMic = () => {
-    const rec = recRef.current as { stop?: () => void; abort?: () => void; onresult?: null; onerror?: null } | null;
+    const rec = recRef.current;
     if (rec) {
       rec.onresult = null;
       rec.onerror = null;
+      rec.onend = null;
     }
     rec?.abort?.();
     rec?.stop?.();
     recRef.current = null;
-    stream?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
     setStream(null);
   };
 
@@ -45,8 +49,8 @@ function Inner() {
     goneRef.current = true;
     abortRef.current?.abort();
     recRef.current?.stop();
-    stream?.getTracks().forEach((t) => t.stop());
-  }, [stream]);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+  }, []);
 
   useEffect(() => {
     if (phase !== "listen") return;
@@ -78,28 +82,38 @@ function Inner() {
   }, []);
 
   const beginListen = (mic: MediaStream) => {
+    streamRef.current = mic;
     setStream(mic);
     const w = window as Window & { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (SR) {
-      const rec = new SR();
-      rec.lang = "ko-KR";
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.onresult = (ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => {
-        let t = "";
-        for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
-        setText(t);
-      };
-      rec.onerror = (ev?: { error?: string }) => {
-        const err = ev?.error ?? "";
-        if (err === "aborted" || err === "no-speech" || phaseRef.current !== "listen") return;
-        stopMic();
-        setPhase("fail");
-      };
-      recRef.current = rec;
-      rec.start();
+    if (!SR) {
+      mic.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      setStream(null);
+      showToast("이 브라우저는 음성 인식을 지원하지 않아요. Chrome에서 다시 시도해 주세요.", "err");
+      return;
     }
+    const rec = new SR();
+    rec.lang = "ko-KR";
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => {
+      let t = "";
+      for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+      setText(t);
+    };
+    rec.onerror = (ev?: { error?: string }) => {
+      const err = ev?.error ?? "";
+      if (err === "aborted" || err === "no-speech" || phaseRef.current !== "listen") return;
+      stopMic();
+      setPhase("fail");
+    };
+    rec.onend = () => {
+      if (recRef.current !== rec || phaseRef.current !== "listen") return;
+      try { rec.start(); } catch { /* already running */ }
+    };
+    recRef.current = rec;
+    rec.start();
     setSec(0);
     setPhase("listen");
   };
@@ -154,6 +168,14 @@ function Inner() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);
+    const finish = (items: ReturnType<typeof parseVoiceItems>) => {
+      if (goneRef.current || phaseRef.current !== "wait" || items.length === 0) {
+        if (!goneRef.current && phaseRef.current === "wait") setPhase("fail");
+        return;
+      }
+      beginExtract(kind, "voice", items);
+      router.replace(afterExtractPath(kind, "voice"));
+    };
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -162,34 +184,29 @@ function Inner() {
         signal: ctrl.signal,
       });
       if (goneRef.current || phaseRef.current !== "wait") return;
-      if (!res.ok) {
-        setPhase("fail");
-        return;
-      }
-      let json: {
+      type AnalyzeJson = {
         ok?: boolean;
         items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
         data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
       };
+      let json: AnalyzeJson | null = null;
       try {
-        json = await res.json() as typeof json;
+        json = await res.json() as AnalyzeJson;
       } catch {
-        setPhase("fail");
-        return;
+        json = null;
       }
       if (goneRef.current || phaseRef.current !== "wait") return;
-      const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
-      if (!json.ok || rows.length === 0) {
-        setPhase("fail");
+      const rows = json?.items?.length ? json.items : json?.data ? [json.data] : [];
+      if (res.ok && json?.ok && rows.length > 0) {
+        finish(kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw));
         return;
       }
-      const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
-      beginExtract(kind, "voice", items);
-      router.push(afterExtractPath(kind, "voice"));
+      finish(parseVoiceItems(text, kind));
     } catch (e) {
       if (goneRef.current || phaseRef.current !== "wait") return;
-      if (e instanceof DOMException && e.name === "AbortError") {
-        setPhase("fail");
+      const aborted = (e as { name?: string })?.name === "AbortError";
+      if (aborted) {
+        finish(parseVoiceItems(text, kind));
         return;
       }
       setPhase("fail");
@@ -347,4 +364,5 @@ type Rec = {
   abort?: () => void;
   onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onerror: ((ev?: { error?: string }) => void) | null;
+  onend: (() => void) | null;
 };
