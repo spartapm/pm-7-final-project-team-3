@@ -150,6 +150,7 @@ function Inner() {
     if (!text.trim()) return;
     stopMic();
     setPhase("wait");
+    phaseRef.current = "wait";
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);

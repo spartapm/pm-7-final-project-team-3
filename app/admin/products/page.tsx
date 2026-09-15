@@ -11,6 +11,7 @@ function Inner() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [bundles, setBundles] = useState<BundleRow[]>([]);
   const [items, setItems] = useState<BundleItemRow[]>([]);
+  const [q, setQ] = useState("");
   useEffect(() => {
     fetch("/api/admin/session").then((r) => r.json()).then((d) => {
       setProviders(d.providers ?? []);
@@ -21,9 +22,11 @@ function Inner() {
   }, []);
   const nameOf = (id: number | null) => providers.find((p) => p.provider_id === id)?.provider_name ?? "-";
   const wonOf = (n: number | string | null | undefined) => `${(Number(n) || 0).toLocaleString("ko-KR")}원`;
+  const needle = q.trim().toLowerCase();
+  const hit = (s: string) => !needle || s.toLowerCase().includes(needle);
   const solo = useMemo(
-    () => products.filter((p) => (p.product_type || "단독") !== "결합" && (p.is_active || type !== "solo")),
-    [products, type],
+    () => products.filter((p) => (p.product_type || "단독") !== "결합" && (p.is_active || type !== "solo") && hit(p.product_name)),
+    [products, type, needle],
   );
   return (
     <>
@@ -33,6 +36,15 @@ function Inner() {
           <p>시트에 없는 값은 등록 화면에서 이어서 넣으면 됩니다.</p>
         </div>
         <Link className="adm-btn primary" href="/admin/products/new">상품 등록</Link>
+      </div>
+      <div className="adm-field" style={{ maxWidth: 420, marginBottom: 16 }}>
+        <label htmlFor="adm-product-q">상품 검색</label>
+        <input
+          id="adm-product-q"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="상품명으로 검색"
+        />
       </div>
       {type !== "bundle" ? (
         <div className="adm-card" style={{ marginBottom: 16 }}>
@@ -60,7 +72,7 @@ function Inner() {
           <table className="adm-table">
             <thead><tr><th>ID</th><th>상품명</th><th>카드 제목</th><th>결합가</th><th>구성</th><th>상태</th></tr></thead>
             <tbody>
-              {bundles.map((b) => (
+              {bundles.filter((b) => hit(b.bundle_name) || hit(b.card_title || "")).map((b) => (
                 <tr key={b.bundle_id}>
                   <td>{b.bundle_id}</td>
                   <td><Link href={`/admin/products/new?bundle=${b.bundle_id}`}>{b.bundle_name}</Link></td>

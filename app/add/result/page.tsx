@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { findBrand } from "@/lib/brands";
-import { clearExtract, readExtract } from "@/lib/extract";
+import { findDuplicate } from "@/lib/dedup";
+import { clearExtract, readExtract, removeExtractItem } from "@/lib/extract";
 import { dateLabel, uid, won } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { ExtractEventItem, ExtractItem, ExtractState, ExtractSubItem } from "@/lib/types";
@@ -28,10 +29,13 @@ function Inner() {
   const q = useSearchParams();
   const kind = q.get("kind") === "event" ? "event" : "subscription";
   const from = q.get("from") === "voice" ? "voice" : "image";
-  const { upsertSub, upsertEvent, showToast } = useStore();
+  const { upsertSub, upsertEvent, showToast, subscriptions } = useStore();
   const [state, setState] = useState<ExtractState | null>(null);
   const [exit, setExit] = useState(false);
   const [fabTab, setFabTab] = useState("/home");
+  const [allowedDup, setAllowedDup] = useState<Set<string>>(new Set());
+  const [dupId, setDupId] = useState<string | null>(null);
+  const [dupChoice, setDupChoice] = useState<"remove" | "keep" | null>(null);
   const exitRef = useRef(false);
   const dirtyRef = useRef(false);
   exitRef.current = exit;
@@ -98,6 +102,32 @@ function Inner() {
     }
   };
 
+  const liveSubs = subscriptions.filter((s) => s.status !== "ended");
+  const dupMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof findDuplicate>>();
+    if (!state || kind !== "subscription") return map;
+    for (const item of state.items) {
+      if (item.kind !== "subscription" || allowedDup.has(item.id)) continue;
+      map.set(item.id, findDuplicate(item, liveSubs));
+    }
+    return map;
+  }, [state, kind, liveSubs, allowedDup]);
+  const dupCount = [...dupMap.values()].filter(Boolean).length;
+  const dupOpen = dupId && state ? state.items.find((x) => x.id === dupId) : null;
+  const dupInfo = dupId ? dupMap.get(dupId) : null;
+
+  const applyDup = () => {
+    if (!dupId || !dupChoice || !state) return;
+    if (dupChoice === "remove") {
+      removeExtractItem(dupId);
+      setState(readExtract());
+    } else {
+      setAllowedDup((prev) => new Set(prev).add(dupId));
+    }
+    setDupId(null);
+    setDupChoice(null);
+  };
+
   const direct = () => {
     if (kind === "event") {
       router.push("/events/new?from=result&i=new");
@@ -108,6 +138,7 @@ function Inner() {
 
   const saveAll = () => {
     if (!state) return;
+    if (kind === "subscription" && dupCount > 0) return;
     const incomplete = state.items.some((item) => (
       item.kind === "event"
         ? !item.title.trim() || !item.date
@@ -210,15 +241,32 @@ function Inner() {
         </div>
         <div className="scroll tabbed result-page">
           <h2>{kind === "event" ? "일정을 확인해주세요" : "구독을 확인해주세요"}</h2>
-          <p className="muted">중복 항목을 확인하고 저장 전 내용을 수정할 수 있어요.</p>
+          {kind === "subscription" && dupCount > 0 ? (
+            <p className="muted">이미 등록된 구독 {dupCount}건을 찾았어요. 저장 전에 처리해주세요.</p>
+          ) : (
+            <p className="muted">중복 항목을 확인하고 저장 전 내용을 수정할 수 있어요.</p>
+          )}
           <div className="result-list">
             {state.items.map((item) => {
               const known = item.kind === "subscription" ? findBrand(item.name) : null;
               const label = item.kind === "event" ? item.title : item.name;
+              const dup = item.kind === "subscription" ? dupMap.get(item.id) : null;
               return (
-                <button key={item.id} type="button" className="result-card" onClick={() => openItem(item)}>
+                <button
+                  key={item.id}
+                  type="button"
+                  className="result-card"
+                  onClick={() => {
+                    if (dup) {
+                      setDupChoice(null);
+                      setDupId(item.id);
+                      return;
+                    }
+                    openItem(item);
+                  }}
+                >
                   {item.kind === "subscription" ? (
-                    <Brand name={known?.name ?? item.name} color={known?.color ?? "#2576f2"} logo={item.name.slice(0, 1)} />
+                    <Brand name={known?.name ?? item.name} color={known?.color ?? "#2576f2"} logo="" />
                   ) : (
                     <span className="brand" style={{ background: "#ff7aa2" }}>{label.slice(0, 1) || "·"}</span>
                   )}
@@ -226,11 +274,15 @@ function Inner() {
                     <b>{label || "이름 없음"}</b>
                     <em>{metaOf(item)}</em>
                   </span>
+                  {dup ? <span className="dup-badge">중복</span> : null}
                   <span className="result-chevron">›</span>
                 </button>
               );
             })}
           </div>
+          {kind === "subscription" && dupCount > 0 ? (
+            <p className="result-hint">중복 항목을 탭하면 처리 방법을 고를 수 있어요.</p>
+          ) : null}
           <div className="result-manual">
             <p>{kind === "event" ? "원하는 일정이 목록에 없나요?" : "원하는 서비스가 목록에 없나요?"}</p>
             <button type="button" onClick={direct}>
@@ -238,9 +290,43 @@ function Inner() {
               직접 입력하기
             </button>
           </div>
-          <button className="btn primary" type="button" disabled={state.items.length === 0} onClick={saveAll}>저장하기</button>
+          <button
+            className="btn primary"
+            type="button"
+            disabled={state.items.length === 0 || (kind === "subscription" && dupCount > 0)}
+            onClick={saveAll}
+          >
+            {kind === "subscription" && dupCount > 0 ? `저장하기 (중복 ${dupCount}건 처리 필요)` : "저장하기"}
+          </button>
         </div>
         <TabBar active={fabTab} />
+        {dupOpen && dupOpen.kind === "subscription" && dupInfo ? (
+          <>
+            <div className="sheet-back" onClick={() => { setDupId(null); setDupChoice(null); }} />
+            <div className="sheet">
+              <h2>{dupOpen.name}, 이미 등록돼 있어요</h2>
+              <p className="muted">동일한 구독 서비스가 감지되었어요. 어떻게 처리할까요?</p>
+              <div className="dup-compare">
+                <div><span className="k">기존</span><b>{dupInfo.existingProductName}</b></div>
+                <div><span className="k">추가</span><b className="add">{dupOpen.name}</b></div>
+              </div>
+              <button type="button" className={`dup-radio ${dupChoice === "remove" ? "on" : ""}`} onClick={() => setDupChoice("remove")}>
+                <i />
+                <b>중복 결과 제거하기</b>
+                <span>추출된 결과에서 이 구독 서비스를 제거해요.</span>
+              </button>
+              <button type="button" className={`dup-radio ${dupChoice === "keep" ? "on" : ""}`} onClick={() => setDupChoice("keep")}>
+                <i />
+                <b>중복 등록하기</b>
+                <span>기존 구독과 동일한 구독을 중복으로 추가해요.</span>
+              </button>
+              <div className="modal-actions" style={{ marginTop: 12 }}>
+                <button className="btn cancel" type="button" onClick={() => { setDupId(null); setDupChoice(null); }}>취소</button>
+                <button className="btn primary" type="button" disabled={!dupChoice} onClick={applyDup}>적용하고 계속</button>
+              </div>
+            </div>
+          </>
+        ) : null}
         {exit ? (
           <div className="modal-back">
             <div className="modal">

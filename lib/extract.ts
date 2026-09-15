@@ -30,6 +30,16 @@ export function markExtractDirty() {
   writeExtract({ ...cur, dirty: true });
 }
 
+export function removeExtractItem(id: string) {
+  const cur = readExtract();
+  if (!cur) return;
+  writeExtract({
+    ...cur,
+    dirty: true,
+    items: cur.items.filter((x) => x.id !== id),
+  });
+}
+
 export function upsertExtractItem(item: ExtractItem) {
   const cur = readExtract();
   if (!cur) return;

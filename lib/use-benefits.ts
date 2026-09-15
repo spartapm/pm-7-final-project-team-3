@@ -18,7 +18,7 @@ function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
         id: `p-${p.product_id}`,
         name: p.product_name,
         category: categoryFromAdmin(p.category) || brand?.category || "other",
-        amount: Number(p.price_standard) || brand?.amount || 0,
+        amount: Number(p.price_standard) || 0,
         color: p.provider?.brand_color || brand?.color || "#2576f2",
         logo,
       };
@@ -29,6 +29,7 @@ type CatalogState = {
   benefits: Benefit[];
   bundles: BundleProduct[];
   soloProducts: ServiceHit[];
+  providers: { id: string; name: string }[];
   source: "code" | "db";
   loaded: boolean;
   error: boolean;
@@ -41,6 +42,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Benefit[]>([]);
   const [bundles, setBundles] = useState<BundleProduct[]>([]);
   const [soloProducts, setSoloProducts] = useState<ServiceHit[]>([]);
+  const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
   const [source, setSource] = useState<"code" | "db">("code");
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -61,6 +63,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         setItems(d.benefits ?? []);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
+        setProviders((d.providers ?? []).map((p) => ({ id: String(p.provider_id), name: p.provider_name })));
         setCatalogIcons([
           ...(d.products ?? []).map((p) => ({ name: p.product_name, icon: p.icon || p.provider?.logo_url })),
           ...(d.providers ?? []).map((p) => ({ name: p.provider_name, icon: p.logo_url })),
@@ -78,8 +81,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   }, [nonce]);
 
   const value = useMemo(
-    () => ({ benefits: items, bundles, soloProducts, source, loaded, error, reload }),
-    [items, bundles, soloProducts, source, loaded, error, reload],
+    () => ({ benefits: items, bundles, soloProducts, providers, source, loaded, error, reload }),
+    [items, bundles, soloProducts, providers, source, loaded, error, reload],
   );
   return createElement(CatalogCtx.Provider, { value }, children);
 }

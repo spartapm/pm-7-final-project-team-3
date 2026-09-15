@@ -760,6 +760,33 @@ img { display: block; max-width: 100%; }
 .result-card-body b { display: block; font-size: 15px; font-weight: 800; }
 .result-card-body em { display: block; margin-top: 2px; font-size: 13px; font-style: normal; color: #8b909a; font-weight: 600; }
 .result-chevron { color: #c5cad3; font-size: 22px; line-height: 1; }
+.dup-badge {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+  border-radius: 99px; background: #fff4e5; color: #b54708;
+  font-size: 11px; font-weight: 800; pointer-events: none;
+}
+.result-hint { margin: 0 4px 8px; font-size: 13px; font-weight: 600; color: #667085; }
+.dup-compare {
+  background: #f7f9fc; border-radius: 14px; padding: 12px 14px; margin: 12px 0 14px;
+}
+.dup-compare div { display: flex; gap: 12px; padding: 6px 0; font-size: 14px; }
+.dup-compare div + div { border-top: 1px solid #e8ecf2; }
+.dup-compare .k { width: 36px; color: #667085; font-weight: 700; flex: none; }
+.dup-compare .add { color: #2f80ed; font-weight: 800; }
+.dup-radio {
+  display: block; width: 100%; text-align: left;
+  border: 1.5px solid #e3e8f0; border-radius: 14px; padding: 14px 14px 14px 44px;
+  margin-bottom: 8px; background: #fff; position: relative;
+}
+.dup-radio.on { border-color: #2f80ed; background: #f5f9ff; }
+.dup-radio i {
+  position: absolute; left: 14px; top: 16px; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #c5cad3; background: #fff;
+}
+.dup-radio.on i { border-color: #2f80ed; box-shadow: inset 0 0 0 4px #2f80ed; }
+.dup-radio b { display: block; font-size: 15px; }
+.dup-radio span { display: block; margin-top: 4px; font-size: 12px; color: #667085; font-weight: 600; }
+.btn.primary:disabled { background: #d0d5dd; color: #fff; box-shadow: none; }
 .result-manual {
   background: #f3f6fb; border-radius: 16px; padding: 16px; margin: 8px 0 18px; text-align: center;
 }
@@ -777,10 +804,11 @@ img { display: block; max-width: 100%; }
 .teumki-illust { width: 180px; height: 180px; object-fit: contain; margin: 12px auto 16px; }
 
 .notice-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f3f8; position: relative; align-items: flex-start; }
+.notice-item .grow { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: stretch; }
 .notice-item .t { font-weight: 800; font-size: 14px; }
 .notice-item .meta { color: var(--muted); font-size: 11px; margin-left: 6px; font-weight: 600; }
 .notice-item p { margin: 4px 0 8px; font-size: 12px; color: var(--muted); line-height: 1.4; }
-.notice-item .mini { margin-left: auto; align-self: flex-end; }
+.notice-item .mini { margin: 0 0 0 auto; align-self: flex-end; }
 .mini { height: 30px; padding: 0 12px; border-radius: 10px; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; }
 
 .menu-group { margin: 16px 0; }
@@ -973,24 +1001,32 @@ img { display: block; max-width: 100%; }
   background: #f4f6fa; border-radius: 12px; font-size: 14px; font-weight: 700;
 }
 .when-bar b { font-weight: 800; }
-.bnf-icons {
-  position: relative; width: 72px; height: 36px; margin: 8px auto 6px;
-  display: grid; place-items: center;
+.bnf-card {
+  border: 1.5px solid #3182f6; border-radius: 14px; padding: 32px 14px 24px; background: #fff; position: relative;
 }
-.bnf-icons img, .bnf-icons .brand {
-  width: 36px; height: 36px; border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(20,23,28,.12); overflow: hidden;
-  object-fit: contain; background: #eef3fb;
+.bnf-icons {
+  width: min(220px, 55%);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.bnf-icons img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 .bnf-icons .a { left: 8px; z-index: 1; }
 .bnf-icons .b { left: 28px; z-index: 2; }
-.bnf-card { padding-top: 36px; }
 .bnf-off { position: absolute; right: 12px; top: 12px; z-index: 3; }
 .bnf-copy { margin: 8px 8px 16px; padding-top: 4px; }
 .bnf-detail { padding-bottom: 24px; }
 .bnf-k { margin: 8px 4px 10px; font-size: 16px; font-weight: 700; color: #16171b; }
 .bnf-card {
-  border: 1.5px solid #3182f6; border-radius: 14px; padding: 16px 14px; background: #fff; position: relative;
+  border: 1.5px solid #3182f6; border-radius: 14px; padding: 32px 14px 24px; background: #fff; position: relative;
 }
 .bnf-off { font-size: 11px; font-weight: 700; color: #266bfa; background: #deebff; border-radius: 6px; padding: 4px 8px; position: absolute; right: 12px; top: 12px; }
 .bnf-copy { margin: 10px 8px 16px; text-align: center; font-size: 13px; font-weight: 700; line-height: 1.45; color: #1c1f24; }

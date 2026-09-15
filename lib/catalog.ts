@@ -225,16 +225,7 @@ export function searchServices(q: string, catalog: ServiceHit[] = []): ServiceHi
       return n.length >= 2 && kl.length >= 2 && n.includes(kl);
     });
   };
-  const fromDb = catalog.filter((p) => matched(p.name));
-  const seen = new Set(fromDb.map((p) => p.name.replace(/\s/g, "").toLowerCase()));
-  const fromBrands = BRANDS.filter((b) => matched(b.name, [b.file.replace("+", ""), ...b.aliases])).map((b) => ({
-    name: b.name,
-    category: b.category,
-    amount: b.amount ?? 0,
-    color: b.color,
-    logo: "",
-  })).filter((b) => !seen.has(b.name.replace(/\s/g, "").toLowerCase()));
-  return [...fromDb, ...fromBrands].slice(0, 8);
+  return catalog.filter((p) => matched(p.name)).slice(0, 8);
 }
 
 export function seedSubscriptions(): Subscription[] {

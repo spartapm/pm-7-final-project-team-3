@@ -136,9 +136,11 @@ export function bundleRowsToProducts(bundles: BundleRow[], items: BundleItemRow[
       .filter((i) => i.bundle_id === b.bundle_id)
       .map((i) => i.product?.product_name)
       .filter((n): n is string => Boolean(n));
+    const rowItems = items.filter((i) => i.bundle_id === b.bundle_id);
+    const primary = rowItems.find((i) => i.item_role === "PRIMARY") ?? rowItems[0];
     return {
       id: `b-${b.bundle_id}`,
-      providerId: b.category,
+      providerId: String(primary?.product?.provider_id ?? b.category),
       name: b.bundle_name,
       included: names.join(", ") || b.card_title || b.bundle_name,
       amount: money(b.price_bundled),

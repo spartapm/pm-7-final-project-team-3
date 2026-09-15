@@ -199,17 +199,17 @@ export default function HomePage() {
                     <div className="grow">
                       <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
                       <p>{n.body}</p>
+                      <button className="mini" type="button" onClick={(e) => {
+                        e.stopPropagation();
+                        markNotice(n.id);
+                        if (n.id === "nt_invite" || n.href.includes("invite")) {
+                          setSheet(false);
+                          setInvite(true);
+                          return;
+                        }
+                        router.push(n.href);
+                      }}>확인</button>
                     </div>
-                    <button className="mini" type="button" onClick={(e) => {
-                      e.stopPropagation();
-                      markNotice(n.id);
-                      if (n.id === "nt_invite" || n.href.includes("invite")) {
-                        setSheet(false);
-                        setInvite(true);
-                        return;
-                      }
-                      router.push(n.href);
-                    }}>확인</button>
                   </div>
                 ))}
               </div>

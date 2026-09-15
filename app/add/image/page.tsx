@@ -52,6 +52,7 @@ function Inner() {
   const analyze = async () => {
     if (files.length === 0) return;
     setPhase("wait");
+    phaseRef.current = "wait";
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);

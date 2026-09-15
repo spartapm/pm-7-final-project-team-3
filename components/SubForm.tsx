@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WhenPick } from "@/components/WhenPick";
 import { Back, Brand, Gate, Modal, PhoneShell } from "@/components/ui";
-import { BUNDLE_PROVIDERS, findBundle, productsOf } from "@/lib/bundles";
-import { findBrand, findBrandExact } from "@/lib/brands";
+import { findBrand } from "@/lib/brands";
 import { emptyDraft, searchServices, type ServiceHit } from "@/lib/catalog";
 import { useBenefits } from "@/lib/use-benefits";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
@@ -68,11 +67,10 @@ export function SubForm({
 }) {
   const router = useRouter();
   const { subscriptions, upsertSub, draft, setDraft, resetDraft, showToast } = useStore();
-  const { soloProducts } = useBenefits();
+  const { soloProducts, bundles, providers } = useBenefits();
   const existing = existingId ? subscriptions.find((s) => s.id === existingId) : null;
   const [local, setLocal] = useState<DraftSub>(existing ? fromSub(existing) : emptyDraft());
   const [open, setOpen] = useState(false);
-  const [picked, setPicked] = useState(Boolean(existing?.name));
   const [trialOn, setTrialOn] = useState((existing?.status ?? "") === "trial");
   const [alertOn, setAlertOn] = useState(existing ? existing.alertDays > 0 : false);
   const [leave, setLeave] = useState(false);
@@ -81,6 +79,7 @@ export function SubForm({
   const [tried, setTried] = useState(false);
   const [dup, setDup] = useState(false);
   const [cycleText, setCycleText] = useState(() => String((existing ? fromSub(existing) : emptyDraft()).everyMonths ?? 1));
+  const [pickedHit, setPickedHit] = useState<ServiceHit | null>(null);
   const mode = local.mode === "bundle" ? "bundle" : "solo";
 
   useEffect(() => {
@@ -91,13 +90,13 @@ export function SubForm({
         setLocal(draftFromSubItem(item));
         setTrialOn(item.status === "trial");
         setAlertOn(item.alertDays > 0);
-        setPicked(Boolean(item.name));
+        setPickedHit(null);
         setCycleText(String(item.cycle === "yearly" ? 12 : 1));
       } else {
         setLocal({ ...emptyDraft(), fromAi: true });
         setTrialOn(false);
         setAlertOn(false);
-        setPicked(false);
+        setPickedHit(null);
         setCycleText("1");
       }
       return;
@@ -106,12 +105,19 @@ export function SubForm({
     setLocal(emptyDraft());
     setTrialOn(false);
     setAlertOn(false);
-    setPicked(false);
+    setPickedHit(null);
     setCycleText("1");
   }, [draft, existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name, soloProducts), [local.name, soloProducts]);
-  const known = findBrandExact(local.name) ?? (picked ? findBrand(local.name) : undefined);
+  const extraAfterDb = soloProducts.some((p) => local.name.startsWith(p.name) && local.name.length > p.name.length);
+  const showHits = open && hits.length > 0 && !pickedHit && !extraAfterDb;
+  const iconHit = pickedHit || soloProducts.find((p) => p.name === local.name.trim());
+  const bundleHit = bundles.find((b) => b.id === local.bundleId);
+  const priceRef = mode === "bundle"
+    ? (bundleHit ? { name: bundleHit.name, amount: bundleHit.amount } : null)
+    : (soloProducts.find((p) => p.name === local.name.trim())
+      || (pickedHit && (local.name === pickedHit.name || local.name.startsWith(pickedHit.name)) ? pickedHit : null));
   const amountNum = Number(digitsOf(local.amount));
   const amountRangeOk = digitsOf(local.amount) === "" || (/^\d+$/.test(digitsOf(local.amount)) && amountNum >= 0 && amountNum <= 99999999);
   const nameOk = local.name.trim().length >= 2 && local.name.trim().length <= 30 && local.name.trim().toUpperCase() !== "NULL";
@@ -121,17 +127,17 @@ export function SubForm({
   const bundleOk = mode === "solo" || Boolean(local.bundleProvider && local.name.trim());
   const cycleOk = /^[1-9]\d?$/.test(cycleText) && Number(cycleText) >= 1 && Number(cycleText) <= 99;
   const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk && cycleOk;
-  const bundleList = local.bundleProvider ? productsOf(local.bundleProvider) : [];
+  const bundleList = bundles.filter((b) => b.providerId === local.bundleProvider);
+  const providerOpts = providers.filter((p) => bundles.some((b) => b.providerId === p.id));
 
   const pick = (hit: ServiceHit) => {
-    const brand = findBrand(hit.name);
     setLocal((p) => ({
       ...p,
       name: hit.name,
-      category: hit.category || brand?.category || p.category,
-      amount: hit.amount ? String(hit.amount) : (brand?.amount ? String(brand.amount) : p.amount),
+      category: hit.category || p.category,
+      amount: hit.amount ? String(hit.amount) : p.amount,
     }));
-    setPicked(true);
+    setPickedHit(hit);
     setOpen(false);
   };
 
@@ -144,7 +150,7 @@ export function SubForm({
       bundleId: "",
       included: "",
     }));
-    setPicked(false);
+    setPickedHit(null);
     setOpen(false);
   };
 
@@ -172,7 +178,7 @@ export function SubForm({
       return;
     }
     const payDay = Number(local.nextPay.slice(8, 10)) || 1;
-    const color = known?.color ?? "#2576f2";
+    const color = iconHit?.color || findBrand(local.name)?.color || "#2576f2";
     const trialEnds = trialOn ? addDays(local.nextPay, Number(local.trialDays) || 14) : null;
     const months = Number(cycleText);
     setSaving(true);
@@ -182,7 +188,7 @@ export function SubForm({
         id,
         name: local.name.trim(),
         plan: local.plan,
-        category: known?.category ?? local.category,
+        category: iconHit?.category ?? local.category,
         amount,
         cycle: months === 12 ? "yearly" : local.cycle,
         everyMonths: months,
@@ -243,11 +249,11 @@ export function SubForm({
                 onChange={(e) => {
                   const id = e.target.value;
                   setLocal((p) => ({ ...p, bundleProvider: id, bundleId: "", name: "", included: "" }));
-                  setPicked(false);
+                  setPickedHit(null);
                 }}
               >
                 <option value="">제공사를 선택해주세요</option>
-                {BUNDLE_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {providerOpts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
           ) : null}
@@ -259,7 +265,7 @@ export function SubForm({
                 value={local.bundleId ?? ""}
                 onChange={(e) => {
                   const id = e.target.value;
-                  const hit = findBundle(id);
+                  const hit = bundles.find((b) => b.id === id);
                   setLocal((p) => ({
                     ...p,
                     bundleId: id,
@@ -269,7 +275,6 @@ export function SubForm({
                     everyMonths: hit?.everyMonths ?? p.everyMonths,
                     cycle: (hit?.everyMonths ?? p.everyMonths) === 12 ? "yearly" : "monthly",
                   }));
-                  setPicked(true);
                 }}
               >
                 <option value="">{local.bundleProvider ? "결합상품을 선택해주세요" : "제공사를 먼저 선택해주세요"}</option>
@@ -279,7 +284,7 @@ export function SubForm({
               </select>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Brand name={known?.name ?? local.name} color={known?.color ?? "#2576f2"} logo="" />
+                <Brand name={iconHit?.name ?? local.name} color={iconHit?.color ?? "#2576f2"} logo={iconHit?.logo ?? ""} />
                 <input
                   id="sub-name"
                   aria-required="true"
@@ -289,16 +294,26 @@ export function SubForm({
                   value={local.name}
                   maxLength={30}
                   placeholder="서비스명 입력"
-                  onFocus={() => setOpen(true)}
+                  onFocus={() => { if (!pickedHit && !extraAfterDb) setOpen(true); }}
                   onChange={(e) => {
-                    setLocal((p) => ({ ...p, name: e.target.value }));
-                    setPicked(false);
-                    setOpen(true);
+                    const v = e.target.value;
+                    setLocal((p) => ({ ...p, name: v }));
+                    if (!v.trim()) {
+                      setPickedHit(null);
+                      setOpen(true);
+                      return;
+                    }
+                    if (pickedHit) {
+                      setOpen(false);
+                      return;
+                    }
+                    const extra = soloProducts.some((p) => v.startsWith(p.name) && v.length > p.name.length);
+                    setOpen(!extra);
                   }}
                 />
               </div>
             )}
-            {mode === "solo" && open && hits.length > 0 && !picked ? (
+            {mode === "solo" && showHits ? (
               <div className="svc-suggest">
                 {hits.map((s) => (
                   <button key={s.id ?? s.name} type="button" onClick={() => pick(s)}>
@@ -363,8 +378,8 @@ export function SubForm({
               <p id="sub-amount-err" className="err-msg">최대 99,999,999원까지 입력할 수 있어요.</p>
             ) : tried && !amountOk ? (
               <p id="sub-amount-err" className="err-msg">결제 금액을 입력해 주세요.</p>
-            ) : mode === "solo" && known && local.amount && Number(digitsOf(local.amount)) !== known.amount ? (
-              <p className="mismatch-warn">⚠️ {known.name} 요금제와 달라요, 확인해주세요</p>
+            ) : priceRef && local.amount && Number(digitsOf(local.amount)) !== priceRef.amount ? (
+              <p className="mismatch-warn">⚠️ {priceRef.name} 요금제와 달라요, 확인해주세요</p>
             ) : null}
           </div>
           <label className="check" style={{ alignItems: "center" }}>

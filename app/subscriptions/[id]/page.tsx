@@ -7,11 +7,13 @@ import { isBundleLike } from "@/lib/catalog";
 import { providerName } from "@/lib/bundles";
 import { dateLabel, won } from "@/lib/format";
 import { useStore } from "@/lib/store";
+import { useBenefits } from "@/lib/use-benefits";
 
 export default function SubDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { subscriptions, removeSub, upsertSub, showToast } = useStore();
+  const { providers } = useBenefits();
   const sub = subscriptions.find((s) => s.id === id);
   const [del, setDel] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -48,6 +50,9 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
   const trialMonths = sub.trialEnds
     ? Math.max(1, Math.round((Date.parse(sub.trialEnds) - Date.now()) / (30 * 86400000)))
     : months;
+  const vendor = sub.bundleProvider
+    ? (providers.find((p) => p.id === sub.bundleProvider)?.name || providerName(sub.bundleProvider))
+    : "";
   return (
     <Gate>
       <PhoneShell>
@@ -64,7 +69,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
                 {sub.name}
                 {isBundleLike(sub) ? <span className="bundle-tag">결합상품</span> : null}
               </div>
-              <div className="muted">{isBundleLike(sub) ? (sub.bundleProvider ? providerName(sub.bundleProvider) : "결합상품") : (sub.plan || "단독 구독")}</div>
+              <div className="muted">{isBundleLike(sub) ? (vendor || "결합상품") : (sub.plan || "단독 구독")}</div>
             </div>
             <div ref={statusRef} className="status-dd">
             <button className={`sub-badge ${badgeCls}`} type="button" onClick={() => setStatusOpen((v) => !v)}>{statusLabel} ▾</button>
@@ -102,7 +107,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
           <div className="card" style={{ marginTop: 12 }}>
             {isBundleLike(sub) ? (
               <>
-                <Row k="제공사" v={sub.bundleProvider ? providerName(sub.bundleProvider) : "-"} />
+                <Row k="제공사" v={vendor || "-"} />
                 <Row k="결합상품" v={sub.name} />
                 {sub.included ? <Row k="포함 서비스" v={sub.included} /> : null}
               </>
