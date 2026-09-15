@@ -8,6 +8,7 @@ import { benefitStatus } from "@/lib/catalog";
 import { daysUntil, won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
 import { leaksOf } from "@/lib/stats";
+import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 import type { BenefitKind } from "@/lib/types";
 
@@ -33,6 +34,7 @@ export default function BenefitsPage() {
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
   const leak = leaksOf(subscriptions);
   const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
+  useGaView("benefit_list_view", {}, loaded);
   const list = kind === "card"
     ? []
     : benefits
@@ -62,11 +64,11 @@ export default function BenefitsPage() {
                 <p>구독을 잘 관리하고 계시네요.</p>
               </>
             )}
-            <button className="btn" type="button" onClick={() => router.push("/inspect")}>구독 점검받기</button>
+            <button className="btn" type="button" onClick={() => { markInspectStart("benefits"); track("subscription_inspection_start", { source: "benefits" }); router.push("/inspect"); }}>구독 점검받기</button>
           </div>
           <ChipScroller style={{ margin: "14px 0 8px" }}>
             {KIND_FILTERS.map((f) => (
-              <button key={f.id} className={`chip outline ${kind === f.id ? "on" : ""}`} type="button" onClick={() => setKind(f.id)}>{f.label}</button>
+              <button key={f.id} className={`chip outline ${kind === f.id ? "on" : ""}`} type="button" onClick={() => { setKind(f.id); track("benefit_filter_select", { filter_type: f.id }); }}>{f.label}</button>
             ))}
           </ChipScroller>
           <div className="section-title" style={{ marginTop: 4 }}>인기 구독 혜택</div>

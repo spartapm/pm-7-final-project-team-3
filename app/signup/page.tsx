@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Back, BounceIfAuthed, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PASSWORD_HINT, emailError, signupPasswordError } from "@/lib/validate";
+import { track } from "@/lib/ga";
 
 const DRAFT = "teum:signup-draft";
 
@@ -79,6 +80,7 @@ export default function SignupPage() {
       return;
     }
     sessionStorage.removeItem(DRAFT);
+    track("sign_up", { method: "email" });
     logout();
     router.push("/signup/done");
   };

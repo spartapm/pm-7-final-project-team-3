@@ -1,6 +1,7 @@
 "use client";
 
 import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
+import { track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 export default function AlertSettings() {
@@ -16,7 +17,11 @@ export default function AlertSettings() {
             <button
               className="alert-row"
               type="button"
-              onClick={() => setAlerts({ pay: !payOn, trial: !payOn })}
+              onClick={() => {
+                const next = !payOn;
+                setAlerts({ pay: next, trial: next });
+                track("notification_setting_update", { setting_type: "payment_renewal", setting_status: next ? "on" : "off" });
+              }}
             >
               <span>
                 <b>결제 예정 알림 수신동의</b>
@@ -27,7 +32,11 @@ export default function AlertSettings() {
             <button
               className="alert-row"
               type="button"
-              onClick={() => setAlerts({ renew: !alerts.renew })}
+              onClick={() => {
+                const next = !alerts.renew;
+                setAlerts({ renew: next });
+                track("notification_setting_update", { setting_type: "price_change", setting_status: next ? "on" : "off" });
+              }}
             >
               <span>
                 <b>가격 변동 알림 수신동의</b>
@@ -41,7 +50,11 @@ export default function AlertSettings() {
             <button
               className="alert-row"
               type="button"
-              onClick={() => setAlerts({ calendar: !alerts.calendar })}
+              onClick={() => {
+                const next = !alerts.calendar;
+                setAlerts({ calendar: next });
+                track("notification_setting_update", { setting_type: "calendar", setting_status: next ? "on" : "off" });
+              }}
             >
               <span>
                 <b>캘린더 알림 수신동의</b>
@@ -55,7 +68,11 @@ export default function AlertSettings() {
             <button
               className="alert-row"
               type="button"
-              onClick={() => setAlerts({ marketing: !alerts.marketing, benefit: !alerts.marketing })}
+              onClick={() => {
+                const next = !alerts.marketing;
+                setAlerts({ marketing: next, benefit: next });
+                track("notification_setting_update", { setting_type: "marketing", setting_status: next ? "on" : "off" });
+              }}
             >
               <span>
                 <b>혜택 및 이벤트 알림 수신동의</b>

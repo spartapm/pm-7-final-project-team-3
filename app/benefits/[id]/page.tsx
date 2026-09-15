@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { bundleIconSrc } from "@/lib/bundle-icon";
 import { won } from "@/lib/format";
+import { track, useGaView } from "@/lib/ga";
 import { useBenefits } from "@/lib/use-benefits";
 import { useStore } from "@/lib/store";
 
@@ -21,6 +22,8 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
   const steps = b?.steps ?? (b?.howTo ? [b.howTo] : []);
   const terms = b?.termsList ?? (b?.terms ? [b.terms] : []);
   const official = b?.officialUrl || b?.href;
+  const combine = Boolean(b?.parent || b?.kind === "carrier");
+  useGaView(combine ? "combine_detail_view" : "benefit_detail_view", {}, loaded && Boolean(b) && !error);
   if (!loaded) {
     return (
       <Gate>
@@ -147,6 +150,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
                 className="btn primary"
                 type="button"
                 onClick={() => {
+                  track(combine ? "combine_outbound_select" : "benefit_use_select", { destination_type: "official" });
                   if (!official) {
                     showToast("혜택 페이지를 열 수 없어요. 잠시 후 다시 시도해주세요.", "err");
                     return;

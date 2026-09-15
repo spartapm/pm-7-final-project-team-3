@@ -6,6 +6,7 @@ import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
 import { dateLabel, monthLabel, relativeTime, subscriptionPayDates, thisWeek, won, ymd } from "@/lib/format";
 import { leaksOf, monthlyAmount } from "@/lib/stats";
+import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 export default function HomePage() {
@@ -64,6 +65,18 @@ export default function HomePage() {
     return map;
   }, [live, events, week]);
 
+  useGaView("home_dashboard_view", {}, hydrated);
+  useEffect(() => {
+    if (!hydrated || PROMOS.length === 0) return;
+    track("home_banner_view", { banner_index: promo });
+  }, [hydrated, promo]);
+
+  const goInspect = (source: string) => {
+    markInspectStart(source);
+    track("subscription_inspection_start", { source });
+    router.push("/inspect");
+  };
+
   if (!hydrated) return <PhoneShell><div className="scroll" /></PhoneShell>;
 
   return (
@@ -73,7 +86,7 @@ export default function HomePage() {
           <div className="home-hero">
             <div className="home-hero-top">
               <Logo light />
-              <button className="bell" type="button" aria-label="알림" onClick={() => setSheet(true)}>
+              <button className="bell" type="button" aria-label="알림" onClick={() => { setSheet(true); track("notification_list_view"); }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M6.2 9.2a5.8 5.8 0 0 1 11.6 0c0 3.4.84 5.3 1.7 6.7.3.48-.05 1.1-.6 1.1H5.1c-.55 0-.9-.62-.6-1.1.86-1.4 1.7-3.3 1.7-6.7Z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
                   <path d="M9.4 18.6a2.6 2.6 0 0 0 5.2 0" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
@@ -85,6 +98,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => {
+                  track("home_banner_select", { banner_index: promo });
                   const href = PROMOS[promo].href;
                   if (href) router.push(href);
                 }}
@@ -110,7 +124,7 @@ export default function HomePage() {
             <div className="mo">{monthLabel(new Date())}</div>
             <div className="week">
               {week.map((d) => (
-                <button key={d.key} type="button" className={`${day === d.key ? "on" : ""} ${d.today ? "today" : ""}`} onClick={() => { setDay(d.key); router.push(`/calendar?date=${d.key}`); }}>
+                <button key={d.key} type="button" className={`${day === d.key ? "on" : ""} ${d.today ? "today" : ""}`} onClick={() => { track("calendar_date_select", { source: "home" }); setDay(d.key); router.push(`/calendar?date=${d.key}`); }}>
                   <span>{d.dow}</span>
                   <span className="num">{d.date}</span>
                   <span className="marks">
@@ -131,13 +145,13 @@ export default function HomePage() {
                   <span className="cta">등록하기 ›</span>
                 </button>
               ) : leak.count > 0 ? (
-                <button className="leak" type="button" onClick={() => router.push("/inspect")}>
+                <button className="leak" type="button" onClick={() => goInspect("home")}>
                   <span>●</span>
                   <span className="leak-copy">새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약</span>
                   <span className="cta">확인하기 ›</span>
                 </button>
               ) : (
-                <button className="ok-leak" type="button" onClick={() => router.push("/inspect")}>
+                <button className="ok-leak" type="button" onClick={() => goInspect("home")}>
                   <span className="leak-copy">틈이 없어요. 구독을 잘 관리하고 계시네요!</span>
                   <span className="cta">확인하기 ›</span>
                 </button>
@@ -165,7 +179,7 @@ export default function HomePage() {
 
           </div>
         </div>
-        <button className="btn primary inspect-cta" type="button" onClick={() => router.push("/inspect")}>
+        <button className="btn primary inspect-cta" type="button" onClick={() => goInspect("home")}>
           구독비 점검받기
         </button>
         <Fab />
@@ -187,6 +201,7 @@ export default function HomePage() {
                   </div>
                 ) : notices.filter((n) => !n.read).map((n) => (
                   <div key={n.id} className="notice-item" role="button" tabIndex={0} onClick={() => {
+                      track("notification_select");
                       markNotice(n.id);
                       if (n.id === "nt_invite" || n.href.includes("invite")) {
                         setSheet(false);
@@ -201,6 +216,7 @@ export default function HomePage() {
                       <p>{n.body}</p>
                       <button className="mini" type="button" onClick={(e) => {
                         e.stopPropagation();
+                        track("notification_select");
                         markNotice(n.id);
                         if (n.id === "nt_invite" || n.href.includes("invite")) {
                           setSheet(false);

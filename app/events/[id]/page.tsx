@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Back, Gate, Modal, PhoneShell } from "@/components/ui";
 import { dateLabel, timeLabel, ymd } from "@/lib/format";
+import { useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 export default function EventDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +14,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const { events, removeEvent } = useStore();
   const ev = events.find((e) => e.id === id);
   const [del, setDel] = useState(false);
+  useGaView("schedule_detail_view", {}, Boolean(ev));
   if (!ev) {
     return (
       <Gate>

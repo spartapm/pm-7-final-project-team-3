@@ -7,6 +7,7 @@ import { leaksOf, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import { cycleEvery, won, ymd } from "@/lib/format";
 import { bundleTips } from "@/lib/recommend";
+import { inspectMeta, markInspectStart, track, useGaView } from "@/lib/ga";
 import { useBenefits } from "@/lib/use-benefits";
 
 const INSPECT_KEY = "teum:inspect-stamp";
@@ -45,16 +46,25 @@ export default function InspectPage() {
     return () => window.clearTimeout(t);
   }, [curStamp, loaded]);
 
-  const rerun = () => {
+  const rerun = (fromFail = false) => {
     if (localStorage.getItem(INSPECT_KEY) === curStamp) {
       showToast("구독 점검은 하루에 한 번만 가능합니다. 내일 다시 점검해주세요.");
       return;
     }
     localStorage.setItem(INSPECT_KEY, curStamp);
+    markInspectStart("benefits");
+    if (fromFail) track("inspection_retry_select");
+    track("subscription_inspection_start", { source: "benefits", inspection_type: "retry" });
     setWaiting(true);
     setFail(false);
     window.setTimeout(() => setWaiting(false), 1400);
   };
+
+  useGaView("subscription_inspection_complete", {
+    result_status: cold ? "empty" : leak.count > 0 ? "leak" : "ok",
+    ...inspectMeta(),
+  }, loaded && !waiting && !fail);
+  useGaView("subscription_inspection_failed", inspectMeta(), fail);
 
   if (waiting || !loaded) {
     return (
@@ -85,7 +95,7 @@ export default function InspectPage() {
             <img className="teumki-illust" src="/teumki/sad.png" alt="" />
             <h2>구독 점검을 완료하지 못했어요</h2>
             <p className="muted">일시적인 오류로 분석이 중단됐어요.<br />잠시 후 다시 점검해 주세요.</p>
-            <button className="btn primary" type="button" onClick={rerun}>다시 시도하기</button>
+            <button className="btn primary" type="button" onClick={() => rerun(true)}>다시 시도하기</button>
             <div style={{ height: 8 }} />
             <button className="btn ghost" type="button" onClick={() => router.push("/benefits")}>혜택 홈으로 돌아가기</button>
           </div>
@@ -115,12 +125,12 @@ export default function InspectPage() {
                   ? `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
                   : "구독을 잘 관리하고 계시네요."}
             </p>
-            <button className="btn" type="button" disabled={cold} onClick={rerun}>다시 점검하기</button>
+            <button className="btn" type="button" disabled={cold} onClick={() => rerun()}>다시 점검하기</button>
           </div>
           <div className="card">
             <div style={{ fontWeight: 800, marginBottom: 8 }}>현재 구독 중인 서비스</div>
             {shown.map((s) => (
-              <button key={s.id} className="row" type="button" onClick={() => router.push(`/subscriptions/${s.id}`)} style={{ width: "100%", textAlign: "left" }}>
+              <button key={s.id} className="row" type="button" onClick={() => { track("inspection_result_select", { result_type: "subscription" }); router.push(`/subscriptions/${s.id}`); }} style={{ width: "100%", textAlign: "left" }}>
                 <Brand name={s.name} color={s.color} logo={s.logo} />
                 <span className="grow">
                   <div style={{ fontWeight: 800 }}>{s.name}</div>
@@ -159,7 +169,7 @@ export default function InspectPage() {
                 type="button"
                 className="rec-card"
                 style={{ ["--c1" as string]: c1, ["--c2" as string]: c2 }}
-                onClick={() => router.push(t.href)}
+                onClick={() => { track("inspection_result_select", { result_type: "combine" }); router.push(t.href); }}
               >
                 <div className="rec-top">
                   <span className="rec-logos">

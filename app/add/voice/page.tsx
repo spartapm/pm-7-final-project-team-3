@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { VoiceWave } from "@/components/VoiceWave";
 import { afterExtractPath, beginExtract, eventItemFromRaw, parseVoiceItems, subItemFromRaw } from "@/lib/extract";
+import { bumpRetry, readRetry, retryGroup, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 type Phase = "idle" | "listen" | "save" | "wait" | "fail" | "exit";
@@ -27,6 +28,7 @@ function Inner() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   streamRef.current = stream;
+  const startedAt = useRef(0);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
@@ -116,6 +118,8 @@ function Inner() {
     rec.start();
     setSec(0);
     setPhase("listen");
+    track("microphone_permission_result", { result: "granted" });
+    track("voice_recording_start");
   };
 
   const start = async () => {
@@ -133,8 +137,10 @@ function Inner() {
       const name = err instanceof DOMException ? err.name : "";
       if (name === "NotFoundError" || name === "DevicesNotFoundError") {
         showToast("⚠️  마이크를 사용할 수 없어요. 기기 상태를 확인해주세요.", "err");
+        track("microphone_permission_result", { result: "denied" });
         return;
       }
+      track("microphone_permission_result", { result: "denied" });
       setPerm(true);
     }
   };
@@ -152,9 +158,11 @@ function Inner() {
   const toSave = () => {
     stopMic();
     setPhase("save");
+    track("voice_recognition_complete");
   };
 
   const retrySpeak = () => {
+    bumpRetry("voice");
     setText("");
     setSec(0);
     void start();
@@ -163,6 +171,8 @@ function Inner() {
   const analyze = async () => {
     if (!text.trim()) return;
     stopMic();
+    startedAt.current = Date.now();
+    track("voice_recognition_start", { retry_count_group: retryGroup(readRetry("voice")) });
     setPhase("wait");
     phaseRef.current = "wait";
     const ctrl = new AbortController();
@@ -170,7 +180,10 @@ function Inner() {
     const timer = window.setTimeout(() => ctrl.abort(), 25000);
     const finish = (items: ReturnType<typeof parseVoiceItems>) => {
       if (goneRef.current || phaseRef.current !== "wait" || items.length === 0) {
-        if (!goneRef.current && phaseRef.current === "wait") setPhase("fail");
+        if (!goneRef.current && phaseRef.current === "wait") {
+          track("voice_recognition_failed", { failure_type: "parse", processing_time_ms: Date.now() - startedAt.current });
+          setPhase("fail");
+        }
         return;
       }
       beginExtract(kind, "voice", items);
@@ -209,6 +222,7 @@ function Inner() {
         finish(parseVoiceItems(text, kind));
         return;
       }
+      track("voice_recognition_failed", { failure_type: "network", processing_time_ms: Date.now() - startedAt.current });
       setPhase("fail");
     } finally {
       window.clearTimeout(timer);

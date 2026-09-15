@@ -8,6 +8,7 @@ import { providerName } from "@/lib/bundles";
 import { dateLabel, won } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
+import { track, useGaView } from "@/lib/ga";
 
 export default function SubDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,6 +27,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [statusOpen]);
+  useGaView("subscription_detail_view", {}, Boolean(sub));
   if (!sub) {
     return (
       <Gate>
@@ -145,7 +147,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
             </div>
           </div>
           <div className="section-title" style={{ marginTop: 16 }}>관리</div>
-          <button className="btn primary" type="button" onClick={() => router.push(`/subscriptions/${sub.id}/edit`)}>정보 수정</button>
+          <button className="btn primary" type="button" onClick={() => { track("subscription_edit_start"); router.push(`/subscriptions/${sub.id}/edit`); }}>정보 수정</button>
           <div style={{ height: 8 }} />
           <button
             className="btn danger"
@@ -171,8 +173,10 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
             mascot="/teumki/shock.png"
             onCancel={() => setDel(false)}
             onConfirm={() => {
+              track("subscription_delete_request");
               subscriptions.filter((s) => s.parentId === sub.id).forEach((s) => removeSub(s.id));
               removeSub(sub.id);
+              track("subscription_delete_complete");
               router.replace("/subscriptions");
             }}
           />

@@ -6,6 +6,7 @@ import { WhenPick } from "@/components/WhenPick";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { eventItemFromForm, readExtract, upsertExtractItem } from "@/lib/extract";
 import { dateLabel, pad, parseYmd, timeLabel, uid, ymd } from "@/lib/format";
+import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 import type { ExtractEventItem, LifeEvent } from "@/lib/types";
 
@@ -52,6 +53,13 @@ export function EventForm({
   const [saving, setSaving] = useState(false);
   const [pick, setPick] = useState<"start" | "end" | null>(null);
   const [pickFocus, setPickFocus] = useState<"date" | "time">("date");
+  const extract = fromResult ? readExtract() : null;
+  const formMethod = fromResult ? (extract?.from === "voice" ? "voice" : "image") : "manual";
+  useGaView("registration_form_view", {
+    registration_target: "schedule",
+    registration_method: formMethod,
+    prefill_status: existing ? "complete" : fromAi ? (title && date ? "complete" : "partial") : "none",
+  });
 
   useEffect(() => {
     if (existing) return;
@@ -147,8 +155,10 @@ export function EventForm({
         alertMin,
       });
       router.replace(`/calendar?date=${date}`);
+      track("schedule_add_complete", { registration_method: formMethod });
     } catch {
       setSaving(false);
+      track("schedule_add_failed", { registration_method: formMethod });
       showToast("저장에 실패했습니다. 잠시 후 다시 시도해주세요.", "err");
     }
   };

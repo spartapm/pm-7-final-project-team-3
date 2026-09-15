@@ -8,6 +8,7 @@ import { cycleEvery, dateLabel, dueBadge, won } from "@/lib/format";
 import { monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
+import { track, useGaView } from "@/lib/ga";
 import type { Category } from "@/lib/types";
 
 type SortKey = "pay" | "amountDesc" | "amountAsc" | "newest" | "status";
@@ -82,6 +83,7 @@ export default function SubListPage() {
     return [{ id: "all" as const, label: "전체" }, ...CATEGORY_OPTIONS.filter((c) => used.has(c.id))];
   }, [live]);
   const sortLabel = SORTS.find((s) => s.id === sort)?.label ?? "결제일 순";
+  useGaView("subscription_list_view", {}, ready);
 
   return (
     <Gate>
@@ -121,7 +123,7 @@ export default function SubListPage() {
           <div className="sub-body">
             <ChipScroller style={{ marginBottom: 4 }}>
               {cats.map((c) => (
-                <button key={c.id} className={`chip ${cat === c.id ? "on" : ""}`} type="button" onClick={() => setCat(c.id as Category | "all")}>{c.label}</button>
+                <button key={c.id} className={`chip ${cat === c.id ? "on" : ""}`} type="button" onClick={() => { setCat(c.id as Category | "all"); track("subscription_filter_select", { filter_type: c.id }); }}>{c.label}</button>
               ))}
             </ChipScroller>
             <div className="list-head">
@@ -175,7 +177,7 @@ export default function SubListPage() {
                   key={s.id}
                   className={`sort-option ${sort === s.id ? "on" : ""}`}
                   type="button"
-                  onClick={() => { setSort(s.id); setSortOpen(false); }}
+                  onClick={() => { setSort(s.id); setSortOpen(false); track("subscription_sort_select", { sort_type: s.id }); }}
                 >
                   {s.label}
                 </button>

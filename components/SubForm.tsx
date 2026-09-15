@@ -10,6 +10,7 @@ import { useBenefits } from "@/lib/use-benefits";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
 import { dateLabel, uid, ymd } from "@/lib/format";
 import { catalogIcon } from "@/lib/catalog-icons";
+import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 import type { BillingCycle, DraftSub, ExtractSubItem, Subscription } from "@/lib/types";
 
@@ -129,6 +130,14 @@ export function SubForm({
   const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk && cycleOk;
   const bundleList = bundles.filter((b) => b.providerId === local.bundleProvider);
   const providerOpts = providers.filter((p) => bundles.some((b) => b.providerId === p.id));
+  const extract = fromResult ? readExtract() : null;
+  const formMethod = fromResult || check ? (extract?.from === "voice" ? "voice" : "image") : "manual";
+  const formPrefill = existing ? "complete" : local.fromAi || check ? (local.name && local.nextPay && local.amount ? "complete" : "partial") : "none";
+  useGaView("registration_form_view", {
+    registration_target: "subscription",
+    registration_method: formMethod,
+    prefill_status: formPrefill,
+  });
 
   const pick = (hit: ServiceHit) => {
     setLocal((p) => ({
@@ -219,8 +228,10 @@ export function SubForm({
         alert: alertOn,
       }));
       router.replace(fromResult ? "/subscriptions" : "/subscriptions/saved");
+      if (!fromResult) track(existing ? "subscription_update_complete" : "subscription_add_complete", { registration_method: formMethod });
     } catch {
       setSaving(false);
+      if (!fromResult) track("subscription_add_failed", { registration_method: formMethod });
       showToast("⚠️ 저장에 실패했어요. 다시 시도해주세요.", "err");
     }
   };

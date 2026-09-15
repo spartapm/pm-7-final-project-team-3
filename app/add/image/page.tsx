@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
+import { bumpRetry, countGroup, readRetry, retryGroup, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 type Phase = "pick" | "wait" | "fail";
@@ -21,6 +22,7 @@ function Inner() {
   const { showToast } = useStore();
   const [phase, setPhase] = useState<Phase>("pick");
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
+  const startedAt = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const goneRef = useRef(false);
@@ -47,10 +49,19 @@ function Inner() {
     }
     const next = incoming.slice(0, MAX - files.length).map((file) => ({ url: URL.createObjectURL(file), name: file.name }));
     setFiles((xs) => [...xs, ...next]);
+    const total = files.length + next.length;
+    const types = [...new Set(incoming.map((f) => (f.type.includes("png") || /\.png$/i.test(f.name) ? "png" : "jpg")))];
+    track("image_upload_complete", {
+      image_count_group: countGroup(total),
+      file_type: types.length > 1 ? "mixed" : (types[0] || "jpg"),
+    });
+    track("photo_permission_result", { result: "granted" });
   };
 
   const analyze = async () => {
     if (files.length === 0) return;
+    startedAt.current = Date.now();
+    track("image_analysis_start", { retry_count_group: retryGroup(readRetry("image")) });
     setPhase("wait");
     phaseRef.current = "wait";
     const ctrl = new AbortController();
@@ -79,6 +90,7 @@ function Inner() {
       if (goneRef.current || phaseRef.current !== "wait") return;
       const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
       if (!json.ok || rows.length === 0) {
+        track("image_analysis_failed", { failure_type: "parse", processing_time_ms: Date.now() - startedAt.current });
         setPhase("fail");
         return;
       }
@@ -87,6 +99,7 @@ function Inner() {
       router.push(afterExtractPath(kind, "image"));
     } catch {
       if (goneRef.current || phaseRef.current !== "wait") return;
+      track("image_analysis_failed", { failure_type: "timeout", processing_time_ms: Date.now() - startedAt.current });
       setPhase("fail");
     } finally {
       window.clearTimeout(timer);
@@ -169,7 +182,7 @@ function Inner() {
             <img className="teumki-illust" src="/teumki/sad.png" alt="" />
             <h2>이미지를 스캔하지 못했어요</h2>
             <p className="muted">일시적인 오류로 분석이 중단됐어요.<br />잠시 후 다시 등록해 주세요.</p>
-            <button className="btn primary" type="button" onClick={() => setPhase("pick")}>다시 시도하기</button>
+            <button className="btn primary" type="button" onClick={() => { bumpRetry("image"); setPhase("pick"); }}>다시 시도하기</button>
           </div>
         ) : null}
       </PhoneShell>

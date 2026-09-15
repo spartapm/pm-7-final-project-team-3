@@ -6,6 +6,7 @@ import { Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { dateLabel, fullDateLabel, isValidYmd, monthGrid, monthLabel, subscriptionPayDates, timeLabel, won, ymd } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
+import { track, useGaView } from "@/lib/ga";
 import type { CalendarFilter } from "@/lib/types";
 
 type CalItem = { type: "sub" | "life" | "benefit"; title: string; right: string; href: string; color: string };
@@ -80,6 +81,7 @@ function Inner() {
   const todayCount = (itemsByDay.get(ymd(now)) ?? []).length;
   const monthCount = [...itemsByDay.keys()].filter((k) => k.startsWith(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`)).reduce((a, k) => a + (itemsByDay.get(k)?.length ?? 0), 0);
   const selected = itemsByDay.get(sel) ?? [];
+  useGaView("calendar_view");
 
   return (
     <Gate>
@@ -111,9 +113,9 @@ function Inner() {
             </div>
             <p>{filter === "all" ? "전체" : filter === "sub" ? "구독" : "일상"} 일정 {monthCount}개 · 오늘 {todayCount}개</p>
             <div className="chip-row">
-              <button className={`chip ${filter === "sub" ? "on" : ""}`} type="button" onClick={() => setFilter("sub")}><i className="dot" style={{ background: "#2F80ED" }} />구독</button>
-              <button className={`chip ${filter === "life" ? "on" : ""}`} type="button" onClick={() => setFilter("life")}><i className="dot life" />일상</button>
-              <button className={`chip ${filter === "all" ? "on" : ""}`} type="button" onClick={() => setFilter("all")}><i className="dot" style={{ background: filter === "all" ? "#fff" : "#9aa3b2" }} />전체</button>
+              <button className={`chip ${filter === "sub" ? "on" : ""}`} type="button" onClick={() => { setFilter("sub"); track("calendar_filter_select", { filter_type: "subscription" }); }}><i className="dot" style={{ background: "#2F80ED" }} />구독</button>
+              <button className={`chip ${filter === "life" ? "on" : ""}`} type="button" onClick={() => { setFilter("life"); track("calendar_filter_select", { filter_type: "schedule" }); }}><i className="dot life" />일상</button>
+              <button className={`chip ${filter === "all" ? "on" : ""}`} type="button" onClick={() => { setFilter("all"); track("calendar_filter_select", { filter_type: "all" }); }}><i className="dot" style={{ background: filter === "all" ? "#fff" : "#9aa3b2" }} />전체</button>
             </div>
           </div>
           <div className="cal-wrap">
@@ -128,7 +130,7 @@ function Inner() {
                       key={c.key}
                       type="button"
                       className={`cal-cell ${c.inMonth ? "" : "out"} ${c.dow === 0 ? "sun" : ""} ${c.dow === 6 ? "sat" : ""} ${c.today ? "today" : ""} ${sel === c.key ? "on" : ""}`}
-                      onClick={() => setSel(c.key)}
+                      onClick={() => { setSel(c.key); track("calendar_date_select", { source: "calendar" }); }}
                     >
                       <span className="d">{c.date}</span>
                       <span className="marks">

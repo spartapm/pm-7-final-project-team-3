@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Back, BounceIfAuthed, Modal, PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PASSWORD_HINT, emailError, passwordError } from "@/lib/validate";
+import { rememberLoginMethod, track } from "@/lib/ga";
 
 function LoginInner() {
   const router = useRouter();
@@ -43,6 +44,7 @@ function LoginInner() {
       showToast(res.error ?? "가입되지 않았거나, 이메일 또는 비밀번호가 일치하지 않습니다.", "err");
       return;
     }
+    track("login", { method: "email" });
     router.replace("/home");
   };
 
@@ -60,6 +62,7 @@ function LoginInner() {
   }, [loggedIn, q, showToast]);
 
   const social = (provider: "google" | "kakao") => {
+    rememberLoginMethod(provider);
     window.location.href = provider === "google" ? "/api/auth/google" : "/api/auth/kakao";
   };
 

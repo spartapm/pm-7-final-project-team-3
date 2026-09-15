@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, PhoneShell } from "@/components/ui";
+import { deleteReasonType, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 const REASONS = [
@@ -74,7 +75,7 @@ export default function WithdrawPage() {
         </label>
         <div className="withdraw-foot">
           <button className="btn ghost" type="button" onClick={() => router.push("/me")}>취소</button>
-          <button className="btn primary" type="button" disabled={!acked} onClick={() => setSheet("reason")}>탈퇴하기</button>
+          <button className="btn primary" type="button" disabled={!acked} onClick={() => { track("account_delete_start"); setSheet("reason"); }}>탈퇴하기</button>
         </div>
       </div>
       {sheet === "reason" ? (
@@ -112,6 +113,7 @@ export default function WithdrawPage() {
                   setBusy(true);
                   await withdraw();
                   setBusy(false);
+                  track("account_delete_complete", { delete_reason_type: deleteReasonType(reason) });
                   setSheet("done");
                 }}
               >

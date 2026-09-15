@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Gate, Modal, PhoneShell, TabBar } from "@/components/ui";
+import { track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 const MVP = "MVP 범위 밖 입니다 추후 실 서비스에서 뵙겠습니다.";
@@ -26,21 +27,21 @@ export default function MePage() {
           <div className="menu-group">
             <div className="k">계정</div>
             <div className="menu">
-              <button type="button" className="off" onClick={() => showToast(MVP, "info")}>프로필 수정 <span className="soon">준비 중</span></button>
-              <button type="button" onClick={() => router.push("/me/alerts")}>알림 설정 <span>›</span></button>
+              <button type="button" className="off" onClick={() => { track("my_menu_select", { menu_type: "profile_edit" }); showToast(MVP, "info"); }}>프로필 수정 <span className="soon">준비 중</span></button>
+              <button type="button" onClick={() => { track("my_menu_select", { menu_type: "notification_setting" }); router.push("/me/alerts"); }}>알림 설정 <span>›</span></button>
             </div>
           </div>
           <div className="menu-group">
             <div className="k">데이터</div>
             <div className="menu">
-              <button type="button" className="off" onClick={() => showToast(MVP, "info")}>서비스 연동 & 해제 <span className="soon">준비 중</span></button>
+              <button type="button" className="off" onClick={() => { track("my_menu_select", { menu_type: "service_link" }); showToast(MVP, "info"); }}>서비스 연동 & 해제 <span className="soon">준비 중</span></button>
             </div>
           </div>
           <div className="menu-group">
             <div className="k">지원</div>
             <div className="menu">
-              <button type="button" onClick={() => router.push("/signup/terms?from=me")}>이용약관 및 개인정보처리방침 <span>›</span></button>
-              <button className="danger-txt" type="button" onClick={() => router.push("/me/withdraw")}>계정 탈퇴 <span>›</span></button>
+              <button type="button" onClick={() => { track("my_menu_select", { menu_type: "terms_policy" }); router.push("/signup/terms?from=me"); }}>이용약관 및 개인정보처리방침 <span>›</span></button>
+              <button className="danger-txt" type="button" onClick={() => { track("account_delete_start"); router.push("/me/withdraw"); }}>계정 탈퇴 <span>›</span></button>
             </div>
           </div>
           <p className="version-foot">앱 버전 0.1.0</p>
@@ -53,7 +54,7 @@ export default function MePage() {
             confirm="로그아웃"
             mascot="/teumki/sad.png"
             onCancel={() => setOut(false)}
-            onConfirm={() => { logout(); router.replace("/login"); }}
+            onConfirm={() => { track("my_menu_select", { menu_type: "logout" }); logout(); router.replace("/login"); }}
           />
         ) : null}
       </PhoneShell>

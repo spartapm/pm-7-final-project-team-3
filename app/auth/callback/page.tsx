@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PhoneShell } from "@/components/ui";
 import { useStore } from "@/lib/store";
+import { consumeLoginMethod, track } from "@/lib/ga";
 
 function AuthCallbackInner() {
   const router = useRouter();
@@ -35,6 +36,7 @@ function AuthCallbackInner() {
           router.replace("/login?social=fail");
           return;
         }
+        track("login", { method: consumeLoginMethod() });
         router.replace("/home");
       } catch {
         showToast("소셜 로그인에 실패했어요. 다시 시도해주세요.", "err");

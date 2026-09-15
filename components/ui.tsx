@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { brandIcon } from "@/lib/brands";
 import { isImageIcon } from "@/lib/bundle-icon";
 import { catalogIcon } from "@/lib/catalog-icons";
+import { fabSource, markNavSource, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
 export function PhoneShell({ children }: { children: ReactNode }) {
@@ -130,7 +131,7 @@ export function TabBar({ active }: { active?: string }) {
                 ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
                 : path === t.href || path.startsWith(`${t.href}/`);
         return (
-          <Link key={t.href} href={t.href} className={`${on ? "on" : ""} ${t.kind === "home" ? "home" : ""}`}>
+          <Link key={t.href} href={t.href} className={`${on ? "on" : ""} ${t.kind === "home" ? "home" : ""}`} onClick={markNavSource}>
             {t.kind === "home" ? (
               <span className="home-orb"><img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" /></span>
             ) : (
@@ -196,7 +197,7 @@ export function Fab({ children }: { children?: ReactNode }) {
   const [tab, setTab] = useState<"subscription" | "event">("subscription");
   const router = useRouter();
   const path = usePathname();
-  const go = (href: string) => {
+  const go = (href: string, method: "image" | "voice" | "manual") => {
     const from = path.startsWith("/calendar")
       ? "/calendar"
       : path.startsWith("/benefits") || path.startsWith("/inspect")
@@ -205,6 +206,11 @@ export function Fab({ children }: { children?: ReactNode }) {
           ? "/me"
           : "/home";
     sessionStorage.setItem("teum:fab-tab", from);
+    track("registration_method_select", {
+      registration_method: method,
+      registration_target: tab === "event" ? "schedule" : "subscription",
+      source: fabSource(path),
+    });
     setOpen(false);
     router.push(href);
   };
@@ -218,12 +224,12 @@ export function Fab({ children }: { children?: ReactNode }) {
             <button className={tab === "subscription" ? "on" : ""} type="button" onClick={() => setTab("subscription")}>구독</button>
             <button className={tab === "event" ? "on" : ""} type="button" onClick={() => setTab("event")}>일상</button>
           </div>
-          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 이미지입니다" : "일상 관련 이미지입니다"); go(`/add/image?kind=${tab}`); }}>
+          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 이미지입니다" : "일상 관련 이미지입니다"); go(`/add/image?kind=${tab}`, "image"); }}>
             <span className="ico-sq"><img src="/icons/fab-image.png" alt="" /></span>
             이미지로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
           </button>
-          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 음성입니다" : "일상 관련 음성입니다"); go(`/add/voice?kind=${tab}`); }}>
+          <button className="fab-row" type="button" onClick={() => { sessionStorage.setItem("teum:ai-hint", tab === "subscription" ? "구독 관련 음성입니다" : "일상 관련 음성입니다"); go(`/add/voice?kind=${tab}`, "voice"); }}>
             <span className="ico-sq"><img src="/icons/fab-voice.png" alt="" /></span>
             음성으로 추가
             <span style={{ marginLeft: "auto", color: "#c5cad3" }}>›</span>
@@ -234,7 +240,7 @@ export function Fab({ children }: { children?: ReactNode }) {
             type="button"
             onClick={() => {
               const date = typeof window !== "undefined" ? sessionStorage.getItem("teum:cal-date") : "";
-              go(tab === "subscription" ? "/subscriptions/new" : (date ? `/events/new?date=${date}` : "/events/new"));
+              go(tab === "subscription" ? "/subscriptions/new" : (date ? `/events/new?date=${date}` : "/events/new"), "manual");
             }}
           >
             <span className="ico-sq">

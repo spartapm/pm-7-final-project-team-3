@@ -7,6 +7,7 @@ import { findBrand } from "@/lib/brands";
 import { findDuplicate } from "@/lib/dedup";
 import { clearExtract, readExtract, removeExtractItem } from "@/lib/extract";
 import { dateLabel, uid, won } from "@/lib/format";
+import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 import type { ExtractEventItem, ExtractItem, ExtractState, ExtractSubItem } from "@/lib/types";
 
@@ -38,6 +39,7 @@ function Inner() {
   const [dupChoice, setDupChoice] = useState<"remove" | "keep" | null>(null);
   const exitRef = useRef(false);
   const dirtyRef = useRef(false);
+  useGaView("image_analysis_complete", { registration_target: kind === "event" ? "schedule" : "subscription" }, from === "image" && Boolean(state));
   exitRef.current = exit;
   dirtyRef.current = Boolean(state?.dirty);
 
@@ -129,6 +131,7 @@ function Inner() {
   };
 
   const direct = () => {
+    track("image_manual_entry_select");
     if (kind === "event") {
       router.push("/events/new?from=result&i=new");
       return;
@@ -172,6 +175,7 @@ function Inner() {
         }
         clearExtract();
         router.replace("/calendar");
+        track("schedule_add_complete", { registration_method: from });
         return;
       }
       const subs = state.items.filter((x): x is ExtractSubItem => x.kind === "subscription");
@@ -215,8 +219,10 @@ function Inner() {
       }
       clearExtract();
       router.replace("/subscriptions");
+      track("subscription_add_complete", { registration_method: from });
     } catch {
       showToast("⚠️ 저장에 실패했어요. 다시 시도해주세요.", "err");
+      track(kind === "event" ? "schedule_add_failed" : "subscription_add_failed", { registration_method: from });
     }
   };
 
@@ -257,6 +263,7 @@ function Inner() {
                   type="button"
                   className="result-card"
                   onClick={() => {
+                    track("image_result_item_select", { duplicate_status: dup ? "duplicate" : "unique" });
                     if (dup) {
                       setDupChoice(null);
                       setDupId(item.id);
