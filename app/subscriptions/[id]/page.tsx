@@ -49,9 +49,6 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
   const child = Boolean(sub.parentId);
   const monthly = sub.status === "trial" ? 0 : sub.amount;
   const months = sub.everyMonths ?? (sub.cycle === "yearly" ? 12 : 1);
-  const trialMonths = sub.trialEnds
-    ? Math.max(1, Math.round((Date.parse(sub.trialEnds) - Date.now()) / (30 * 86400000)))
-    : months;
   const vendor = sub.bundleProvider
     ? (providers.find((p) => p.id === sub.bundleProvider)?.name || providerName(sub.bundleProvider))
     : "";
@@ -104,7 +101,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
             <div className="warn-banner">⚠️  결합 상품 재선택시 구독 서비스를 새로 등록해주세요.</div>
           ) : null}
           {sub.status === "trial" ? (
-            <div className="trial-pill">{trialMonths}개월 무료체험 중</div>
+            <div className="trial-pill">{dateLabel(sub.trialEnds ?? "")}까지 무료체험</div>
           ) : null}
           <div className="card" style={{ marginTop: 12 }}>
             {isBundleLike(sub) ? (

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { bundleIconSrc } from "@/lib/bundle-icon";
 import type { BundleItemRow, BundleRow, ProductRow, ProviderRow } from "@/lib/catalog-db";
 
 function Inner() {
@@ -25,7 +26,9 @@ function Inner() {
   const needle = q.trim().toLowerCase();
   const hit = (s: string) => !needle || s.toLowerCase().includes(needle);
   const solo = useMemo(
-    () => products.filter((p) => (p.product_type || "단독") !== "결합" && (p.is_active || type !== "solo") && hit(p.product_name)),
+    () => products.filter((p) => (p.product_type || "단독") !== "결합" && (p.is_active || type !== "solo") && (
+      hit(p.product_name) || hit(p.product_name_en || "") || (p.plans ?? []).some((x) => hit(x.plan_name))
+    )),
     [products, type, needle],
   );
   return (
@@ -43,22 +46,26 @@ function Inner() {
           id="adm-product-q"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="상품명으로 검색"
+          placeholder="상품명·영문명·요금제로 검색"
         />
       </div>
       {type !== "bundle" ? (
         <div className="adm-card" style={{ marginBottom: 16 }}>
           <h3 style={{ margin: "0 0 10px" }}>단독상품</h3>
           <table className="adm-table">
-            <thead><tr><th>ID</th><th>상품명</th><th>제공사</th><th>카테고리</th><th>정가</th><th>상태</th></tr></thead>
+            <thead><tr><th>아이콘</th><th>ID</th><th>상품명</th><th>영문명</th><th>제공사</th><th>카테고리</th><th>정가</th><th>상태</th></tr></thead>
             <tbody>
               {solo.map((p) => (
                 <tr key={p.product_id}>
+                  <td>
+                    <img className="adm-list-ico" src={bundleIconSrc(p.icon)} alt="" />
+                  </td>
                   <td>{p.product_id}</td>
                   <td><Link href={`/admin/products/new?solo=${p.product_id}`}>{p.product_name}</Link></td>
+                  <td>{p.product_name_en || "-"}</td>
                   <td>{nameOf(p.provider_id)}</td>
                   <td>{p.category}</td>
-                  <td>{wonOf(p.price_standard)}</td>
+                  <td>{wonOf((p.plans ?? [])[0]?.price_standard ?? p.price_standard)}</td>
                   <td>{p.is_active ? "공개" : "임시"}</td>
                 </tr>
               ))}

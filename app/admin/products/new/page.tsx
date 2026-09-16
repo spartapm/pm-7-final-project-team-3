@@ -20,6 +20,8 @@ function Inner() {
 
   const [providerId, setProviderId] = useState("");
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [plans, setPlans] = useState<{ plan_name: string; price_standard: string }[]>([{ plan_name: "", price_standard: "" }]);
   const [category, setCategory] = useState("커머스 멤버십");
   const [price, setPrice] = useState("");
   const [url, setUrl] = useState("");
@@ -66,9 +68,13 @@ function Inner() {
         setMode("solo");
         setProductId(p.product_id);
         setName(p.product_name ?? "");
+        setNameEn(p.product_name_en ?? "");
         setProviderId(p.provider_id ? String(p.provider_id) : "");
         setCategory(p.category || "커머스 멤버십");
         setPrice(String(p.price_standard || ""));
+        setPlans((p.plans ?? []).length
+          ? (p.plans ?? []).map((x) => ({ plan_name: x.plan_name, price_standard: String(x.price_standard || "") }))
+          : [{ plan_name: "", price_standard: String(p.price_standard || "") }]);
         setUrl(p.official_url ?? "");
         setIcon(isImageIcon(p.icon) ? (p.icon ?? "") : "");
         setActive(p.is_active);
@@ -94,12 +100,14 @@ function Inner() {
           product_id: productId,
           provider_id: providerId ? Number(providerId) : null,
           product_name: name,
+          product_name_en: nameEn,
           category,
           product_type: "단독",
-          price_standard: bundled,
+          price_standard: Number(plans[0]?.price_standard.replace(/[^\d]/g, "") || bundled) || 0,
           official_url: url,
           icon,
           is_active: publish,
+          plans: plans.map((x) => ({ plan_name: x.plan_name, price_standard: Number(String(x.price_standard).replace(/[^\d]/g, "")) || 0 })),
         };
         const res = await fetch("/api/admin/products", {
           method: productId ? "PATCH" : "POST",
@@ -174,7 +182,14 @@ function Inner() {
           </div>
           <div className="adm-field">
             <label>상품명 <i>*</i></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="네이버멤버십 & Spotify" />
+            {mode === "solo" ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="한글명 (예: 챗지피티)" />
+                <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} placeholder="영문명 (예: ChatGPT)" />
+              </div>
+            ) : (
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="네이버멤버십 & Spotify" />
+            )}
           </div>
           {mode === "solo" ? (
             <div className="adm-field">
@@ -223,13 +238,33 @@ function Inner() {
           ) : null}
         </div>
         <div className="adm-card">
+          {mode === "solo" ? (
+            <div className="adm-field">
+              <label>요금제 <i>*</i></label>
+              <p style={{ margin: 0, fontSize: 12, color: "#667085" }}>같은 서비스의 Go / Pro처럼 요금제를 여러 개 등록하면 중복·유사 구독 처리에 쓰입니다.</p>
+              <div className="adm-plans">
+                {plans.map((row, idx) => (
+                  <div key={idx} className="adm-plan-row">
+                    <input value={row.plan_name} onChange={(e) => setPlans((xs) => xs.map((x, i) => i === idx ? { ...x, plan_name: e.target.value } : x))} placeholder="요금제명 (예: Go)" />
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={row.price_standard} onChange={(e) => setPlans((xs) => xs.map((x, i) => i === idx ? { ...x, price_standard: e.target.value } : x))} placeholder="20,000" />
+                      <span>원</span>
+                    </div>
+                    <button className="adm-btn" type="button" onClick={() => setPlans((xs) => xs.length === 1 ? xs : xs.filter((_, i) => i !== idx))}>×</button>
+                  </div>
+                ))}
+                <button className="adm-btn" type="button" onClick={() => setPlans((xs) => [...xs, { plan_name: "", price_standard: "" }])}>+ 요금제 추가</button>
+              </div>
+            </div>
+          ) : (
           <div className="adm-field">
-            <label>{mode === "bundle" ? "결합 가격" : "정가"} <i>*</i></label>
+            <label>결합 가격 <i>*</i></label>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="4,900" />
               <span>원</span>
             </div>
           </div>
+          )}
           {mode === "solo" ? (
             <div className="adm-field">
               <label>상품 아이콘</label>

@@ -77,6 +77,19 @@ export default function HomePage() {
     router.push("/inspect");
   };
 
+  const openNotice = (n: (typeof notices)[number]) => {
+    track("notification_select");
+    const inviteHit = n.id === "nt_invite" || n.href.includes("invite");
+    if (inviteHit) {
+      setSheet(false);
+      setInvite(true);
+      markNotice(n.id);
+      return;
+    }
+    router.push(n.href);
+    window.setTimeout(() => markNotice(n.id), 400);
+  };
+
   if (!hydrated) return <PhoneShell><div className="scroll" /></PhoneShell>;
 
   return (
@@ -200,31 +213,12 @@ export default function HomePage() {
                     <p className="muted">모든 알림을 확인했어요</p>
                   </div>
                 ) : notices.filter((n) => !n.read).map((n) => (
-                  <div key={n.id} className="notice-item" role="button" tabIndex={0} onClick={() => {
-                      track("notification_select");
-                      markNotice(n.id);
-                      if (n.id === "nt_invite" || n.href.includes("invite")) {
-                        setSheet(false);
-                        setInvite(true);
-                        return;
-                      }
-                      router.push(n.href);
-                    }} onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
+                  <div key={n.id} className="notice-item" role="button" tabIndex={0} onClick={() => openNotice(n)} onKeyDown={(e) => { if (e.key === "Enter") openNotice(n); }}>
                     <Brand name={n.brand ?? "틈"} color={n.icon === "warn" ? "#ff7700" : n.icon === "gift" ? "#2576f2" : "#14171c"} logo={n.icon === "warn" ? "!" : n.icon === "gift" ? "🎁" : ""} />
                     <div className="grow">
                       <div><span className="t">{n.title}</span><span className="meta">{relativeTime(n.at)}</span></div>
                       <p>{n.body}</p>
-                      <button className="mini" type="button" onClick={(e) => {
-                        e.stopPropagation();
-                        track("notification_select");
-                        markNotice(n.id);
-                        if (n.id === "nt_invite" || n.href.includes("invite")) {
-                          setSheet(false);
-                          setInvite(true);
-                          return;
-                        }
-                        router.push(n.href);
-                      }}>확인</button>
+                      <button className="mini" type="button" onClick={(e) => { e.stopPropagation(); openNotice(n); }}>확인</button>
                     </div>
                   </div>
                 ))}

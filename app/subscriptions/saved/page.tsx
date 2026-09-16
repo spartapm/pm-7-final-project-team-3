@@ -31,14 +31,22 @@ export default function SavedSub() {
               <p className="muted">{won(saved.amount)} · {cycle} · {saved.alert ? "알림 설정" : "알림 없음"}</p>
             </div>
           ) : null}
-          <div style={{ height: 24 }} />
-          <button
-            className="btn primary"
-            type="button"
-            onClick={() => router.replace(saved?.id ? `/subscriptions/${saved.id}` : "/subscriptions")}
-          >
-            구독 상세 보기
-          </button>
+          <div className="done-actions">
+            <button
+              className="btn outline"
+              type="button"
+              onClick={() => router.replace(saved?.id ? `/subscriptions/${saved.id}` : "/subscriptions")}
+            >
+              구독 상세 보기
+            </button>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => router.replace("/subscriptions")}
+            >
+              구독 목록으로 가기
+            </button>
+          </div>
         </div>
       </PhoneShell>
     </Gate>

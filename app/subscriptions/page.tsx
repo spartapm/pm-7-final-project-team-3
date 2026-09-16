@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, ChipScroller, Fab, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { CATEGORY_OPTIONS, benefitStatus, isBundleLike } from "@/lib/catalog";
+import { isBundleLike, type ServiceHit } from "@/lib/catalog";
 import { cycleEvery, dateLabel, dueBadge, won } from "@/lib/format";
-import { monthlyAmount } from "@/lib/stats";
+import { bundleTips } from "@/lib/recommend";
 import { useStore } from "@/lib/store";
 import { useBenefits } from "@/lib/use-benefits";
 import { track, useGaView } from "@/lib/ga";
-import type { Category } from "@/lib/types";
+import type { Subscription } from "@/lib/types";
 
 type SortKey = "pay" | "amountDesc" | "amountAsc" | "newest" | "status";
 
@@ -27,16 +27,29 @@ function statusRank(s: { paused: boolean; status: string }) {
   return 0;
 }
 
-function catLabel(id: Category | "all") {
+function compactName(s: string) {
+  return s.replace(/[\s\-_/·,.]/g, "").toLowerCase();
+}
+
+function dbCategoryOf(s: Subscription, products: ServiceHit[]) {
+  const n = compactName(s.name);
+  const hit = products.find((p) => {
+    const keys = [p.name, p.nameEn, ...(p.plans ?? []).map((x) => `${p.name} ${x.name}`), ...(p.plans ?? []).map((x) => x.name)];
+    return keys.some((k) => k && (compactName(k) === n || (n.includes(compactName(k)) && compactName(k).length >= 4)));
+  });
+  return (hit?.adminCategory || "").trim();
+}
+
+function catLabel(id: string) {
   if (id === "all") return "전체";
-  return CATEGORY_OPTIONS.find((c) => c.id === id)?.label ?? id;
+  return id;
 }
 
 export default function SubListPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits, loaded } = useBenefits();
-  const [cat, setCat] = useState<Category | "all">("all");
+  const { benefits, bundles, soloProducts, loaded } = useBenefits();
+  const [cat, setCat] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("pay");
   const [sortOpen, setSortOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -45,7 +58,7 @@ export default function SubListPage() {
     try {
       const raw = sessionStorage.getItem("teum:sub-list");
       if (raw) {
-        const saved = JSON.parse(raw) as { cat?: Category | "all"; sort?: SortKey; y?: number };
+        const saved = JSON.parse(raw) as { cat?: string; sort?: SortKey; y?: number };
         if (saved.cat) setCat(saved.cat);
         if (saved.sort) setSort(saved.sort);
         requestAnimationFrame(() => {
@@ -67,7 +80,7 @@ export default function SubListPage() {
   }, [ready, cat, sort]);
   const live = subscriptions.filter((s) => s.status !== "ended");
   const list = live
-    .filter((s) => cat === "all" || catLabel(s.category) === catLabel(cat))
+    .filter((s) => cat === "all" || dbCategoryOf(s, soloProducts) === cat)
     .slice()
     .sort((a, b) => {
       if (sort === "pay") return a.nextPay.localeCompare(b.nextPay);
@@ -77,11 +90,15 @@ export default function SubListPage() {
       return statusRank(a) - statusRank(b);
     });
   const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
-  const benefitCheck = loaded ? benefits.filter((b) => benefitStatus(b, live) !== "owned").length : null;
+  const benefitCheck = loaded ? bundleTips(live, benefits, bundles).length : null;
   const cats = useMemo(() => {
-    const used = new Set(live.map((s) => s.category));
-    return [{ id: "all" as const, label: "전체" }, ...CATEGORY_OPTIONS.filter((c) => used.has(c.id))];
-  }, [live]);
+    const labels: string[] = [];
+    for (const s of live) {
+      const label = dbCategoryOf(s, soloProducts);
+      if (label && !labels.includes(label)) labels.push(label);
+    }
+    return [{ id: "all", label: "전체" }, ...labels.map((l) => ({ id: l, label: l }))];
+  }, [live, soloProducts]);
   const sortLabel = SORTS.find((s) => s.id === sort)?.label ?? "결제일 순";
   useGaView("subscription_list_view", {}, ready);
 
@@ -110,7 +127,7 @@ export default function SubListPage() {
                     <span className="sum-num dday">{next ? dueBadge(next.nextPay) : "없음"}</span>
                   </div>
                 </div>
-                <button className="card tight" type="button" onClick={() => router.push("/benefits")} style={{ textAlign: "left" }}>
+                <button className="card tight" type="button" onClick={() => router.push("/inspect")} style={{ textAlign: "left" }}>
                   <div className="muted">확인할 혜택</div>
                   <div className="sum-row">
                     <span className="sum-num" style={{ color: "#2576f2" }}>{benefitCheck === null ? "" : `${benefitCheck}개`}</span>
@@ -123,7 +140,7 @@ export default function SubListPage() {
           <div className="sub-body">
             <ChipScroller style={{ marginBottom: 4 }}>
               {cats.map((c) => (
-                <button key={c.id} className={`chip ${cat === c.id ? "on" : ""}`} type="button" onClick={() => { setCat(c.id as Category | "all"); track("subscription_filter_select", { filter_type: c.id }); }}>{c.label}</button>
+                <button key={c.id} className={`chip ${cat === c.id ? "on" : ""}`} type="button" onClick={() => { setCat(c.id); track("subscription_filter_select", { filter_type: c.id }); }}>{c.label}</button>
               ))}
             </ChipScroller>
             <div className="list-head">

@@ -9,6 +9,7 @@ import { clearExtract, readExtract, removeExtractItem } from "@/lib/extract";
 import { dateLabel, uid, won } from "@/lib/format";
 import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
+import { useBenefits } from "@/lib/use-benefits";
 import type { ExtractEventItem, ExtractItem, ExtractState, ExtractSubItem } from "@/lib/types";
 
 function metaOf(item: ExtractItem) {
@@ -31,6 +32,7 @@ function Inner() {
   const kind = q.get("kind") === "event" ? "event" : "subscription";
   const from = q.get("from") === "voice" ? "voice" : "image";
   const { upsertSub, upsertEvent, showToast, subscriptions } = useStore();
+  const { soloProducts } = useBenefits();
   const [state, setState] = useState<ExtractState | null>(null);
   const [exit, setExit] = useState(false);
   const [fabTab, setFabTab] = useState("/home");
@@ -110,10 +112,10 @@ function Inner() {
     if (!state || kind !== "subscription") return map;
     for (const item of state.items) {
       if (item.kind !== "subscription" || allowedDup.has(item.id)) continue;
-      map.set(item.id, findDuplicate(item, liveSubs));
+      map.set(item.id, findDuplicate(item, liveSubs, soloProducts));
     }
     return map;
-  }, [state, kind, liveSubs, allowedDup]);
+  }, [state, kind, liveSubs, allowedDup, soloProducts]);
   const dupCount = [...dupMap.values()].filter(Boolean).length;
   const dupOpen = dupId && state ? state.items.find((x) => x.id === dupId) : null;
   const dupInfo = dupId ? dupMap.get(dupId) : null;

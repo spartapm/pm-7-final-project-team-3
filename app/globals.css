@@ -235,6 +235,9 @@ img { display: block; max-width: 100%; }
   padding: 10px 12px; text-align: left; font-size: 14px; font-weight: 700;
 }
 .svc-suggest button:active { background: #f7f9fc; }
+.svc-suggest-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.svc-suggest-copy strong { font-size: 14px; font-weight: 800; color: #19191b; }
+.svc-suggest-copy em { font-style: normal; font-size: 12px; font-weight: 600; color: #667085; }
 .switch {
   width: 44px; height: 26px; border-radius: 99px; background: #d8dee8; position: relative;
 }
@@ -360,25 +363,26 @@ img { display: block; max-width: 100%; }
   position: relative; overflow: hidden;
   box-shadow: 0 10px 24px rgba(20, 47, 110, 0.12);
 }
-.promo.photo { padding: 0 0 10px; background: transparent; box-shadow: none; min-height: 0; overflow: visible; }
+.promo.photo { padding: 0; background: transparent; box-shadow: none; min-height: 0; overflow: hidden; }
 .promo-full { width: 100%; height: 148px; object-fit: cover; border-radius: 16px; display: block; }
 .promo-nav {
-  position: static; display: flex; align-items: center; justify-content: center;
-  gap: 14px; margin: 10px 0 0; padding: 0; color: #5c6671; pointer-events: auto;
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  z-index: 10; display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin: 0; padding: 0; color: #fff; pointer-events: auto;
 }
 .promo-nav button {
-  width: 32px; height: 32px; border-radius: 0;
-  background: transparent; color: #4a525c;
-  font-size: 22px; font-weight: 700; line-height: 1;
+  width: 24px; height: 24px; border-radius: 0; padding: 0;
+  background: transparent; color: #fff;
+  font-size: 12px; font-weight: 700; line-height: 1;
   display: grid; place-items: center; pointer-events: auto;
-  text-shadow: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
-.promo-nav button.off, .promo-nav button:disabled { color: #d0d5dd; }
+.promo-nav button.off, .promo-nav button:disabled { color: rgba(255,255,255,.4); }
 .promo-nav .dots { display: flex; gap: 6px; align-items: center; pointer-events: auto; }
 .promo-nav .dots button, .promo-nav .dots i {
-  width: 7px; height: 7px; padding: 0; border-radius: 50%; background: #d0d5dd;
+  width: 6px; height: 6px; padding: 0; border-radius: 50%; background: #D1D5DB;
 }
-.promo-nav .dots button.on, .promo-nav .dots i.on { background: #2f80ed; width: 7px; }
+.promo-nav .dots button.on, .promo-nav .dots i.on { background: #2f80ed; width: 6px; }
 .ok-leak {
   display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; width: 100%;
   margin-top: 8px; background: #eaf3ff; color: #2f80ed;
@@ -549,11 +553,11 @@ img { display: block; max-width: 100%; }
 }
 .benefit-card:active { background: #f8fafc; }
 .benefit-ico {
-  width: 48px; height: 48px; border-radius: 14px; background: #f4f6fa;
-  display: grid; place-items: center; font-size: 22px; flex: none;
+  width: 96px; height: 56px; border-radius: 14px; background: transparent;
+  display: grid; place-items: center; flex-shrink: 0;
   overflow: hidden;
 }
-.benefit-ico img { width: 24px; height: 24px; object-fit: contain; }
+.benefit-ico img { width: 100%; height: 100%; object-fit: contain; }
 .benefit-card .body { flex: 1; min-width: 0; }
 .tag {
   display: inline-flex; font-size: 11px; font-weight: 800; color: #fff;
@@ -705,16 +709,20 @@ img { display: block; max-width: 100%; }
 }
 .voice-pencil { color: #19191b; }
 .voice-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.add-title { font-size: 22px; font-weight: 800; margin: 8px 0 6px; }
+.add-title { font-size: 22px; font-weight: 800; margin: 8px 0 6px; color: #19191b; }
+.add-lead { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; word-break: keep-all; }
 .upload-area {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   width: 100%; min-height: 168px; margin: 16px 0 12px; border-radius: 16px;
   border: 1.5px dashed #c5d4ea; background: #f6f8fc; color: #16181d;
 }
-.upload-area strong { font-size: 16px; }
+.upload-area strong { font-size: 16px; font-weight: 800; }
 .upload-area em { font-style: normal; color: #667085; font-size: 13px; }
-.upload-plus { font-size: 22px; color: #2f80ed; font-weight: 800; }
-.upload-count { font-size: 13px; font-weight: 700; margin: 4px 0 0; }
+.upload-plus {
+  width: 48px; height: 48px; border-radius: 50%; margin-bottom: 4px;
+  background: var(--blue); color: #fff; display: grid; place-items: center;
+}
+.upload-count { font-size: 13px; font-weight: 700; color: var(--muted); margin: 4px 0 0; }
 .wait { position: relative; }
 .wait-close { position: absolute; top: 8px; right: 8px; }
 .when-row { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -1065,6 +1073,29 @@ img { display: block; max-width: 100%; }
 }
 .done-screen h1 { font-size: 22px; font-weight: 800; margin: 0 0 8px; }
 .done-screen p { color: var(--muted); margin: 0; }
+.done-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 24px; }
+.done-actions .btn { height: 52px; }
+.img-guide {
+  margin: 0 0 10px; background: #fff; border: 1px solid #e6eef8; border-radius: 16px; overflow: hidden;
+}
+.img-guide.is-open { border: 0; background: transparent; display: flex; flex-direction: column; gap: 10px; }
+.img-guide-toggle {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; text-align: left;
+}
+.img-guide-full { position: relative; display: block; width: 100%; }
+.img-guide-full img { width: 100%; height: auto; display: block; }
+.img-guide-pill {
+  flex: none; background: #e8f1ff; color: #2f80ed;
+  font-size: 12px; font-weight: 800; line-height: 1;
+  padding: 6px 10px; border-radius: 999px;
+}
+.img-guide-label { flex: 1; font-size: 15px; font-weight: 800; color: #19191b; }
+.img-guide-chevron { flex: none; color: #98a2b3; transition: transform 0.15s ease; }
+.img-guide.is-open .img-guide-chevron {
+  position: absolute; top: 18px; right: 16px; transform: rotate(180deg);
+}
+.img-avoid { width: 100%; height: auto; display: block; margin: 0; }
 .email-clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
 .home-body .overview + .section-title { margin-top: 26px; }
 

@@ -6,9 +6,10 @@ import { WhenPick } from "@/components/WhenPick";
 import { Back, Brand, Gate, Modal, PhoneShell } from "@/components/ui";
 import { findBrand } from "@/lib/brands";
 import { emptyDraft, searchServices, type ServiceHit } from "@/lib/catalog";
+import { namesOverlap } from "@/lib/dedup";
+import { dateLabel, uid, ymd, isValidYmd } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
 import { draftFromSubItem, readExtract, subItemFromDraft, upsertExtractItem } from "@/lib/extract";
-import { dateLabel, uid, ymd } from "@/lib/format";
 import { catalogIcon } from "@/lib/catalog-icons";
 import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
@@ -67,7 +68,7 @@ export function SubForm({
   extractId?: string | null;
 }) {
   const router = useRouter();
-  const { subscriptions, upsertSub, draft, setDraft, resetDraft, showToast } = useStore();
+  const { subscriptions, upsertSub, resetDraft, showToast } = useStore();
   const { soloProducts, bundles, providers } = useBenefits();
   const existing = existingId ? subscriptions.find((s) => s.id === existingId) : null;
   const [local, setLocal] = useState<DraftSub>(existing ? fromSub(existing) : emptyDraft());
@@ -76,6 +77,7 @@ export function SubForm({
   const [alertOn, setAlertOn] = useState(existing ? existing.alertDays > 0 : false);
   const [leave, setLeave] = useState(false);
   const [payPick, setPayPick] = useState(false);
+  const [trialPick, setTrialPick] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tried, setTried] = useState(false);
   const [dup, setDup] = useState(false);
@@ -102,13 +104,7 @@ export function SubForm({
       }
       return;
     }
-    if (existingId) return;
-    setLocal(emptyDraft());
-    setTrialOn(false);
-    setAlertOn(false);
-    setPickedHit(null);
-    setCycleText("1");
-  }, [draft, existingId, extractId, fromResult]);
+  }, [existingId, extractId, fromResult]);
 
   const hits = useMemo(() => searchServices(local.name, soloProducts), [local.name, soloProducts]);
   const extraAfterDb = soloProducts.some((p) => local.name.startsWith(p.name) && local.name.length > p.name.length);
@@ -124,7 +120,7 @@ export function SubForm({
   const nameOk = local.name.trim().length >= 2 && local.name.trim().length <= 30 && local.name.trim().toUpperCase() !== "NULL";
   const amountOk = trialOn || (Boolean(digitsOf(local.amount)) && amountRangeOk);
   const dateOk = Boolean(local.nextPay);
-  const trialOk = !trialOn || (/^\d{1,2}$/.test(local.trialDays) && Number(local.trialDays) >= 1 && Number(local.trialDays) <= 99);
+  const trialOk = !trialOn || isValidYmd(local.trialEnds) || (/^\d{1,3}$/.test(local.trialDays) && Number(local.trialDays) >= 1 && Number(local.trialDays) <= 365);
   const bundleOk = mode === "solo" || Boolean(local.bundleProvider && local.name.trim());
   const cycleOk = /^[1-9]\d?$/.test(cycleText) && Number(cycleText) >= 1 && Number(cycleText) <= 99;
   const canSave = nameOk && amountOk && dateOk && trialOk && bundleOk && cycleOk;
@@ -140,9 +136,11 @@ export function SubForm({
   });
 
   const pick = (hit: ServiceHit) => {
+    const first = hit.plans?.[0];
     setLocal((p) => ({
       ...p,
       name: hit.name,
+      plan: hit.plans?.length === 1 ? (first?.name ?? p.plan) : "",
       category: hit.category || p.category,
       amount: hit.amount ? String(hit.amount) : p.amount,
     }));
@@ -175,7 +173,10 @@ export function SubForm({
       return;
     }
     const amount = Number(digitsOf(local.amount)) || 0;
-    const twin = subscriptions.find((s) => s.id !== existing?.id && s.name.trim().toLowerCase() === local.name.trim().toLowerCase() && s.amount === amount);
+    const twin = subscriptions.find((s) => s.id !== existing?.id && (
+      (s.name.trim().toLowerCase() === local.name.trim().toLowerCase() && s.amount === amount)
+      || namesOverlap(s.name, local.name, soloProducts)
+    ));
     if (twin && !force) {
       setDup(true);
       return;
@@ -188,7 +189,9 @@ export function SubForm({
     }
     const payDay = Number(local.nextPay.slice(8, 10)) || 1;
     const color = iconHit?.color || findBrand(local.name)?.color || "#2576f2";
-    const trialEnds = trialOn ? addDays(local.nextPay, Number(local.trialDays) || 14) : null;
+    const trialEnds = trialOn
+      ? (isValidYmd(local.trialEnds) ? local.trialEnds : addDays(ymd(new Date()), Number(local.trialDays) || 14))
+      : null;
     const months = Number(cycleText);
     setSaving(true);
     try {
@@ -202,13 +205,13 @@ export function SubForm({
         cycle: months === 12 ? "yearly" : local.cycle,
         everyMonths: months,
         payDay,
-        nextPay: trialEnds || local.nextPay,
+        nextPay: local.nextPay,
         status: trialOn ? "trial" : local.status === "paused" ? "paused" : "active",
         autoRenew: local.autoRenew,
         unused: existing?.unused ?? false,
         memo: local.memo,
         color,
-        logo: catalogIcon(local.name.trim()) || "",
+        logo: catalogIcon(local.name.trim()) || iconHit?.logo || "",
         trialEnds,
         paused: local.status === "paused",
         alertDays: alertOn ? (local.alertDays || 3) : 0,
@@ -227,7 +230,7 @@ export function SubForm({
         months,
         alert: alertOn,
       }));
-      router.replace(fromResult ? "/subscriptions" : "/subscriptions/saved");
+      router.replace(fromResult || force ? "/subscriptions" : "/subscriptions/saved");
       if (!fromResult) track(existing ? "subscription_update_complete" : "subscription_add_complete", { registration_method: formMethod });
     } catch {
       setSaving(false);
@@ -329,18 +332,39 @@ export function SubForm({
                 {hits.map((s) => (
                   <button key={s.id ?? s.name} type="button" onClick={() => pick(s)}>
                     <Brand name={s.name} color={s.color} logo={s.logo} />
-                    {s.name}
+                    <span className="svc-suggest-copy">
+                      <strong>{s.name}</strong>
+                      {s.nameEn ? <em>{s.nameEn}</em> : null}
+                    </span>
                   </button>
                 ))}
               </div>
             ) : null}
             {tried && !nameOk ? <p id="sub-name-err" className="err-msg">서비스명을 입력해 주세요.</p> : null}
+            {mode === "solo" && (pickedHit?.plans?.length ?? 0) > 1 ? (
+              <div className="field" style={{ marginTop: 10 }}>
+                <label>요금제</label>
+                <select
+                  value={local.plan}
+                  onChange={(e) => {
+                    const plan = e.target.value;
+                    const hit = pickedHit?.plans?.find((x) => x.name === plan);
+                    setLocal((p) => ({ ...p, plan, amount: hit ? String(hit.amount) : p.amount }));
+                  }}
+                >
+                  <option value="">요금제를 선택해주세요</option>
+                  {pickedHit?.plans?.map((x) => (
+                    <option key={x.name} value={x.name}>{x.name}{x.amount ? ` · ${x.amount.toLocaleString("ko-KR")}원` : ""}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             {mode === "bundle" && local.included ? (
               <p className="field-hint">포함 서비스: {local.included}</p>
             ) : null}
           </div>
           <div className={`field ${tried && !dateOk ? "err" : ""}`}>
-            <label htmlFor="sub-pay">첫 결제일 <i className="req">*</i></label>
+            <label htmlFor="sub-pay">다음 결제일 <i className="req">*</i></label>
             <button id="sub-pay" type="button" className="when-chip" aria-required="true" onClick={() => setPayPick(true)}>
               {local.nextPay ? dateLabel(local.nextPay) : "날짜"}
             </button>
@@ -404,11 +428,27 @@ export function SubForm({
             }}><i /></button>
           </label>
           {trialOn ? (
+            <>
             <div className="field">
-              <label>무료 체험 기간 <i className="req">*</i></label>
-              <input inputMode="numeric" value={local.trialDays} maxLength={2} placeholder="체험 기간을 입력해주세요" onChange={(e) => setLocal((p) => ({ ...p, trialDays: e.target.value.replace(/[^0-9]/g, "") }))} />
-              <p className="field-hint">ⓘ 무료체험 기간이 종료되면 자동으로 위에 설정된 결제 금액으로 표기됩니다.</p>
+              <label>무료 체험 기간</label>
+              <input inputMode="numeric" value={local.trialDays} maxLength={3} placeholder="일 수 (예: 90)" onChange={(e) => {
+                const days = e.target.value.replace(/[^0-9]/g, "");
+                setLocal((p) => ({
+                  ...p,
+                  trialDays: days,
+                  trialEnds: days ? addDays(ymd(new Date()), Number(days) || 0) : p.trialEnds,
+                }));
+              }} />
+              <p className="field-hint">ⓘ 무료체험 기간은 구독 주기와 별개입니다. 입력한 일 수만큼 오늘부터 종료일이 계산됩니다.</p>
             </div>
+            <div className={`field ${tried && trialOn && !isValidYmd(local.trialEnds) ? "err" : ""}`}>
+              <label>무료체험 종료일 <i className="req">*</i></label>
+              <button type="button" className="when-chip" onClick={() => setTrialPick(true)}>
+                {local.trialEnds ? dateLabel(local.trialEnds) : "날짜"}
+              </button>
+              <p className="field-hint">ⓘ 종료일을 직접 고르면 그 날짜가 그대로 저장됩니다.</p>
+            </div>
+            </>
           ) : null}
           <div className="field">
             <label htmlFor="sub-pay-method">결제 수단</label>
@@ -431,7 +471,7 @@ export function SubForm({
             <label htmlFor="sub-memo">메모</label>
             <textarea id="sub-memo" value={local.memo} onChange={(e) => setLocal((p) => ({ ...p, memo: e.target.value }))} placeholder="해지 가능일 · 종료일 · 메모 (선택)" />
           </div>
-          <button className="btn primary" type="button" disabled={saving || !amountRangeOk} onClick={() => { setDraft(local); save(); }}>{saving ? "저장 중…" : "저장하기"}</button>
+          <button className="btn primary" type="button" disabled={saving || !amountRangeOk} onClick={() => save()}>{saving ? "저장 중…" : "저장하기"}</button>
         </div>
         <WhenPick
           open={payPick}
@@ -443,6 +483,18 @@ export function SubForm({
           onPick={(d) => {
             setLocal((p) => ({ ...p, nextPay: d, payDay: String(Number(d.slice(8, 10)) || 1) }));
             setPayPick(false);
+          }}
+        />
+        <WhenPick
+          open={trialPick}
+          allDay
+          date={local.trialEnds}
+          time=""
+          minDate={ymd(new Date())}
+          onCancel={() => setTrialPick(false)}
+          onPick={(d) => {
+            setLocal((p) => ({ ...p, trialEnds: d }));
+            setTrialPick(false);
           }}
         />
         {dup ? (

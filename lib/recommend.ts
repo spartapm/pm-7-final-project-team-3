@@ -28,6 +28,7 @@ export type BundleTip = {
   headline: string;
   names: string[];
   colors: string[];
+  logos?: string[];
   solo: number;
   bundle: number;
   save: number;
@@ -65,12 +66,20 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
       const save = capSave(solo - bundle, live);
       if (save <= 0) continue;
       const colors = parts.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
+      const carrier = b.kind === "carrier";
+      const names = carrier
+        ? [b.provider, b.perk?.name || b.parent?.name || ""].filter(Boolean)
+        : parts;
+      const logos = carrier
+        ? [b.providerLogo || "", b.perkIcon || b.parentIcon || ""]
+        : [b.parentIcon || "", b.perkIcon || ""];
       out.push({
         id: b.id,
         href: `/benefits/${b.id}`,
         headline: b.title,
-        names: parts,
-        colors,
+        names,
+        colors: carrier ? [b.providerColor || colors[0], colors[1] || colors[0]] : colors,
+        logos,
         solo,
         bundle,
         save,

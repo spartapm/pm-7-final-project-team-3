@@ -44,21 +44,27 @@ export function cycleStepMonths(cycle: string, everyMonths?: number) {
 }
 
 export function subscriptionPayDates(
-  sub: { nextPay: string; payDay: number; cycle: string; everyMonths?: number },
+  sub: { nextPay: string; payDay: number; cycle: string; everyMonths?: number; createdAt?: number },
   fromKey: string,
   toKey: string,
 ) {
   if (!isValidYmd(sub.nextPay) || fromKey > toKey) return [] as string[];
+  const created = sub.createdAt ? new Date(sub.createdAt) : null;
+  const minKey = created
+    ? ymd(new Date(created.getFullYear(), created.getMonth(), 1))
+    : sub.nextPay;
   const out: string[] = [];
+  const keep = (iso: string) => iso >= minKey && iso >= fromKey && iso <= toKey;
   if (sub.cycle === "weekly") {
     const d = parseYmd(sub.nextPay);
     let guard = 0;
-    while (ymd(d) > fromKey && guard++ < 80) d.setDate(d.getDate() - 7);
+    while (ymd(d) > fromKey && ymd(d) > minKey && guard++ < 80) d.setDate(d.getDate() - 7);
     guard = 0;
     while (ymd(d) < fromKey && guard++ < 80) d.setDate(d.getDate() + 7);
     guard = 0;
     while (ymd(d) <= toKey && guard++ < 80) {
-      out.push(ymd(d));
+      const key = ymd(d);
+      if (keep(key)) out.push(key);
       d.setDate(d.getDate() + 7);
     }
     return out;
@@ -67,7 +73,7 @@ export function subscriptionPayDates(
   const day = sub.payDay || parseYmd(sub.nextPay).getDate();
   let cur = sub.nextPay;
   let guard = 0;
-  while (cur > fromKey && guard++ < 48) {
+  while (cur > fromKey && cur > minKey && guard++ < 48) {
     const prev = addMonthsClamped(cur, -step, day);
     if (prev >= cur) break;
     cur = prev;
@@ -76,7 +82,7 @@ export function subscriptionPayDates(
   while (cur < fromKey && guard++ < 48) cur = addMonthsClamped(cur, step, day);
   guard = 0;
   while (cur <= toKey && guard++ < 48) {
-    out.push(cur);
+    if (keep(cur)) out.push(cur);
     const next = addMonthsClamped(cur, step, day);
     if (next <= cur) break;
     cur = next;

@@ -21,6 +21,7 @@ function Inner() {
   const kind = useSearchParams().get("kind") === "event" ? "event" : "subscription";
   const { showToast } = useStore();
   const [phase, setPhase] = useState<Phase>("pick");
+  const [guideOpen, setGuideOpen] = useState(false);
   const [files, setFiles] = useState<{ url: string; name: string }[]>([]);
   const startedAt = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -122,8 +123,39 @@ function Inner() {
         </div>
         {phase === "pick" ? (
           <div className="scroll">
-            <h2 className="add-title">추가 할 이미지를 올려주세요</h2>
-            <p className="muted">여러 장 올려도 구독 및 일정을 함께 찾을 수 있어요.</p>
+            <h2 className="add-title">추가할 이미지를 올려주세요</h2>
+            <p className="add-lead">영수증·청첩장·초대장을 올리면 구독과 일정을 함께 찾아드려요.</p>
+            <div className={`img-guide${guideOpen ? " is-open" : ""}`}>
+              {guideOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className="img-guide-full"
+                    aria-expanded="true"
+                    onClick={() => setGuideOpen(false)}
+                  >
+                    <img src="/add/ExampleGuide.png" alt="이런 이미지를 올려주세요. 결제 영수증, 청첩장·초대장" />
+                    <svg className="img-guide-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                      <path d="M5 7.5 10 12.5 15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <img className="img-avoid" src="/add/AvoidHint.png" alt="흐릿하거나 글자가 잘린 사진, 손글씨 메모는 인식이 어려워요." />
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="img-guide-toggle"
+                  aria-expanded="false"
+                  onClick={() => setGuideOpen(true)}
+                >
+                  <span className="img-guide-pill">예시</span>
+                  <span className="img-guide-label">이런 이미지를 올려주세요</span>
+                  <svg className="img-guide-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+                    <path d="M5 7.5 10 12.5 15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <button className="upload-area" type="button" onClick={() => {
               if (files.length >= MAX) {
                 showToast("⚠️  이미지는 최대 3장까지 올릴 수 있어요.", "err");
@@ -131,9 +163,13 @@ function Inner() {
               }
               inputRef.current?.click();
             }}>
-              <span className="upload-plus">↑</span>
+              <span className="upload-plus" aria-hidden>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 19V7M12 7 7 12M12 7l5 5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
               <strong>이미지 추가하기</strong>
-              <em>최대 3장 · PNG/JPG</em>
+              <em>최대 3장 · PNG / JPG</em>
             </button>
             <input
               ref={inputRef}

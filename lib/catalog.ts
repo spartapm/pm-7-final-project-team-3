@@ -1,4 +1,4 @@
-import { BRANDS } from "./brands";
+import { findBrand } from "./brands";
 import type { AlertPrefs, Benefit, Category, DraftSub, LifeEvent, Notice, Subscription } from "./types";
 import { daysUntil, dateLabel, nextPayDate } from "./format";
 
@@ -190,6 +190,9 @@ export function emptyDraft(kind: "subscription" | "event" = "subscription"): Dra
 export type ServiceHit = {
   id?: string;
   name: string;
+  nameEn?: string;
+  adminCategory?: string;
+  plans?: { name: string; amount: number }[];
   category: Category;
   amount: number;
   color: string;
@@ -214,18 +217,93 @@ export function categoryFromAdmin(raw: string | null | undefined): Category {
   return "other";
 }
 
+function searchKeys(p: ServiceHit) {
+  const brand = findBrand(p.name) || (p.nameEn ? findBrand(p.nameEn) : undefined);
+  return [
+    p.name,
+    p.nameEn ?? "",
+    ...(p.plans ?? []).map((x) => x.name),
+    ...(p.plans ?? []).map((x) => `${p.name} ${x.name}`),
+    ...(brand ? [brand.name, ...brand.aliases] : []),
+  ].filter(Boolean);
+}
+
+function foldKey(s: string) {
+  return s.toLowerCase().replace(/[\s._+\-]/g, "");
+}
+
+function editDistance(a: string, b: string) {
+  if (a === b) return 0;
+  const al = a.length;
+  const bl = b.length;
+  if (!al) return bl;
+  if (!bl) return al;
+  if (Math.abs(al - bl) > 3) return 99;
+  let prev = new Uint16Array(bl + 1);
+  let curr = new Uint16Array(bl + 1);
+  for (let j = 0; j <= bl; j++) prev[j] = j;
+  for (let i = 1; i <= al; i++) {
+    curr[0] = i;
+    const ca = a.charCodeAt(i - 1);
+    for (let j = 1; j <= bl; j++) {
+      const ins = curr[j - 1] + 1;
+      const del = prev[j] + 1;
+      const sub = prev[j - 1] + (ca === b.charCodeAt(j - 1) ? 0 : 1);
+      curr[j] = ins < del ? (ins < sub ? ins : sub) : (del < sub ? del : sub);
+    }
+    const tmp = prev;
+    prev = curr;
+    curr = tmp;
+  }
+  return prev[bl];
+}
+
+const CHO = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+const JUNG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
+const JONG = ["", "ㄱ", "ㄲ", "ㄳ", "ㄴ", "ㄵ", "ㄶ", "ㄷ", "ㄹ", "ㄺ", "ㄻ", "ㄼ", "ㄽ", "ㄾ", "ㄿ", "ㅀ", "ㅁ", "ㅂ", "ㅄ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+
+function toJamo(s: string) {
+  let out = "";
+  for (const ch of s) {
+    const c = ch.charCodeAt(0);
+    if (c >= 0xac00 && c <= 0xd7a3) {
+      const x = c - 0xac00;
+      out += CHO[Math.floor(x / 588)] + JUNG[Math.floor((x % 588) / 28)] + JONG[x % 28];
+    } else out += ch;
+  }
+  return out;
+}
+
+function closeTypo(query: string, key: string) {
+  const q = foldKey(query);
+  const k = foldKey(key);
+  if (q.length < 2 || k.length < 2) return false;
+  const max = q.length <= 5 ? 1 : 2;
+  if (editDistance(q, k) <= max) return true;
+  if (k.length > q.length && editDistance(q, k.slice(0, q.length)) <= 1) return true;
+  const qj = toJamo(q);
+  const kj = toJamo(k);
+  const jmax = qj.length <= 6 ? 1 : 2;
+  return editDistance(qj, kj) <= jmax;
+}
+
 export function searchServices(q: string, catalog: ServiceHit[] = []): ServiceHit[] {
   const n = q.trim().toLowerCase();
   if (n.length < 1) return [];
-  const matched = (name: string, extra: string[] = []) => {
-    const keys = [name, ...extra];
-    return keys.some((k) => {
-      const kl = k.toLowerCase();
-      if (kl.includes(n)) return true;
-      return n.length >= 2 && kl.length >= 2 && n.includes(kl);
-    });
+  const rank = (p: ServiceHit) => {
+    const keys = searchKeys(p).map((k) => k.toLowerCase());
+    if (keys.some((k) => k.startsWith(n))) return 0;
+    if (keys.some((k) => k.includes(n))) return 1;
+    if (n.length >= 2 && keys.some((k) => k.length >= 2 && n.includes(k))) return 2;
+    if (n.length >= 2 && keys.some((k) => closeTypo(n, k))) return 3;
+    return -1;
   };
-  return catalog.filter((p) => matched(p.name)).slice(0, 8);
+  return catalog
+    .map((p) => ({ p, r: rank(p) }))
+    .filter((x) => x.r >= 0)
+    .sort((a, b) => a.r - b.r || a.p.name.localeCompare(b.p.name, "ko"))
+    .slice(0, 8)
+    .map((x) => x.p);
 }
 
 export function seedSubscriptions(): Subscription[] {
@@ -443,6 +521,17 @@ function noticeClock(t: string) {
   return m ? `${ap} ${h12}시 ${m}분` : `${ap} ${h12}시`;
 }
 
+function addedMonth(s: Subscription) {
+  if (!s.createdAt) return "";
+  const d = new Date(s.createdAt);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function noticeFromNextMonth(s: Subscription, payIso: string) {
+  const m = addedMonth(s);
+  return !m || payIso.slice(0, 7) > m;
+}
+
 export function mergePayNotices(
   subs: Subscription[],
   alerts: AlertPrefs,
@@ -454,7 +543,7 @@ export function mergePayNotices(
   for (const s of subs) {
     if (s.status === "ended" || s.paused) continue;
     const days = daysUntil(s.nextPay);
-    if (payOn && s.status === "trial" && s.trialEnds) {
+    if (payOn && s.status === "trial" && s.trialEnds && noticeFromNextMonth(s, s.trialEnds)) {
       const td = daysUntil(s.trialEnds);
       if (td >= 0 && td <= Math.max(s.alertDays, 3)) {
         generated.push({
@@ -469,7 +558,7 @@ export function mergePayNotices(
         });
       }
     }
-    if (payOn && days >= 0 && days <= Math.max(s.alertDays, 3) && s.status !== "trial") {
+    if (payOn && days >= 0 && days <= Math.max(s.alertDays, 3) && s.status !== "trial" && noticeFromNextMonth(s, s.nextPay)) {
       generated.push({
         id: `pay_${s.id}_${s.nextPay}`,
         title: `${s.name} 자동결제 예정`,

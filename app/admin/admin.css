@@ -77,6 +77,11 @@
   background: #eef3fb; border: 1px solid #e6eef8;
 }
 .adm-icon-pick > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.adm-list-ico { width: 36px; height: 36px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid #e6eef8; display: block; }
+.adm-list-ico-btn { display: inline-flex; cursor: pointer; }
+.adm-name-ico { display: inline-flex; align-items: center; gap: 8px; }
+.adm-plans { display: flex; flex-direction: column; gap: 8px; }
+.adm-plan-row { display: grid; grid-template-columns: 1.2fr 1fr 40px; gap: 8px; align-items: center; }
 @media (max-width: 1100px) {
   .adm-root { grid-template-columns: 1fr; }
   .adm-side { display: none; }

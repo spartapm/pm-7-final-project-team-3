@@ -14,11 +14,15 @@ function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
     .map((p) => {
       const brand = findBrand(p.product_name);
       const logo = p.icon || p.provider?.logo_url || "";
+      const plans = (p.plans ?? []).map((x) => ({ name: x.plan_name, amount: Number(x.price_standard) || 0 }));
       return {
         id: `p-${p.product_id}`,
         name: p.product_name,
+        nameEn: p.product_name_en || "",
+        adminCategory: p.category || "",
+        plans,
         category: categoryFromAdmin(p.category) || brand?.category || "other",
-        amount: Number(p.price_standard) || 0,
+        amount: Number(plans[0]?.amount || p.price_standard) || 0,
         color: p.provider?.brand_color || brand?.color || "#2576f2",
         logo,
       };
@@ -65,7 +69,10 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         setSoloProducts(soloHitsOf(d.products ?? []));
         setProviders((d.providers ?? []).map((p) => ({ id: String(p.provider_id), name: p.provider_name })));
         setCatalogIcons([
-          ...(d.products ?? []).map((p) => ({ name: p.product_name, icon: p.icon || p.provider?.logo_url })),
+          ...(d.products ?? []).flatMap((p) => [
+            { name: p.product_name, icon: p.icon || p.provider?.logo_url },
+            { name: p.product_name_en, icon: p.icon || p.provider?.logo_url },
+          ]),
           ...(d.providers ?? []).map((p) => ({ name: p.provider_name, icon: p.logo_url })),
         ]);
         if (d.source === "db") setSource("db");

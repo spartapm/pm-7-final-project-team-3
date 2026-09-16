@@ -12,10 +12,19 @@ export type ProviderRow = {
   is_active: boolean;
 };
 
+export type ProductPlanRow = {
+  plan_id: number;
+  product_id: number;
+  plan_name: string;
+  price_standard: number;
+  sort_order: number;
+};
+
 export type ProductRow = {
   product_id: number;
   provider_id: number | null;
   product_name: string;
+  product_name_en?: string;
   category: string;
   product_type: string;
   price_standard: number;
@@ -23,6 +32,7 @@ export type ProductRow = {
   official_url: string;
   is_active: boolean;
   provider?: ProviderRow | null;
+  plans?: ProductPlanRow[];
 };
 
 export type BundleRow = {
@@ -121,6 +131,9 @@ export function bundleToBenefit(
     brandColor: color,
     parent: primary?.product ? { name: primary.product.product_name, sub: "월 자동결제" } : undefined,
     perk: perk?.product ? { name: perk.product.product_name, sub: perk.item_role === "BENEFIT" ? "혜택상품" : "월 정기결제" } : undefined,
+    providerLogo: primary?.product?.provider?.logo_url || "",
+    parentIcon: primary?.product?.icon || "",
+    perkIcon: perk?.product?.icon || "",
     priceSingle: solo || money(b.price_bundled),
     priceBundle: money(b.price_bundled),
     steps: steps.length ? steps : undefined,
@@ -164,12 +177,13 @@ export async function loadCatalog() {
   if (!sb) return { status: "off" as const, ...EMPTY_CATALOG };
 
   try {
-  const [providers, products, bundles, items, promotions] = await Promise.all([
+  const [providers, products, bundles, items, promotions, plans] = await Promise.all([
     sb.from("provider").select("*").order("provider_id"),
     sb.from("product").select("*").order("product_id"),
     sb.from("bundle_product").select("*").order("bundle_id"),
     sb.from("bundle_item").select("*"),
     sb.from("product_promotion").select("*").order("promotion_id"),
+    sb.from("product_plan").select("*").order("sort_order"),
   ]);
 
   const err = providers.error || products.error || bundles.error || items.error || promotions.error;
@@ -178,10 +192,13 @@ export async function loadCatalog() {
     return { status: "error" as const, ...EMPTY_CATALOG };
   }
 
+  const planRows = plans.error ? [] as ProductPlanRow[] : ((plans.data ?? []) as ProductPlanRow[]);
   const providerRows = (providers.data ?? []) as ProviderRow[];
   const productRows = ((products.data ?? []) as ProductRow[]).map((p) => ({
     ...p,
+    product_name_en: p.product_name_en ?? "",
     provider: providerRows.find((x) => x.provider_id === p.provider_id) ?? null,
+    plans: planRows.filter((x) => x.product_id === p.product_id),
   }));
   const bundleRows = (bundles.data ?? []) as BundleRow[];
   const itemRows = ((items.data ?? []) as BundleItemRow[]).map((i) => ({

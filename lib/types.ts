@@ -135,6 +135,9 @@ export type Benefit = {
   brandColor?: string;
   parent?: { name: string; sub: string };
   perk?: { name: string; sub: string };
+  providerLogo?: string;
+  parentIcon?: string;
+  perkIcon?: string;
   priceSingle?: number;
   priceBundle?: number;
   copy?: { prefix: string; highlight: string; middle: string; priceText: string; suffix: string };

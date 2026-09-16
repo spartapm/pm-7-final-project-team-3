@@ -156,7 +156,7 @@ export default function InspectPage() {
               </div>
             </div>
           </div>
-          <div className="section-title">AI가 추천하는 결합상품</div>
+          <div className="section-title">AI가 추천하는 결합상품 {tips.length}개</div>
           <p className="muted" style={{ marginTop: -6, marginBottom: 8 }}>지금 가진 구독 기준으로 결합할 수 있는 상품만 보여요.</p>
           {tips.length === 0 ? (
             <div className="empty" style={{ background: "transparent" }}>지금 결합할 수 있는 상품이 없어요.</div>
@@ -176,7 +176,7 @@ export default function InspectPage() {
                     {t.names.map((name, i) => (
                       <span key={`${t.id}-${name}`} className="rec-logo-wrap">
                         {i > 0 ? <span className="rec-plus">+</span> : null}
-                        <Brand name={name} color={t.colors[i] || "#2576f2"} logo="" />
+                        <Brand name={name} color={t.colors[i] || "#2576f2"} logo={t.logos?.[i] || ""} />
                       </span>
                     ))}
                   </span>

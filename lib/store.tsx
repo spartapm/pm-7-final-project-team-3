@@ -22,7 +22,7 @@ import {
   signupCloud,
   type CloudStatus,
 } from "./cloud";
-import { daysUntil, ensureFuturePay, nextPayDate, uid } from "./format";
+import { ensureFuturePay, nextPayDate, uid } from "./format";
 import type {
   AlertPrefs,
   AppState,
@@ -116,12 +116,6 @@ function withNotices(s: AppState): AppState {
     .map(cleanSub)
     .filter((x): x is Subscription => Boolean(x))
     .map((sub) => {
-      if (sub.status === "trial" && sub.trialEnds) {
-        const nextPay = daysUntil(sub.trialEnds) >= 0
-          ? sub.trialEnds
-          : ensureFuturePay(sub.trialEnds, sub.payDay, sub.cycle, sub.everyMonths);
-        return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
-      }
       const nextPay = ensureFuturePay(sub.nextPay, sub.payDay, sub.cycle, sub.everyMonths);
       return nextPay === sub.nextPay ? sub : { ...sub, nextPay };
     });
