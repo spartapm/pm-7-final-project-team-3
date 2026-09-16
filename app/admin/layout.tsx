@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/promotions", label: "할인 이벤트 관리", cap: "혜택" },
   { href: "/admin/providers", label: "제공사 관리" },
   { href: "/admin/users", label: "사용자 관리" },
+  { href: "/admin/inquiries", label: "CS 문의", cap: "고객 지원" },
 ];
 
 function Side() {

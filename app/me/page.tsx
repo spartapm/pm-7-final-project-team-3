@@ -40,6 +40,7 @@ export default function MePage() {
           <div className="menu-group">
             <div className="k">지원</div>
             <div className="menu">
+              <button type="button" onClick={() => { track("my_menu_select", { menu_type: "cs" }); router.push("/me/support"); }}>고객센터 <span>›</span></button>
               <button type="button" onClick={() => { track("my_menu_select", { menu_type: "terms_policy" }); router.push("/signup/terms?from=me"); }}>이용약관 및 개인정보처리방침 <span>›</span></button>
               <button className="danger-txt" type="button" onClick={() => { track("account_delete_start"); router.push("/me/withdraw"); }}>계정 탈퇴 <span>›</span></button>
             </div>

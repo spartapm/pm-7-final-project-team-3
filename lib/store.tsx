@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { emptyDraft, mergePayNotices, seedEvents, seedNotices, seedSubscriptions } from "./catalog";
+import { inquiryNotice, type Inquiry } from "./cs";
 import {
   deleteAccount,
   emailOnCloud,
@@ -141,11 +142,21 @@ function fillDemoGaps(
     : demo
       ? (local.events.length ? local.events : seedEvents())
       : remote.events;
-  const notices = remote.notices.length > 0
+  const baseNotices = remote.notices.length > 0
     ? remote.notices
     : demo
       ? (local.notices.length ? local.notices : seedNotices(subscriptions))
       : remote.notices;
+  const seen = new Set(baseNotices.map((n) => n.id));
+  const localMap = new Map(local.notices.map((n) => [n.id, n]));
+  const notices = [
+    ...baseNotices.map((n) => {
+      const prev = localMap.get(n.id);
+      if (n.id.startsWith("cs_") && prev?.read && !n.read) return { ...n, read: true };
+      return n;
+    }),
+    ...local.notices.filter((n) => n.id.startsWith("cs_") && !seen.has(n.id)),
+  ];
   return { subscriptions, events, notices };
 }
 
@@ -308,6 +319,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!hydrated || !state.loggedIn) return;
     void runPull(state.accountId);
   }, [hydrated, state.loggedIn, state.accountId, runPull]);
+
+  useEffect(() => {
+    if (!hydrated || !state.loggedIn) return;
+    let alive = true;
+    const sync = async () => {
+      try {
+        const res = await fetch(`/api/cs/inquiries?accountId=${encodeURIComponent(stateRef.current.accountId)}`);
+        const json = await res.json().catch(() => ({}));
+        if (!alive || !json.ok || !Array.isArray(json.inquiries)) return;
+        const rows = json.inquiries as Inquiry[];
+        setState((s) => {
+          const map = new Map(s.notices.map((n) => [n.id, n]));
+          let changed = false;
+          for (const row of rows) {
+            if (!row.answered_at) continue;
+            const next = inquiryNotice(row);
+            const prev = map.get(next.id);
+            const merged = prev ? { ...next, read: next.read || prev.read, at: prev.at || next.at } : next;
+            if (!prev || prev.read !== merged.read || prev.body !== merged.body) {
+              map.set(merged.id, merged);
+              changed = true;
+            }
+          }
+          if (!changed) return s;
+          mutGen.current += 1;
+          return withNotices({ ...s, notices: [...map.values()] });
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+    void sync();
+    const t = setInterval(sync, 10000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [hydrated, state.loggedIn, state.accountId]);
 
   useEffect(() => {
     if (!hydrated) return;

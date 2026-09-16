@@ -571,7 +571,7 @@ export function mergePayNotices(
       });
     }
     const official = SERVICES.find((x) => x.name === s.name);
-    if (alerts.renew && official && official.amount !== s.amount && days >= 0 && days <= 3) {
+    if (alerts.renew && official && official.amount !== s.amount && days >= 0 && days <= 3 && noticeFromNextMonth(s, s.nextPay)) {
       generated.push({
         id: `price_${s.id}_${s.nextPay}_${official.amount}`,
         title: `${s.name} 가격변동 예정`,

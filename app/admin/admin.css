@@ -78,6 +78,11 @@
 }
 .adm-icon-pick > div { display: flex; gap: 8px; flex-wrap: wrap; }
 .adm-list-ico { width: 36px; height: 36px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid #e6eef8; display: block; }
+.adm-wait-count {
+  flex: none; background: #eaf3ff; color: #2576f2; font-weight: 800;
+  padding: 10px 14px; border-radius: 12px; font-size: 14px;
+}
+.adm-wait-count b { font-size: 18px; }
 .adm-list-ico-btn { display: inline-flex; cursor: pointer; }
 .adm-name-ico { display: inline-flex; align-items: center; gap: 8px; }
 .adm-plans { display: flex; flex-direction: column; gap: 8px; }

@@ -121,13 +121,21 @@ export default function HomePage() {
               </button>
               {PROMOS.length > 1 ? (
                 <div className="promo-nav">
-                  <button type="button" className={promo === 0 ? "off" : ""} disabled={promo === 0} onClick={() => setPromo((p) => Math.max(0, p - 1))} aria-label="이전">‹</button>
+                  <button type="button" className={promo === 0 ? "off" : ""} disabled={promo === 0} onClick={() => setPromo((p) => Math.max(0, p - 1))} aria-label="이전">
+                    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+                      <path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                   <span className="dots">
                     {PROMOS.map((_, i) => (
                       <button key={i} type="button" className={i === promo ? "on" : ""} aria-label={`${i + 1}번째 배너`} onClick={() => setPromo(i)} />
                     ))}
                   </span>
-                  <button type="button" className={promo === PROMOS.length - 1 ? "off" : ""} disabled={promo === PROMOS.length - 1} onClick={() => setPromo((p) => Math.min(PROMOS.length - 1, p + 1))} aria-label="다음">›</button>
+                  <button type="button" className={promo === PROMOS.length - 1 ? "off" : ""} disabled={promo === PROMOS.length - 1} onClick={() => setPromo((p) => Math.min(PROMOS.length - 1, p + 1))} aria-label="다음">
+                    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+                      <path d="M4.5 2.5 8 6 4.5 9.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                 </div>
               ) : null}
             </div>

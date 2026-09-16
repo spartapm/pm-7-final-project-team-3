@@ -111,6 +111,7 @@ export function Back({ href, onClick }: { href?: string; onClick?: () => void })
 
 export function TabBar({ active }: { active?: string }) {
   const path = usePathname();
+  const { notices } = useStore();
   const tabs = [
     { href: "/subscriptions", label: "구독목록", kind: "img" as const, onSrc: "/nav/list-on.png", offSrc: "/nav/list-off.png" },
     { href: "/calendar", label: "캘린더", kind: "img" as const, onSrc: "/nav/cal-on.png", offSrc: "/nav/cal-off.png" },
@@ -130,6 +131,7 @@ export function TabBar({ active }: { active?: string }) {
               : t.href === "/benefits"
                 ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
                 : path === t.href || path.startsWith(`${t.href}/`);
+        const meDot = t.href === "/me" && notices.some((n) => !n.read && n.href.startsWith("/me/cs"));
         return (
           <Link key={t.href} href={t.href} className={`${on ? "on" : ""} ${t.kind === "home" ? "home" : ""}`} onClick={markNavSource}>
             {t.kind === "home" ? (
@@ -138,6 +140,7 @@ export function TabBar({ active }: { active?: string }) {
               <img className="tab-ico" src={on ? t.onSrc : t.offSrc} alt="" />
             )}
             <span>{t.label}</span>
+            {meDot ? <i className="tab-dot" /> : null}
           </Link>
         );
       })}
@@ -269,7 +272,7 @@ export function ToastHost() {
   const { toast, clearToast } = useStore();
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(clearToast, 2200);
+    const t = setTimeout(clearToast, Math.min(4800, 1800 + toast.message.length * 35));
     return () => clearTimeout(t);
   }, [toast, clearToast]);
   if (!toast) return null;

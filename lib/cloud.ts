@@ -299,7 +299,7 @@ export async function pushAccount(state: AppState): Promise<CloudStatus> {
   const noticeIds = new Set(state.notices.map((n) => n.id));
   const staleSubs = (existingSubs.data ?? []).map((r) => r.id).filter((id) => !subIds.has(id));
   const staleEvents = (existingEvents.data ?? []).map((r) => r.id).filter((id) => !eventIds.has(id));
-  const staleNotices = (existingNotices.data ?? []).map((r) => r.id).filter((id) => !noticeIds.has(id));
+  const staleNotices = (existingNotices.data ?? []).map((r) => r.id).filter((id) => !noticeIds.has(id) && !String(id).startsWith("cs_"));
 
   if (staleNotices.length) await sb.from("notices").delete().in("id", staleNotices);
   if (staleEvents.length) await sb.from("events").delete().in("id", staleEvents);
