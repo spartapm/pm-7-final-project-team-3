@@ -110,7 +110,7 @@ export function Back({ href, onClick }: { href?: string; onClick?: () => void })
 }
 
 export function TabBar({ active }: { active?: string }) {
-  const path = usePathname();
+  const path = usePathname() || "";
   const { notices } = useStore();
   const tabs = [
     { href: "/subscriptions", label: "구독목록", kind: "img" as const, onSrc: "/nav/list-on.png", offSrc: "/nav/list-off.png" },
@@ -131,7 +131,7 @@ export function TabBar({ active }: { active?: string }) {
               : t.href === "/benefits"
                 ? path === "/benefits" || path.startsWith("/benefits/") || path.startsWith("/inspect")
                 : path === t.href || path.startsWith(`${t.href}/`);
-        const meDot = t.href === "/me" && notices.some((n) => !n.read && n.href.startsWith("/me/cs"));
+        const meDot = t.href === "/me" && (notices ?? []).some((n) => !n.read && String(n.href || "").startsWith("/me/cs"));
         return (
           <Link key={t.href} href={t.href} className={`${on ? "on" : ""} ${t.kind === "home" ? "home" : ""}`} onClick={markNavSource}>
             {t.kind === "home" ? (
@@ -201,11 +201,11 @@ export function Fab({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const path = usePathname();
   const go = (href: string, method: "image" | "voice" | "manual") => {
-    const from = path.startsWith("/calendar")
+    const from = (path || "").startsWith("/calendar")
       ? "/calendar"
-      : path.startsWith("/benefits") || path.startsWith("/inspect")
+      : (path || "").startsWith("/benefits") || (path || "").startsWith("/inspect")
         ? "/benefits"
-        : path.startsWith("/me")
+        : (path || "").startsWith("/me")
           ? "/me"
           : "/home";
     sessionStorage.setItem("teum:fab-tab", from);

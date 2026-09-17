@@ -111,11 +111,11 @@ export const BRANDS: BrandMeta[] = [
 ];
 
 function compact(s: string) {
-  return s.toLowerCase().replace(/[\s._+\-]/g, "").replace(/premium|plus|pro|클럽|와우|멤버십|프리미엄|플러스/g, "");
+  return String(s ?? "").toLowerCase().replace(/[\s._+\-]/g, "").replace(/premium|plus|pro|클럽|와우|멤버십|프리미엄|플러스/g, "");
 }
 
 export function brandIcon(name: string): string | undefined {
-  const raw = name.trim();
+  const raw = String(name ?? "").trim();
   if (!raw) return undefined;
   const n = compact(raw);
   if (!n) return undefined;

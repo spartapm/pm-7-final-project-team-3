@@ -96,6 +96,14 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
 export function useBenefits() {
   const ctx = useContext(CatalogCtx);
-  if (!ctx) throw new Error("useBenefits");
-  return ctx;
+  return ctx ?? {
+    benefits: [],
+    bundles: [],
+    soloProducts: [],
+    providers: [],
+    source: "code" as const,
+    loaded: false,
+    error: false,
+    reload: () => undefined,
+  };
 }

@@ -27,17 +27,22 @@ function statusRank(s: { paused: boolean; status: string }) {
   return 0;
 }
 
-function compactName(s: string) {
-  return s.replace(/[\s\-_/·,.]/g, "").toLowerCase();
+function compactName(s: unknown) {
+  return String(s ?? "").replace(/[\s\-_/·,.]/g, "").toLowerCase();
 }
 
 function dbCategoryOf(s: Subscription, products: ServiceHit[]) {
-  const n = compactName(s.name);
-  const hit = products.find((p) => {
+  const n = compactName(s?.name);
+  if (!n) return "";
+  const hit = (products ?? []).find((p) => {
     const keys = [p.name, p.nameEn, ...(p.plans ?? []).map((x) => `${p.name} ${x.name}`), ...(p.plans ?? []).map((x) => x.name)];
-    return keys.some((k) => k && (compactName(k) === n || (n.includes(compactName(k)) && compactName(k).length >= 4)));
+    return keys.some((k) => {
+      if (k == null || k === "") return false;
+      const ck = compactName(k);
+      return ck === n || (ck.length >= 4 && n.includes(ck));
+    });
   });
-  return (hit?.adminCategory || "").trim();
+  return String(hit?.adminCategory || "").trim();
 }
 
 function catLabel(id: string) {
@@ -78,19 +83,22 @@ export default function SubListPage() {
     el?.addEventListener("scroll", save, { passive: true });
     return () => el?.removeEventListener("scroll", save);
   }, [ready, cat, sort]);
-  const live = subscriptions.filter((s) => s.status !== "ended");
+  const live = (subscriptions ?? []).filter((s) => s.status !== "ended");
   const list = live
     .filter((s) => cat === "all" || dbCategoryOf(s, soloProducts) === cat)
     .slice()
     .sort((a, b) => {
-      if (sort === "pay") return a.nextPay.localeCompare(b.nextPay);
-      if (sort === "amountDesc") return b.amount - a.amount;
-      if (sort === "amountAsc") return a.amount - b.amount;
-      if (sort === "newest") return b.createdAt - a.createdAt;
+      if (sort === "pay") return String(a.nextPay ?? "").localeCompare(String(b.nextPay ?? ""));
+      if (sort === "amountDesc") return (b.amount || 0) - (a.amount || 0);
+      if (sort === "amountAsc") return (a.amount || 0) - (b.amount || 0);
+      if (sort === "newest") return (b.createdAt || 0) - (a.createdAt || 0);
       return statusRank(a) - statusRank(b);
     });
-  const next = live.filter((s) => !s.paused).slice().sort((a, b) => a.nextPay.localeCompare(b.nextPay))[0];
-  const benefitCheck = loaded ? bundleTips(live, benefits, bundles).length : null;
+  const next = live.filter((s) => !s.paused).slice().sort((a, b) => String(a.nextPay ?? "").localeCompare(String(b.nextPay ?? "")))[0];
+  let benefitCheck: number | null = null;
+  if (loaded) {
+    try { benefitCheck = bundleTips(live, benefits, bundles).length; } catch { benefitCheck = 0; }
+  }
   const cats = useMemo(() => {
     const labels: string[] = [];
     for (const s of live) {

@@ -9,15 +9,16 @@ function partsOf(included: string) {
 }
 
 function keysOf(token: string) {
-  const brand = findBrand(token);
-  const raw = [token, brand?.name, ...(brand?.aliases ?? [])].filter(Boolean) as string[];
-  return raw.map((s) => s.replace(/\s/g, "").toLowerCase()).filter((s) => s.length >= 2);
+  const t = String(token ?? "");
+  const brand = findBrand(t);
+  const raw = [t, brand?.name, ...(brand?.aliases ?? [])].filter(Boolean) as string[];
+  return raw.map((s) => String(s).replace(/\s/g, "").toLowerCase()).filter((s) => s.length >= 2);
 }
 
 function owns(names: string[], token: string) {
-  const keys = keysOf(token);
+  const keys = keysOf(String(token ?? ""));
   return names.some((name) => {
-    const x = name.replace(/\s/g, "").toLowerCase();
+    const x = String(name ?? "").replace(/\s/g, "").toLowerCase();
     return keys.some((n) => x.includes(n) || n.includes(x));
   });
 }

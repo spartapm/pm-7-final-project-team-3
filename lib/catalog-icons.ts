@@ -1,7 +1,7 @@
 import { isImageIcon } from "./bundle-icon";
 
 function compact(s: string) {
-  return s.replace(/\s/g, "").toLowerCase();
+  return String(s ?? "").replace(/\s/g, "").toLowerCase();
 }
 
 let map = new Map<string, string>();

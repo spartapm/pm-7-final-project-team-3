@@ -34,7 +34,7 @@ export default function HomePage() {
     const t = setInterval(() => setPromo((p) => (p + 1 < PROMOS.length ? p + 1 : p)), 3000);
     return () => clearInterval(t);
   }, []);
-  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
+  const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const leak = leaksOf(live);
   const week = useMemo(() => thisWeek(), []);
@@ -79,14 +79,14 @@ export default function HomePage() {
 
   const openNotice = (n: (typeof notices)[number]) => {
     track("notification_select");
-    const inviteHit = n.id === "nt_invite" || n.href.includes("invite");
+    const inviteHit = n.id === "nt_invite" || String(n.href || "").includes("invite");
     if (inviteHit) {
       setSheet(false);
       setInvite(true);
       markNotice(n.id);
       return;
     }
-    router.push(n.href);
+    router.push(n.href || "/home");
     window.setTimeout(() => markNotice(n.id), 400);
   };
 

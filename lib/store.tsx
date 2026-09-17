@@ -123,8 +123,14 @@ function withNotices(s: AppState): AppState {
   const events = (Array.isArray(s.events) ? s.events : [])
     .map(cleanEvent)
     .filter((x): x is LifeEvent => Boolean(x));
-  const notices = (Array.isArray(s.notices) ? s.notices : []).filter((n) => n && typeof n === "object" && n.id);
-  return { ...s, subscriptions, events, notices: mergePayNotices(subscriptions, s.alerts, notices, events) };
+  const notices = (Array.isArray(s.notices) ? s.notices : [])
+    .filter((n) => n && typeof n === "object" && n.id)
+    .map((n) => ({ ...n, id: String(n.id), href: String(n.href || "/home") }));
+  try {
+    return { ...s, subscriptions, events, notices: mergePayNotices(subscriptions, s.alerts, notices, events) };
+  } catch {
+    return { ...s, subscriptions, events, notices };
+  }
 }
 
 function fillDemoGaps(
@@ -148,14 +154,14 @@ function fillDemoGaps(
       ? (local.notices.length ? local.notices : seedNotices(subscriptions))
       : remote.notices;
   const seen = new Set(baseNotices.map((n) => n.id));
-  const localMap = new Map(local.notices.map((n) => [n.id, n]));
+  const localMap = new Map((local.notices ?? []).map((n) => [n.id, n]));
   const notices = [
     ...baseNotices.map((n) => {
       const prev = localMap.get(n.id);
-      if (n.id.startsWith("cs_") && prev?.read && !n.read) return { ...n, read: true };
+      if (String(n.id ?? "").startsWith("cs_") && prev?.read && !n.read) return { ...n, read: true };
       return n;
     }),
-    ...local.notices.filter((n) => n.id.startsWith("cs_") && !seen.has(n.id)),
+    ...local.notices.filter((n) => String(n.id ?? "").startsWith("cs_") && !seen.has(n.id)),
   ];
   return { subscriptions, events, notices };
 }
@@ -330,7 +336,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!alive || !json.ok || !Array.isArray(json.inquiries)) return;
         const rows = json.inquiries as Inquiry[];
         setState((s) => {
-          const map = new Map(s.notices.map((n) => [n.id, n]));
+          const map = new Map((s.notices ?? []).map((n) => [n.id, n]));
           let changed = false;
           for (const row of rows) {
             if (!row.answered_at) continue;
