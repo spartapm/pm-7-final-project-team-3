@@ -112,8 +112,9 @@ export function countGroup(n: number) {
 }
 
 export function fabSource(path: string) {
-  if (path.startsWith("/calendar")) return "calendar";
-  if (path.startsWith("/subscriptions")) return "subscription_list";
+  const p = String(path || "");
+  if (p.startsWith("/calendar")) return "calendar";
+  if (p.startsWith("/subscriptions")) return "subscription_list";
   return "home";
 }
 

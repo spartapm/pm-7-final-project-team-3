@@ -66,7 +66,7 @@ export function BounceIfAuthed() {
 export function Gate({ children }: { children: ReactNode }) {
   const { hydrated, loggedIn, onboarded } = useStore();
   const router = useRouter();
-  const path = usePathname();
+  const path = usePathname() || "";
   useEffect(() => {
     if (!hydrated) return;
     if (!loggedIn) {
@@ -345,7 +345,8 @@ export function Modal({
 }
 
 export function Brand({ name, color, logo }: { name: string; color: string; logo: string }) {
-  const src = (isImageIcon(logo) ? logo : "") || catalogIcon(name) || brandIcon(name) || "/brand/app-icon.png";
+  const raw = String(logo ?? "");
+  const src = (isImageIcon(raw) && raw.length < 180_000 ? raw : "") || catalogIcon(name) || brandIcon(name) || "/brand/app-icon.png";
   const custom = true;
   return (
     <span className="brand" style={custom ? undefined : { background: "#eef3fb" }} aria-hidden>

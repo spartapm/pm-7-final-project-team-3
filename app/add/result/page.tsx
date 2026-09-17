@@ -106,7 +106,7 @@ function Inner() {
     }
   };
 
-  const liveSubs = subscriptions.filter((s) => s.status !== "ended");
+  const liveSubs = (subscriptions ?? []).filter((s) => s.status !== "ended");
   const dupMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof findDuplicate>>();
     if (!state || kind !== "subscription") return map;

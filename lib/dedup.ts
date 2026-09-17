@@ -12,7 +12,7 @@ export type DupMatch = {
 };
 
 function compact(s: string) {
-  return s.replace(/[\s\-_/·,.]/g, "").toLowerCase();
+  return String(s ?? "").replace(/[\s\-_/·,.]/g, "").toLowerCase();
 }
 
 function keysOf(token: string, catalog: ServiceHit[] = []) {

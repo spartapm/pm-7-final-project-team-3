@@ -40,7 +40,7 @@ export default function HomePage() {
   const week = useMemo(() => thisWeek(), []);
   const weekKeys = new Set(week.map((d) => d.key));
   const upcoming = live.filter((s) => weekKeys.has(s.nextPay)).sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);
-  const unread = notices.filter((n) => !n.read).length;
+  const unread = (notices ?? []).filter((n) => !n.read).length;
   const marked = useMemo(() => {
     const map = new Map<string, string[]>();
     const fromKey = week[0]?.key ?? ymd(new Date());

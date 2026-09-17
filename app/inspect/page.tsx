@@ -23,13 +23,16 @@ export default function InspectPage() {
   const [waiting, setWaiting] = useState(true);
   const [fail, setFail] = useState(false);
   const [open, setOpen] = useState(false);
-  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
+  const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const cold = live.length === 0;
   const leak = leaksOf(live);
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
-  const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || a.name.localeCompare(b.name));
+  const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || String(a.name ?? "").localeCompare(String(b.name ?? "")));
   const shown = open ? ranked : ranked.slice(0, 3);
-  const tips = loaded ? bundleTips(live, benefits, bundles) : [];
+  let tips: ReturnType<typeof bundleTips> = [];
+  if (loaded) {
+    try { tips = bundleTips(live, benefits, bundles); } catch { tips = []; }
+  }
   const today = ymd(new Date());
   const curStamp = stampOf(today, live.map((s) => s.id));
 

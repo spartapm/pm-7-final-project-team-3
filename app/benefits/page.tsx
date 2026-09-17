@@ -32,7 +32,7 @@ export default function BenefitsPage() {
   const { subscriptions } = useStore();
   const { benefits, loaded } = useBenefits();
   const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
-  const leak = leaksOf(subscriptions);
+  const leak = leaksOf(subscriptions ?? []);
   const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
   useGaView("benefit_list_view", {}, loaded);
   const list = kind === "card"

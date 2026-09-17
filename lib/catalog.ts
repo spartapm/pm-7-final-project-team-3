@@ -229,7 +229,7 @@ function searchKeys(p: ServiceHit) {
 }
 
 function foldKey(s: string) {
-  return s.toLowerCase().replace(/[\s._+\-]/g, "");
+  return String(s ?? "").toLowerCase().replace(/[\s._+\-]/g, "");
 }
 
 function editDistance(a: string, b: string) {
@@ -496,8 +496,10 @@ export function benefitStatus(b: Benefit, subs: Subscription[]): "owned" | "expi
     const left = daysUntil(b.expires);
     if (left >= 0 && left <= 30) return "expiring";
   }
-  const names = subs.filter((s) => s.status !== "ended").map((s) => s.name);
-  if (names.some((n) => b.title.includes(n) || b.body.includes(n))) return "owned";
+  const names = (subs ?? []).filter((s) => s.status !== "ended").map((s) => String(s.name ?? "")).filter(Boolean);
+  const title = String(b.title ?? "");
+  const body = String(b.body ?? "");
+  if (names.some((n) => title.includes(n) || body.includes(n))) return "owned";
   return "available";
 }
 

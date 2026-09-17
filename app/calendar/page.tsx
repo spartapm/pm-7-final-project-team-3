@@ -26,7 +26,7 @@ function Inner() {
   const [sel, setSel] = useState(startDate);
   useEffect(() => { sessionStorage.setItem("teum:cal-date", sel); }, [sel]);
   const cells = monthGrid(cursor.getFullYear(), cursor.getMonth());
-  const live = subscriptions.filter((s) => s.status !== "ended" && !s.paused);
+  const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused);
   const fromKey = cells[0]?.key ?? ymd(now);
   const toKey = cells[cells.length - 1]?.key ?? fromKey;
 
