@@ -15,7 +15,7 @@ export default function SubDetailPage({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const { subscriptions, removeSub, upsertSub, showToast } = useStore();
   const { providers } = useBenefits();
-  const sub = subscriptions.find((s) => s.id === id);
+  const sub = (subscriptions ?? []).find((s) => s.id === id);
   const [del, setDel] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);

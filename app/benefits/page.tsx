@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { bundleIconSrc } from "@/lib/bundle-icon";
+import { BenefitIcons } from "@/components/BenefitIcons";
 import { benefitStatus } from "@/lib/catalog";
 import { DEFAULT_BENEFIT_FILTERS } from "@/lib/catalog-cats";
 import { daysUntil, won } from "@/lib/format";
@@ -27,7 +27,7 @@ export default function BenefitsPage() {
   const filters = benefitFilters.length ? benefitFilters : [...DEFAULT_BENEFIT_FILTERS];
   const kindLabel = kind;
   useGaView("benefit_list_view", {}, loaded);
-  const list = benefits
+  const list = (benefits ?? [])
     .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
     .filter((b) => kind === "전체" || (b.benefitCategories ?? []).includes(kind))
     .slice()
@@ -69,20 +69,14 @@ export default function BenefitsPage() {
           {!loaded ? null : list.length === 0 ? (
             <div className="empty">
               <img className="teumki-illust" src="/teumki/card.png" alt="" />
-              <p>{kindLabel}으로 받을 수 있는 등록된 구독이 없어요.</p>
+              <p>{kindLabel}에서 받을 수 있는 등록된 구독이 없어요.</p>
             </div>
           ) : list.map((b) => {
-            const st = benefitStatus(b, subscriptions);
+            const st = benefitStatus(b, subscriptions ?? []);
             const tag = STATE_TAG[st] ?? STATE_TAG.available;
             return (
               <button key={b.id} className="benefit-card" type="button" onClick={() => router.push(`/benefits/${b.id}`)} style={{ width: "100%", textAlign: "left" }}>
-                <span className="benefit-ico" aria-hidden>
-                  <img
-                    src={bundleIconSrc(b.icon)}
-                    alt=""
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }}
-                  />
-                </span>
+                <BenefitIcons b={b} />
                 <span className="body">
                   <span className="tag" style={{ background: b.providerColor }}>{b.provider}</span>
                   <span className="tag" style={{ background: tag.bg, marginLeft: 6 }}>{tag.label}</span>

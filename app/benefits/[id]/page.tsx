@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { bundleIconSrc } from "@/lib/bundle-icon";
+import { BenefitIcons } from "@/components/BenefitIcons";
 import { won } from "@/lib/format";
 import { track, useGaView } from "@/lib/ga";
 import { useBenefits } from "@/lib/use-benefits";
@@ -14,7 +14,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const { showToast } = useStore();
   const { benefits, loaded, error, reload } = useBenefits();
-  const b = benefits.find((x) => x.id === id);
+  const b = (benefits ?? []).find((x) => x.id === id);
   const color = b?.brandColor || b?.providerColor || "#3182f6";
   const single = b?.priceSingle ?? 0;
   const bundle = b?.priceBundle ?? 0;
@@ -74,13 +74,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
               <div className="bnf-k">현재 선택한 결합상품</div>
               <div className="bnf-card" style={{ borderColor: color }}>
                 {off > 0 ? <span className="bnf-off">{won(off)} 할인</span> : null}
-                <div className="bnf-icons">
-                  <img
-                    src={bundleIconSrc(b.icon)}
-                    alt=""
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/brand/logo-mark.png"; }}
-                  />
-                </div>
+                <BenefitIcons b={b} className="bnf-icons" />
                 {b.copy ? (
                   <p className="bnf-copy">
                     {b.copy.prefix}

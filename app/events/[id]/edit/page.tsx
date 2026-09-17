@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 export default function EventEdit({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { events } = useStore();
-  const ev = events.find((e) => e.id === id);
+  const ev = (events ?? []).find((e) => e.id === id);
   if (!ev) {
     return (
       <Gate>

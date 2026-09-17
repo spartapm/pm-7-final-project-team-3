@@ -12,7 +12,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const router = useRouter();
   const { events, removeEvent } = useStore();
-  const ev = events.find((e) => e.id === id);
+  const ev = (events ?? []).find((e) => e.id === id);
   const [del, setDel] = useState(false);
   useGaView("schedule_detail_view", {}, Boolean(ev));
   if (!ev) {
