@@ -109,6 +109,7 @@ function cleanEvent(raw: unknown): LifeEvent | null {
     memo: String(e.memo ?? ""),
     createdAt: Number(e.createdAt) || 0,
     endDate: e.endDate ? String(e.endDate) : undefined,
+    alertMin: Number(e.alertMin) || 30,
   };
 }
 
@@ -335,6 +336,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const json = await res.json().catch(() => ({}));
         if (!alive || !json.ok || !Array.isArray(json.inquiries)) return;
         const rows = json.inquiries as Inquiry[];
+        let added = "";
         setState((s) => {
           const map = new Map((s.notices ?? []).map((n) => [n.id, n]));
           let changed = false;
@@ -344,6 +346,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const prev = map.get(next.id);
             const merged = prev ? { ...next, read: next.read || prev.read, at: prev.at || next.at } : next;
             if (!prev || prev.read !== merged.read || prev.body !== merged.body) {
+              if (!prev) added = next.title;
               map.set(merged.id, merged);
               changed = true;
             }
@@ -352,6 +355,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           mutGen.current += 1;
           return withNotices({ ...s, notices: [...map.values()] });
         });
+        if (added) setToast({ message: added, kind: "ok" });
       } catch {
         /* ignore */
       }
@@ -662,7 +666,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState((s) => {
       const exists = s.events.some((x) => x.id === ev.id);
       const events = exists ? s.events.map((x) => (x.id === ev.id ? ev : x)) : [ev, ...s.events];
-      return { ...s, events };
+      return withNotices({ ...s, events });
     });
   }, []);
 

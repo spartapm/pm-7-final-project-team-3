@@ -731,11 +731,16 @@ img { display: block; max-width: 100%; }
 .when-row span { font-size: 13px; font-weight: 700; color: #4b4e58; }
 .when-row input { height: 44px; }
 .when-row.bad input, .when-chip.bad { border-color: #ff0000; }
+.when-stack { display: grid; gap: 8px; margin-bottom: 8px; }
+.when-stack > em { font-style: normal; font-size: 13px; font-weight: 700; color: #4b4e58; }
+.when-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.when-stack.allday .when-pair { grid-template-columns: 1fr; }
 .when-chip {
   height: 44px; border-radius: 12px; border: 1px solid #e3e8f0; background: #f7f9fc;
   font-size: 14px; font-weight: 700; color: #171a21;
 }
-.field > .when-chip, .when-row .when-chip { width: 100%; }
+.field > .when-chip, .when-row .when-chip, .when-pair .when-chip, select.when-chip { width: 100%; }
+select.when-chip { appearance: none; padding: 0 12px; }
 .when-sheet {
   background: #fff; border-radius: 20px; padding: 16px 14px 18px; width: 100%;
   box-shadow: 0 20px 48px rgba(20, 23, 28, 0.18);

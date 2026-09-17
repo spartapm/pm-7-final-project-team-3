@@ -122,6 +122,7 @@ export type Notice = {
 export type Benefit = {
   id: string;
   kind: BenefitKind;
+  benefitCategories?: string[];
   provider: string;
   providerColor: string;
   title: string;

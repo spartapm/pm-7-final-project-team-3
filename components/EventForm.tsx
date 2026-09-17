@@ -47,7 +47,7 @@ export function EventForm({
   const [end, setEnd] = useState(existing?.end || (fromResult ? "" : endShift?.time ?? ""));
   const [allDay, setAllDay] = useState(existing?.allDay ?? false);
   const [memo, setMemo] = useState(existing?.memo ?? "");
-  const [alertMin, setAlertMin] = useState(30);
+  const [alertMin, setAlertMin] = useState(existing?.alertMin ?? 30);
   const [fromAi, setFromAi] = useState(fromResult);
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,7 +74,7 @@ export function EventForm({
         setEnd(item.end);
         setAllDay(item.allDay);
         setMemo(item.memo);
-        setAlertMin(30);
+        setAlertMin(item.alertMin || 30);
         setFromAi(true);
       }
       return;
@@ -204,33 +204,41 @@ export function EventForm({
                 });
               }}><i /></button>
             </label>
-            <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
-              <span>시작</span>
-              <button type="button" className="when-chip" onClick={() => { setPickFocus("date"); setPick("start"); }}>
-                {date ? dateLabel(date) : "날짜"}
-              </button>
-              {allDay ? null : (
-                <button type="button" className="when-chip" onClick={() => { setPickFocus("time"); setPick("start"); }}>
-                  {start ? timeLabel(start) : "시간"}
+            <div className={`when-stack ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
+              <em>시작</em>
+              <div className="when-pair">
+                <button type="button" className="when-chip" onClick={() => { setPickFocus("date"); setPick("start"); }}>
+                  {date ? dateLabel(date) : "날짜"}
                 </button>
-              )}
-            </div>
-            <div className={`when-row ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
-              <span>종료</span>
-              <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("date"); setPick("end"); }}>
-                {endD ? dateLabel(endD) : "날짜"}
-              </button>
-              {allDay ? null : (
-                <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("time"); setPick("end"); }}>
-                  {end ? timeLabel(end) : "시간"}
+                {allDay ? null : (
+                  <button type="button" className="when-chip" onClick={() => { setPickFocus("time"); setPick("start"); }}>
+                    {start ? timeLabel(start) : "시간"}
+                  </button>
+                )}
+              </div>
+              <em>종료</em>
+              <div className="when-pair">
+                <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("date"); setPick("end"); }}>
+                  {endD ? dateLabel(endD) : "날짜"}
                 </button>
-              )}
+                {allDay ? null : (
+                  <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("time"); setPick("end"); }}>
+                    {end ? timeLabel(end) : "시간"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {!timeOk && date && endD ? <p className="err-msg">종료 시간은 시작 시간보다 늦어야 해요</p> : null}
           <div className="field">
             <label>알림</label>
-            <div className="when-chip" style={{ pointerEvents: "none" }}>30분 전</div>
+            <select className="when-chip" value={alertMin} onChange={(e) => setAlertMin(Number(e.target.value))}>
+              <option value={5}>5분 전</option>
+              <option value={10}>10분 전</option>
+              <option value={15}>15분 전</option>
+              <option value={30}>30분 전</option>
+              <option value={60}>1시간 전</option>
+            </select>
           </div>
           <div className="field">
             <label>메모</label>

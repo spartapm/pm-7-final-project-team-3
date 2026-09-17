@@ -64,6 +64,8 @@ function rowToEvent(row: Record<string, unknown>): LifeEvent {
     allDay: Boolean(row.all_day),
     memo: String(row.memo ?? ""),
     createdAt: fromIso(row.created_at as string),
+    alertMin: Number(row.alert_min ?? 30) || 30,
+    endDate: ymd(row.end_date) || ymd(row.date),
   };
 }
 
@@ -338,20 +340,26 @@ export async function pushAccount(state: AppState): Promise<CloudStatus> {
   }
 
   if (state.events.length) {
-    const eventUpsert = await sb.from("events").upsert(
-      state.events.map((e) => ({
-        id: e.id,
-        account_id: state.accountId,
-        title: e.title,
-        date: e.date,
-        start_time: e.start,
-        end_time: e.end,
-        all_day: e.allDay,
-        memo: e.memo,
-        created_at: toIso(e.createdAt) ?? new Date().toISOString(),
-      })),
-      { onConflict: "id" },
-    );
+    const rows = state.events.map((e) => ({
+      id: e.id,
+      account_id: state.accountId,
+      title: e.title,
+      date: e.date,
+      start_time: e.start,
+      end_time: e.end,
+      all_day: e.allDay,
+      memo: e.memo,
+      created_at: toIso(e.createdAt) ?? new Date().toISOString(),
+      alert_min: Number(e.alertMin) || 30,
+      end_date: e.endDate || e.date || null,
+    }));
+    let eventUpsert = await sb.from("events").upsert(rows, { onConflict: "id" });
+    if (eventUpsert.error && /alert_min|end_date|schema cache|column/i.test(eventUpsert.error.message)) {
+      eventUpsert = await sb.from("events").upsert(
+        rows.map(({ alert_min: _a, end_date: _d, ...rest }) => rest),
+        { onConflict: "id" },
+      );
+    }
     if (eventUpsert.error) {
       console.error("[teum] events upsert", eventUpsert.error.message);
       if (isMissingTable(eventUpsert.error)) return "missing-table";

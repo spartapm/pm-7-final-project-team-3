@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminOk, deny } from "@/lib/admin-auth";
+import { categoryIdsOf, loadAdminCategories, replaceCategoryMaps } from "@/lib/admin-cats";
 import { sanitizeBundleIcon } from "@/lib/bundle-icon";
 import { getSupabase } from "@/lib/supabase";
 
@@ -27,9 +28,11 @@ export async function POST(req: Request) {
   try { icon = sanitizeBundleIcon(body.icon); } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 저장하지 못했어요." }, { status: 400 });
   }
+  const cats = await loadAdminCategories();
+  const mapped = categoryIdsOf(body, cats);
   const res = await sb.from("bundle_product").insert({
     bundle_name: String(body.bundle_name ?? "").trim(),
-    category: String(body.category ?? ""),
+    category: mapped.category,
     card_title: String(body.card_title ?? ""),
     card_body: String(body.card_body ?? ""),
     icon,
@@ -42,6 +45,7 @@ export async function POST(req: Request) {
   }).select("*").single();
   if (res.error) return NextResponse.json({ ok: false, error: res.error.message }, { status: 400 });
   await replaceItems(res.data.bundle_id, body.items ?? []);
+  await replaceCategoryMaps("bundle", res.data.bundle_id, mapped.allIds);
   return NextResponse.json({ ok: true, row: res.data });
 }
 
@@ -55,9 +59,11 @@ export async function PATCH(req: Request) {
   try { icon = sanitizeBundleIcon(body.icon); } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 저장하지 못했어요." }, { status: 400 });
   }
+  const cats = await loadAdminCategories();
+  const mapped = categoryIdsOf(body, cats);
   const res = await sb.from("bundle_product").update({
     bundle_name: body.bundle_name,
-    category: body.category,
+    category: mapped.category,
     card_title: body.card_title,
     card_body: body.card_body,
     icon,
@@ -71,6 +77,7 @@ export async function PATCH(req: Request) {
   }).eq("bundle_id", id).select("*").single();
   if (res.error) return NextResponse.json({ ok: false, error: res.error.message }, { status: 400 });
   if (body.items) await replaceItems(id, body.items);
+  await replaceCategoryMaps("bundle", id, mapped.allIds);
   return NextResponse.json({ ok: true, row: res.data });
 }
 

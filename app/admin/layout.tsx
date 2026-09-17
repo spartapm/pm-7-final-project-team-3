@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/products?type=solo", label: "단독상품" },
   { href: "/admin/products?type=bundle", label: "결합상품" },
   { href: "/admin/products/new", label: "상품 등록" },
+  { href: "/admin/categories", label: "카테고리 관리" },
   { href: "/admin/promotions", label: "할인 이벤트 관리", cap: "혜택" },
   { href: "/admin/providers", label: "제공사 관리" },
   { href: "/admin/users", label: "사용자 관리" },

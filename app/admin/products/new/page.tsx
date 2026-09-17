@@ -2,10 +2,53 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { CatalogCategory } from "@/lib/catalog-cats";
 import type { BundleItemRow, BundleRow, ProductRow, ProviderRow } from "@/lib/catalog-db";
 import { bundleIconSrc, fileToBundleIcon, isImageIcon } from "@/lib/bundle-icon";
 
-const CATS = ["통신사 결합", "커머스 멤버십", "카드 혜택", "OTT", "음악", "기타"];
+function CatRows({
+  label,
+  cats,
+  ids,
+  onChange,
+}: {
+  label: string;
+  cats: CatalogCategory[];
+  ids: number[];
+  onChange: (next: number[]) => void;
+}) {
+  const rows = ids.length ? ids : [0];
+  const setAt = (i: number, v: number) => {
+    const next = rows.slice();
+    next[i] = v;
+    onChange(next);
+  };
+  const add = () => onChange([...rows, 0]);
+  const remove = (i: number) => {
+    if (rows.length <= 1) return;
+    onChange(rows.filter((_, j) => j !== i));
+  };
+  const picked = rows.filter((n) => n > 0).length;
+  return (
+    <div className="adm-field">
+      <label>{label}</label>
+      {rows.map((id, i) => {
+        const taken = new Set(rows.filter((x, j) => j !== i && x > 0));
+        const options = cats.filter((c) => c.id === id || !taken.has(c.id));
+        return (
+          <div key={`${i}-${id}`} className="adm-cat-row">
+            <select value={id || ""} onChange={(e) => setAt(i, Number(e.target.value) || 0)}>
+              <option value="">카테고리를 선택하세요</option>
+              {options.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button type="button" className="adm-cat-x" disabled={rows.length <= 1} onClick={() => remove(i)} aria-label="삭제">×</button>
+          </div>
+        );
+      })}
+      <button className="adm-cat-add" type="button" disabled={picked >= cats.length} onClick={add}>+ 카테고리 추가하기</button>
+    </div>
+  );
+}
 
 function Inner() {
   const router = useRouter();
@@ -22,7 +65,10 @@ function Inner() {
   const [name, setName] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [plans, setPlans] = useState<{ plan_name: string; price_standard: string }[]>([{ plan_name: "", price_standard: "" }]);
-  const [category, setCategory] = useState("커머스 멤버십");
+  const [category, setCategory] = useState("");
+  const [serviceIds, setServiceIds] = useState<number[]>([0]);
+  const [benefitIds, setBenefitIds] = useState<number[]>([0]);
+  const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [price, setPrice] = useState("");
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
@@ -38,16 +84,19 @@ function Inner() {
   const [productId, setProductId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/session").then((r) => r.json()).then((d: { providers: ProviderRow[]; products: ProductRow[]; bundles: BundleRow[]; items: BundleItemRow[] }) => {
+    fetch("/api/admin/session").then((r) => r.json()).then((d: { providers: ProviderRow[]; products: ProductRow[]; bundles: BundleRow[]; items: BundleItemRow[]; categories?: CatalogCategory[] }) => {
       setProviders(d.providers ?? []);
       setProducts(d.products ?? []);
+      setCategories(d.categories ?? []);
       if (editBundle) {
         const b = (d.bundles ?? []).find((x) => String(x.bundle_id) === editBundle);
         if (!b) return;
         setMode("bundle");
         setBundleId(b.bundle_id);
         setName(b.bundle_name ?? "");
-        setCategory(b.category || "커머스 멤버십");
+        setCategory(b.category || "");
+        setServiceIds(b.serviceCategoryIds?.length ? b.serviceCategoryIds : [0]);
+        setBenefitIds(b.benefitCategoryIds?.length ? b.benefitCategoryIds : [0]);
         setTitle(b.card_title ?? "");
         setBody(b.card_body ?? "");
         setIcon(isImageIcon(b.icon) ? b.icon : "");
@@ -70,7 +119,9 @@ function Inner() {
         setName(p.product_name ?? "");
         setNameEn(p.product_name_en ?? "");
         setProviderId(p.provider_id ? String(p.provider_id) : "");
-        setCategory(p.category || "커머스 멤버십");
+        setCategory(p.category || "");
+        setServiceIds(p.serviceCategoryIds?.length ? p.serviceCategoryIds : [0]);
+        setBenefitIds(p.benefitCategoryIds?.length ? p.benefitCategoryIds : [0]);
         setPrice(String(p.price_standard || ""));
         setPlans((p.plans ?? []).length
           ? (p.plans ?? []).map((x) => ({ plan_name: x.plan_name, price_standard: String(x.price_standard || "") }))
@@ -102,6 +153,8 @@ function Inner() {
           product_name: name,
           product_name_en: nameEn,
           category,
+          service_category_ids: serviceIds.filter((n) => n > 0),
+          benefit_category_ids: benefitIds.filter((n) => n > 0),
           product_type: "단독",
           price_standard: Number(plans[0]?.price_standard.replace(/[^\d]/g, "") || bundled) || 0,
           official_url: url,
@@ -121,6 +174,8 @@ function Inner() {
           bundle_id: bundleId,
           bundle_name: name,
           category,
+          service_category_ids: serviceIds.filter((n) => n > 0),
+          benefit_category_ids: benefitIds.filter((n) => n > 0),
           card_title: title,
           card_body: body,
           icon,
@@ -200,12 +255,18 @@ function Inner() {
               </select>
             </div>
           ) : null}
-          <div className="adm-field">
-            <label>카테고리 <i>*</i></label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATS.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
+          <CatRows
+            label="서비스 카테고리"
+            cats={categories.filter((c) => c.kind === "service")}
+            ids={serviceIds}
+            onChange={setServiceIds}
+          />
+          <CatRows
+            label="혜택 카테고리"
+            cats={categories.filter((c) => c.kind === "benefit")}
+            ids={benefitIds}
+            onChange={setBenefitIds}
+          />
           {mode === "bundle" ? (
             <div className="adm-field">
               <label>구성 상품 <i>*</i></label>

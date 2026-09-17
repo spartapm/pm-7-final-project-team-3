@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminOk, deny } from "@/lib/admin-auth";
+import { categoryIdsOf, loadAdminCategories, replaceCategoryMaps } from "@/lib/admin-cats";
 import { sanitizeBundleIcon } from "@/lib/bundle-icon";
 import { getSupabase, isMissingTable } from "@/lib/supabase";
 
@@ -59,7 +60,9 @@ async function replacePlans(productId: number, body: Record<string, unknown>) {
 async function writeProduct(kind: "insert" | "update", body: Record<string, unknown>, icon: string) {
   const sb = getSupabase();
   if (!sb) throw new Error("DB가 연결되어 있지 않아요.");
-  const full = productPayload(body, icon);
+  const cats = await loadAdminCategories();
+  const mapped = categoryIdsOf(body, cats);
+  const full = productPayload({ ...body, category: mapped.category }, icon);
   const { product_name_en: nameEn, ...base } = full;
   const run = async (payload: Record<string, unknown>) => kind === "insert"
     ? sb.from("product").insert(payload).select("*").single()
@@ -71,6 +74,7 @@ async function writeProduct(kind: "insert" | "update", body: Record<string, unkn
   if (res.error) throw new Error(res.error.message);
   const id = Number((res.data as { product_id: number }).product_id);
   await replacePlans(id, body);
+  await replaceCategoryMaps("product", id, mapped.allIds);
   return res.data;
 }
 

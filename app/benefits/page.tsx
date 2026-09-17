@@ -5,21 +5,12 @@ import { useRouter } from "next/navigation";
 import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { bundleIconSrc } from "@/lib/bundle-icon";
 import { benefitStatus } from "@/lib/catalog";
+import { DEFAULT_BENEFIT_FILTERS } from "@/lib/catalog-cats";
 import { daysUntil, won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
 import { leaksOf } from "@/lib/stats";
 import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
-import type { BenefitKind } from "@/lib/types";
-
-const KIND_FILTERS: { id: "all" | BenefitKind; label: string }[] = [
-  { id: "all", label: "전체" },
-  { id: "carrier", label: "통신사 결합" },
-  { id: "commerce", label: "커머스 멤버십" },
-  { id: "card", label: "카드 혜택" },
-];
-
-const KIND_ORDER: Record<BenefitKind, number> = { carrier: 0, commerce: 1, card: 2 };
 
 const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg: string }> = {
   owned: { label: "보유 중", bg: "#2576f2" },
@@ -30,18 +21,21 @@ const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg:
 export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits, loaded } = useBenefits();
-  const [kind, setKind] = useState<(typeof KIND_FILTERS)[number]["id"]>("all");
+  const { benefits, benefitFilters, loaded } = useBenefits();
+  const [kind, setKind] = useState("전체");
   const leak = leaksOf(subscriptions ?? []);
-  const kindLabel = KIND_FILTERS.find((f) => f.id === kind)?.label ?? "전체";
+  const filters = benefitFilters.length ? benefitFilters : [...DEFAULT_BENEFIT_FILTERS];
+  const kindLabel = kind;
   useGaView("benefit_list_view", {}, loaded);
-  const list = kind === "card"
-    ? []
-    : benefits
-      .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
-      .filter((b) => kind === "all" || b.kind === kind)
-      .slice()
-      .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+  const list = benefits
+    .filter((b) => !b.expires || daysUntil(b.expires) >= 0)
+    .filter((b) => kind === "전체" || (b.benefitCategories ?? []).includes(kind))
+    .slice()
+    .sort((a, b) => {
+      const ai = Math.min(...(a.benefitCategories ?? []).map((n) => filters.indexOf(n)).filter((n) => n >= 0), 99);
+      const bi = Math.min(...(b.benefitCategories ?? []).map((n) => filters.indexOf(n)).filter((n) => n >= 0), 99);
+      return ai - bi;
+    });
   return (
     <Gate>
       <PhoneShell>
@@ -67,8 +61,8 @@ export default function BenefitsPage() {
             <button className="btn" type="button" onClick={() => { markInspectStart("benefits"); track("subscription_inspection_start", { source: "benefits" }); router.push("/inspect"); }}>구독 점검받기</button>
           </div>
           <ChipScroller style={{ margin: "14px 0 8px" }}>
-            {KIND_FILTERS.map((f) => (
-              <button key={f.id} className={`chip outline ${kind === f.id ? "on" : ""}`} type="button" onClick={() => { setKind(f.id); track("benefit_filter_select", { filter_type: f.id }); }}>{f.label}</button>
+            {filters.map((f) => (
+              <button key={f} className={`chip outline ${kind === f ? "on" : ""}`} type="button" onClick={() => { setKind(f); track("benefit_filter_select", { filter_type: f }); }}>{f}</button>
             ))}
           </ChipScroller>
           <div className="section-title" style={{ marginTop: 4 }}>인기 구독 혜택</div>
@@ -79,7 +73,7 @@ export default function BenefitsPage() {
             </div>
           ) : list.map((b) => {
             const st = benefitStatus(b, subscriptions);
-            const tag = STATE_TAG[st];
+            const tag = STATE_TAG[st] ?? STATE_TAG.available;
             return (
               <button key={b.id} className="benefit-card" type="button" onClick={() => router.push(`/benefits/${b.id}`)} style={{ width: "100%", textAlign: "left" }}>
                 <span className="benefit-ico" aria-hidden>

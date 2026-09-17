@@ -14,5 +14,7 @@ export async function GET() {
     items: data.items,
     promotions: data.promotions,
     bundleProducts: data.bundleProducts,
+    categories: data.categories,
+    benefitFilters: data.benefitFilters,
   });
 }

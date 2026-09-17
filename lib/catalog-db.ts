@@ -1,4 +1,10 @@
 import type { BundleProduct } from "./bundles";
+import {
+  type CatalogCategory,
+  type CatalogCategoryRow,
+  DEFAULT_BENEFIT_FILTERS,
+  rowToCategory,
+} from "./catalog-cats";
 import type { Benefit, BenefitKind } from "./types";
 import { getSupabase, isMissingTable } from "./supabase";
 
@@ -33,6 +39,8 @@ export type ProductRow = {
   is_active: boolean;
   provider?: ProviderRow | null;
   plans?: ProductPlanRow[];
+  serviceCategoryIds?: number[];
+  benefitCategoryIds?: number[];
 };
 
 export type BundleRow = {
@@ -48,6 +56,8 @@ export type BundleRow = {
   official_url: string;
   expires: string | null;
   is_active: boolean;
+  serviceCategoryIds?: number[];
+  benefitCategoryIds?: number[];
 };
 
 export type BundleItemRow = {
@@ -87,6 +97,21 @@ export function kindOf(category: string): BenefitKind {
   return "commerce";
 }
 
+function fallbackBenefitNames(category: string) {
+  if (/통신/.test(category)) return ["통신사 결합"];
+  if (/카드/.test(category)) return ["카드 혜택"];
+  if (/엔터/.test(category)) return ["엔터"];
+  if (/AI/.test(category)) return ["생성형 AI"];
+  if (/학습/.test(category)) return ["일·학습"];
+  if (/커머스/.test(category)) return ["일상·생활"];
+  return category ? [category] : ["일상·생활"];
+}
+
+function idsOf(maps: { id: number; category_id: number }[], id: number, cats: CatalogCategory[], kind: "service" | "benefit") {
+  const set = new Set(maps.filter((m) => m.id === id).map((m) => m.category_id));
+  return cats.filter((c) => c.kind === kind && set.has(c.id)).map((c) => c.id);
+}
+
 function splitLines(raw: unknown) {
   return String(raw ?? "").split(/\r?\n/).map((s) => s.replace(/^\s*[-•\d.]+\s*/, "").trim()).filter(Boolean);
 }
@@ -99,10 +124,12 @@ function money(n: unknown) {
 export function bundleToBenefit(
   b: BundleRow,
   items: BundleItemRow[],
+  benefitNames: string[] = [],
 ): Benefit {
   const primary = items.find((i) => i.item_role === "PRIMARY") ?? items[0];
   const perk = items.find((i) => i.item_role === "BENEFIT") ?? items[1];
   const category = String(b.category ?? "");
+  const names = benefitNames.filter(Boolean);
   const provider = primary?.product?.provider?.provider_name
     || category.replace(" 결합", "").replace(" 멤버십", "")
     || "틈";
@@ -117,7 +144,8 @@ export function bundleToBenefit(
   const expires = b.expires && /^\d{4}-\d{2}-\d{2}/.test(b.expires) ? b.expires.slice(0, 10) : undefined;
   return {
     id: `b-${b.bundle_id}`,
-    kind: kindOf(category),
+    kind: kindOf(names[0] || category),
+    benefitCategories: names.length ? names : fallbackBenefitNames(category),
     provider,
     providerColor: color,
     title,
@@ -170,6 +198,8 @@ const EMPTY_CATALOG = {
   promotions: [] as PromotionRow[],
   benefits: [] as Benefit[],
   bundleProducts: [] as BundleProduct[],
+  categories: [] as CatalogCategory[],
+  benefitFilters: [...DEFAULT_BENEFIT_FILTERS] as string[],
 };
 
 export async function loadCatalog() {
@@ -177,13 +207,16 @@ export async function loadCatalog() {
   if (!sb) return { status: "off" as const, ...EMPTY_CATALOG };
 
   try {
-  const [providers, products, bundles, items, promotions, plans] = await Promise.all([
+  const [providers, products, bundles, items, promotions, plans, cats, pc, bc] = await Promise.all([
     sb.from("provider").select("*").order("provider_id"),
     sb.from("product").select("*").order("product_id"),
     sb.from("bundle_product").select("*").order("bundle_id"),
     sb.from("bundle_item").select("*"),
     sb.from("product_promotion").select("*").order("promotion_id"),
     sb.from("product_plan").select("*").order("sort_order"),
+    sb.from("catalog_category").select("*").order("sort_order"),
+    sb.from("product_category").select("product_id, category_id"),
+    sb.from("bundle_category").select("bundle_id, category_id"),
   ]);
 
   const err = providers.error || products.error || bundles.error || items.error || promotions.error;
@@ -194,22 +227,44 @@ export async function loadCatalog() {
 
   const planRows = plans.error ? [] as ProductPlanRow[] : ((plans.data ?? []) as ProductPlanRow[]);
   const providerRows = (providers.data ?? []) as ProviderRow[];
+  const catRows = cats.error ? [] as CatalogCategory[] : ((cats.data ?? []) as CatalogCategoryRow[]).map((r) => rowToCategory(r));
+  const productMaps = (pc.error ? [] : (pc.data ?? [])).map((r) => ({
+    id: Number((r as { product_id: number }).product_id),
+    category_id: Number((r as { category_id: number }).category_id),
+  }));
+  const bundleMaps = (bc.error ? [] : (bc.data ?? [])).map((r) => ({
+    id: Number((r as { bundle_id: number }).bundle_id),
+    category_id: Number((r as { category_id: number }).category_id),
+  }));
   const productRows = ((products.data ?? []) as ProductRow[]).map((p) => ({
     ...p,
     product_name_en: p.product_name_en ?? "",
     provider: providerRows.find((x) => x.provider_id === p.provider_id) ?? null,
     plans: planRows.filter((x) => x.product_id === p.product_id),
+    serviceCategoryIds: idsOf(productMaps, p.product_id, catRows, "service"),
+    benefitCategoryIds: idsOf(productMaps, p.product_id, catRows, "benefit"),
   }));
-  const bundleRows = (bundles.data ?? []) as BundleRow[];
+  const bundleRows = ((bundles.data ?? []) as BundleRow[]).map((b) => ({
+    ...b,
+    serviceCategoryIds: idsOf(bundleMaps, b.bundle_id, catRows, "service"),
+    benefitCategoryIds: idsOf(bundleMaps, b.bundle_id, catRows, "benefit"),
+  }));
   const itemRows = ((items.data ?? []) as BundleItemRow[]).map((i) => ({
     ...i,
     product: productRows.find((p) => p.product_id === i.product_id) ?? null,
   }));
   const promotionRows = (promotions.data ?? []) as PromotionRow[];
+  const visibleBenefit = catRows.filter((c) => c.kind === "benefit" && c.appVisible).sort((a, b) => a.sortOrder - b.sortOrder);
+  const benefitFilters = visibleBenefit.length
+    ? ["전체", ...visibleBenefit.map((c) => c.name)]
+    : [...DEFAULT_BENEFIT_FILTERS];
 
   const benefits = bundleRows
     .filter((b) => b.is_active)
-    .map((b) => bundleToBenefit(b, itemRows.filter((i) => i.bundle_id === b.bundle_id)));
+    .map((b) => {
+      const names = catRows.filter((c) => (b.benefitCategoryIds ?? []).includes(c.id)).map((c) => c.name);
+      return bundleToBenefit(b, itemRows.filter((i) => i.bundle_id === b.bundle_id), names);
+    });
   const bundleProducts = bundleRowsToProducts(bundleRows, itemRows);
 
   return {
@@ -221,6 +276,8 @@ export async function loadCatalog() {
     promotions: promotionRows,
     benefits,
     bundleProducts,
+    categories: catRows,
+    benefitFilters,
   };
   } catch {
     return { status: "error" as const, ...EMPTY_CATALOG };

@@ -57,7 +57,8 @@ export default function HomePage() {
         map.set(s.trialEnds, t);
       }
     }
-    for (const e of events) {
+    for (const e of events ?? []) {
+      if (!e?.date) continue;
       const arr = map.get(e.date) ?? [];
       arr.push("#FF919C");
       map.set(e.date, arr);

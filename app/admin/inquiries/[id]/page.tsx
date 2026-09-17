@@ -2,11 +2,12 @@
 
 import { Suspense, use, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { csDateTime, statusLabel, type Inquiry } from "@/lib/cs";
 
 function Inner({ id }: { id: string }) {
   const sp = useSearchParams();
+  const router = useRouter();
   const qs = sp.toString();
   const back = qs ? `/admin/inquiries?${qs}` : "/admin/inquiries";
   const keep = qs ? `?${qs}` : "";
@@ -16,10 +17,9 @@ function Inner({ id }: { id: string }) {
   const [edit, setEdit] = useState(true);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState("");
+  const [popup, setPopup] = useState(false);
 
   const load = () => {
-    setNote("");
     fetch(`/api/admin/inquiries/${encodeURIComponent(id)}`)
       .then(async (res) => {
         const json = await res.json().catch(() => ({}));
@@ -37,18 +37,17 @@ function Inner({ id }: { id: string }) {
 
   useEffect(() => { load(); }, [id]);
 
-  const save = async (close = false) => {
+  const save = async () => {
     if (!row || busy) return;
-    if (!close) {
-      const text = answer.trim();
-      if (text.length < 10 || text.length > 2000) return;
-    }
+    const text = answer.trim();
+    if (text.length < 10 || text.length > 2000) return;
     setBusy(true);
     setErr("");
+    const first = !row.answered_at;
     const res = await fetch(`/api/admin/inquiries/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(close ? { close: true } : { answer_body: answer.trim() }),
+      body: JSON.stringify({ answer_body: text }),
     });
     const json = await res.json().catch(() => ({}));
     setBusy(false);
@@ -59,7 +58,7 @@ function Inner({ id }: { id: string }) {
     setRow(json.inquiry);
     setAnswer(json.inquiry.answer_body || answer);
     setEdit(false);
-    setNote(close ? "문의를 종료했어요." : json.inquiry.answered_at && !row.answered_at ? "답변을 등록하고 앱 내 알림을 남겼어요." : "답변을 수정했어요.");
+    if (first) setPopup(true);
   };
 
   const canSend = answer.trim().length >= 10 && answer.trim().length <= 2000;
@@ -98,9 +97,7 @@ function Inner({ id }: { id: string }) {
               <>
                 <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{row.answer_body}</p>
                 <p style={{ color: "#667085", fontSize: 13 }}>{row.answered_at ? csDateTime(row.answered_at) : ""}</p>
-                {row.status !== "CLOSED" ? (
-                  <button className="adm-btn" type="button" onClick={() => setEdit(true)}>답변 수정</button>
-                ) : null}
+                <button className="adm-btn" type="button" onClick={() => setEdit(true)}>답변 수정</button>
               </>
             ) : (
               <>
@@ -115,16 +112,13 @@ function Inner({ id }: { id: string }) {
                   <span style={{ fontSize: 12, color: "#667085", textAlign: "right" }}>{answer.length}/2000</span>
                 </div>
                 {err ? <p className="adm-err">{err}</p> : null}
-                {note ? <p style={{ color: "#027a48", fontSize: 13 }}>{note}</p> : null}
                 <div className="adm-actions">
-                  <button className="adm-btn primary" type="button" disabled={!canSend || busy} onClick={() => void save(false)}>
+                  <button className="adm-btn primary" type="button" disabled={!canSend || busy} onClick={() => void save()}>
                     {row.answered_at ? "수정 저장" : "답변 등록 + 푸시 발송"}
                   </button>
-                  <button className="adm-btn" type="button" disabled={busy} onClick={() => void save(true)}>문의 종료</button>
                 </div>
               </>
             )}
-            {row.answer_body && !edit && note ? <p style={{ color: "#027a48", fontSize: 13 }}>{note}</p> : null}
             {row.answer_body && !edit && err ? <p className="adm-err">{err}</p> : null}
           </div>
         </div>
@@ -140,6 +134,15 @@ function Inner({ id }: { id: string }) {
           ))}
         </div>
       </div>
+      {popup ? (
+        <div className="adm-modal-bg">
+          <div className="adm-modal" style={{ textAlign: "center" }}>
+            <h2>답변이 등록되었습니다.</h2>
+            <p>사용자 앱에 알림이 전달됩니다.</p>
+            <button className="adm-btn primary" type="button" onClick={() => { setPopup(false); router.push(back); }}>닫기</button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

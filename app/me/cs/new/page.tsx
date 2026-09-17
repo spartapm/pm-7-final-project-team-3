@@ -93,7 +93,7 @@ function Inner() {
               id="cs-title"
               maxLength={40}
               value={title}
-              placeholder="넷플릭스 구독이 등록되지 않아요"
+              placeholder="제목을 입력해주세요"
               onChange={(e) => setTitle(e.target.value.slice(0, 40))}
             />
             <span className="cs-count">{title.length}/40</span>
@@ -104,7 +104,7 @@ function Inner() {
               id="cs-body"
               maxLength={1000}
               value={body}
-              placeholder="카드 내역에는 결제가 찍혀 있는데…"
+              placeholder="문의 내용을 입력해주세요"
               onChange={(e) => setBody(e.target.value.slice(0, 1000))}
             />
             <span className="cs-count">{body.length}/1000</span>

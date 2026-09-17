@@ -6,6 +6,7 @@ import { categoryFromAdmin, type ServiceHit } from "@/lib/catalog";
 import type { BundleProduct } from "@/lib/bundles";
 import type { ProductRow, ProviderRow } from "@/lib/catalog-db";
 import { setCatalogIcons } from "@/lib/catalog-icons";
+import { DEFAULT_BENEFIT_FILTERS } from "@/lib/catalog-cats";
 import type { Benefit } from "@/lib/types";
 
 function soloHitsOf(rows: ProductRow[]): ServiceHit[] {
@@ -34,6 +35,7 @@ type CatalogState = {
   bundles: BundleProduct[];
   soloProducts: ServiceHit[];
   providers: { id: string; name: string }[];
+  benefitFilters: string[];
   source: "code" | "db";
   loaded: boolean;
   error: boolean;
@@ -50,6 +52,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [source, setSource] = useState<"code" | "db">("code");
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [filters, setFilters] = useState<string[]>([...DEFAULT_BENEFIT_FILTERS]);
   const [nonce, setNonce] = useState(0);
 
   const reload = useCallback(() => {
@@ -62,12 +65,14 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     let live = true;
     fetch("/api/catalog")
       .then((r) => r.json())
-      .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db" }) => {
+      .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db"; benefitFilters?: string[] }) => {
         if (!live) return;
         setItems(d.benefits ?? []);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
         setProviders((d.providers ?? []).map((p) => ({ id: String(p.provider_id), name: p.provider_name })));
+        const nextFilters = (d.benefitFilters ?? []).filter(Boolean);
+        setFilters(nextFilters.length ? nextFilters : [...DEFAULT_BENEFIT_FILTERS]);
         setCatalogIcons([
           ...(d.products ?? []).flatMap((p) => [
             { name: p.product_name, icon: p.icon || p.provider?.logo_url },
@@ -88,8 +93,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   }, [nonce]);
 
   const value = useMemo(
-    () => ({ benefits: items, bundles, soloProducts, providers, source, loaded, error, reload }),
-    [items, bundles, soloProducts, providers, source, loaded, error, reload],
+    () => ({ benefits: items, bundles, soloProducts, providers, benefitFilters: filters, source, loaded, error, reload }),
+    [items, bundles, soloProducts, providers, filters, source, loaded, error, reload],
   );
   return createElement(CatalogCtx.Provider, { value }, children);
 }
@@ -101,6 +106,7 @@ export function useBenefits() {
     bundles: [],
     soloProducts: [],
     providers: [],
+    benefitFilters: [...DEFAULT_BENEFIT_FILTERS],
     source: "code" as const,
     loaded: false,
     error: false,

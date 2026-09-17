@@ -41,7 +41,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   if (!(await adminOk())) return fail("답변 권한이 없습니다", 401);
   const { id } = await ctx.params;
-  const body = await req.json().catch(() => ({})) as { answer_body?: string; close?: boolean };
+  const body = await req.json().catch(() => ({})) as { answer_body?: string };
   const sb = getSupabase();
   if (!sb) return fail("DB가 연결되어 있지 않아요.", 500);
   const cur = await sb.from("inquiry").select("*").eq("id", id).maybeSingle();
@@ -52,25 +52,18 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const patch: Record<string, unknown> = {};
   const firstAnswer = !row.answered_at;
 
-  if (body.close) {
-    patch.status = "CLOSED";
-    patch.closed_at = now;
+  if (typeof body.answer_body !== "string") return fail("답변을 입력해주세요.");
+  const text = body.answer_body.trim();
+  if (text.length < 10) return fail("답변은 10자 이상 입력해주세요.");
+  if (text.length > 2000) return fail("답변은 2000자까지 입력할 수 있어요.");
+  patch.answer_body = text;
+  if (firstAnswer) {
+    patch.answered_at = now;
+    patch.status = "ANSWERED";
+  } else if (isCsStatus(String(row.status)) && String(row.status) === "WAITING") {
+    patch.status = "ANSWERED";
   }
 
-  if (typeof body.answer_body === "string") {
-    const text = body.answer_body.trim();
-    if (text.length < 10) return fail("답변은 10자 이상 입력해주세요.");
-    if (text.length > 2000) return fail("답변은 2000자까지 입력할 수 있어요.");
-    patch.answer_body = text;
-    if (firstAnswer) {
-      patch.answered_at = now;
-      if (!body.close) patch.status = "ANSWERED";
-    } else if (!body.close && isCsStatus(String(row.status)) && String(row.status) === "WAITING") {
-      patch.status = "ANSWERED";
-    }
-  }
-
-  if (!Object.keys(patch).length) return fail("변경할 내용이 없어요.");
   const saved = await sb.from("inquiry").update(patch).eq("id", id).select("*").single();
   if (saved.error) return fail(saved.error.message, 500);
 

@@ -73,7 +73,10 @@ function Inner() {
       }
     }
     if (filter !== "sub") {
-      for (const e of events) add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
+      for (const e of events ?? []) {
+        if (!e?.date) continue;
+        add(e.date, { type: "life", title: e.title, right: e.allDay ? "하루 종일" : timeLabel(e.start), href: `/events/${e.id}`, color: "#FF6B7F" });
+      }
     }
     return map;
   }, [live, events, filter, benefits, loaded, fromKey, toKey]);
