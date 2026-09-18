@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 const MODELS = [
   process.env.GEMINI_MODEL,
   "gemini-3.6-flash",
@@ -59,9 +61,12 @@ export async function POST(req: Request) {
 
   let res: Response | null = null;
   const started = Date.now();
+  const many = images.length > 1;
+  const budget = many ? 28000 : 16000;
+  const perTry = many ? 18000 : 12000;
   outer: for (const model of MODELS) {
     for (const key of keys) {
-      const left = 16000 - (Date.now() - started);
+      const left = budget - (Date.now() - started);
       if (left < 2000) break outer;
       try {
         res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
@@ -78,7 +83,7 @@ export async function POST(req: Request) {
                 : {}),
             },
           }),
-          signal: AbortSignal.timeout(Math.min(12000, left)),
+          signal: AbortSignal.timeout(Math.min(perTry, left)),
         });
       } catch {
         continue;

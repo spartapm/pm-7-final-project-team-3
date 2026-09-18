@@ -47,7 +47,7 @@ export default function VerifyPage() {
       showToast("인증 코드가 만료되었어요. 코드 재전송을 해주세요.", "err");
       return;
     }
-    const expected = sessionStorage.getItem("teum:code") ?? "123456";
+    const expected = sessionStorage.getItem("teum:code") ?? "";
     if (code !== expected) {
       setErr("코드가 일치하지 않습니다. 다시 입력해주세요");
       setDigits(["", "", "", "", "", ""]);
@@ -62,8 +62,12 @@ export default function VerifyPage() {
     const to = sessionStorage.getItem("teum:reset-email") ?? email;
     try {
       const res = await fetch("/api/otp/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: to }) });
-      const json = await res.json() as { ok?: boolean; code?: string };
-      sessionStorage.setItem("teum:code", json.code || "123456");
+      const json = await res.json().catch(() => ({})) as { ok?: boolean; code?: string };
+      if (!res.ok || !json.ok || !json.code) {
+        showToast("인증 코드를 보내지 못했어요. 잠시 후 다시 시도해주세요.", "err");
+        return;
+      }
+      sessionStorage.setItem("teum:code", json.code);
       sessionStorage.setItem("teum:code-exp", String(Date.now() + OTP_EXPIRES_MS));
       setCool(OTP_RESEND_SEC);
       setDigits(["", "", "", "", "", ""]);

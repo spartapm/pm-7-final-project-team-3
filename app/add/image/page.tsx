@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
+import { fileToCsImage, inlineFromDataUrl } from "@/lib/cs";
 import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { bumpRetry, countGroup, readRetry, retryGroup, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
@@ -38,7 +39,7 @@ function Inner() {
     filesRef.current.forEach((f) => URL.revokeObjectURL(f.url));
   }, []);
 
-  const pickFiles = (list: FileList | File[] | null) => {
+  const pickFiles = async (list: FileList | File[] | null) => {
     const incoming = Array.from(list ?? []);
     if (incoming.some((f) => !isPngJpg(f))) {
       showToast("⚠️  PNG 또는 JPG 형식의 이미지만 올릴 수 있어요.", "err");
@@ -48,7 +49,15 @@ function Inner() {
       showToast("⚠️  이미지는 최대 3장까지 올릴 수 있어요.", "err");
       return;
     }
-    const next = incoming.slice(0, MAX - files.length).map((file) => ({ url: URL.createObjectURL(file), name: file.name }));
+    const next: { url: string; name: string }[] = [];
+    for (const file of incoming.slice(0, MAX - files.length)) {
+      try {
+        next.push({ url: await fileToCsImage(file), name: file.name });
+      } catch {
+        showToast("⚠️  이미지를 읽지 못했어요.", "err");
+      }
+    }
+    if (!next.length) return;
     setFiles((xs) => [...xs, ...next]);
     const total = files.length + next.length;
     const types = [...new Set(incoming.map((f) => (f.type.includes("png") || /\.png$/i.test(f.name) ? "png" : "jpg")))];
@@ -67,30 +76,35 @@ function Inner() {
     phaseRef.current = "wait";
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const timer = window.setTimeout(() => ctrl.abort(), 25000);
-    try {
-      const images = await Promise.all(files.slice(0, MAX).map(async (f) => {
-        const blob = await fetch(f.url).then((r) => r.blob());
-        const buf = await blob.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let bin = "";
-        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-        return { mime: blob.type || "image/jpeg", data: btoa(bin) };
-      }));
+    const timer = window.setTimeout(() => ctrl.abort(), files.length > 1 ? 70000 : 45000);
+    type Row = { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string };
+    const readResult = async (images: { mime: string; data: string }[]) => {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images, kind }),
         signal: ctrl.signal,
       });
-      const json = await res.json() as {
-        ok?: boolean;
-        items?: { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string }[];
-        data?: { name?: string; plan?: string; amount?: string; day?: number; title?: string; date?: string };
-      };
-      if (goneRef.current || phaseRef.current !== "wait") return;
+      const json = await res.json().catch(() => ({})) as { ok?: boolean; items?: Row[]; data?: Row };
       const rows = json.items?.length ? json.items : json.data ? [json.data] : [];
-      if (!json.ok || rows.length === 0) {
+      return { ok: Boolean(json.ok && rows.length), rows };
+    };
+    try {
+      const images = files.slice(0, MAX).map((f) => inlineFromDataUrl(f.url));
+      let rows: Row[] = [];
+      const first = await readResult(images);
+      rows = first.rows;
+      if (!first.ok && images.length > 1) {
+        const merged: Row[] = [];
+        for (const img of images) {
+          if (ctrl.signal.aborted || goneRef.current) break;
+          const one = await readResult([img]);
+          if (one.ok) merged.push(...one.rows);
+        }
+        rows = merged;
+      }
+      if (goneRef.current || phaseRef.current !== "wait") return;
+      if (rows.length === 0) {
         track("image_analysis_failed", { failure_type: "parse", processing_time_ms: Date.now() - startedAt.current });
         setPhase("fail");
         return;
@@ -178,7 +192,7 @@ function Inner() {
               multiple
               hidden
               onChange={(e) => {
-                pickFiles(e.target.files);
+                void pickFiles(e.target.files);
                 e.target.value = "";
               }}
             />

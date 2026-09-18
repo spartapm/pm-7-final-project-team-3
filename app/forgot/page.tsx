@@ -52,9 +52,14 @@ export default function ForgotPage() {
             const to = email.trim().toLowerCase();
             try {
               const res = await fetch("/api/otp/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: to }) });
-              const json = await res.json() as { ok?: boolean; code?: string };
+              const json = await res.json().catch(() => ({})) as { ok?: boolean; code?: string };
+              if (!res.ok || !json.ok || !json.code) {
+                setBusy(false);
+                setErr("인증 코드를 보내지 못했어요. 잠시 후 다시 시도해주세요.");
+                return;
+              }
               sessionStorage.setItem("teum:reset-email", to);
-              sessionStorage.setItem("teum:code", json.code || "123456");
+              sessionStorage.setItem("teum:code", json.code);
               sessionStorage.setItem("teum:code-exp", String(Date.now() + OTP_EXPIRES_MS));
               router.push("/forgot/verify");
             } catch {

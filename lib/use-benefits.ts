@@ -2,7 +2,7 @@
 
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { findBrand } from "@/lib/brands";
-import { categoryFromAdmin, type ServiceHit } from "@/lib/catalog";
+import { categoryFromAdmin, BENEFITS, type ServiceHit } from "@/lib/catalog";
 import type { BundleProduct } from "@/lib/bundles";
 import type { ProductRow, ProviderRow } from "@/lib/catalog-db";
 import { setCatalogIcons } from "@/lib/catalog-icons";
@@ -67,7 +67,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       .then((r) => r.json())
       .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db"; benefitFilters?: string[] }) => {
         if (!live) return;
-        setItems(d.benefits ?? []);
+        setItems((d.benefits ?? []).length ? d.benefits : BENEFITS);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
         setProviders((d.providers ?? []).map((p) => ({ id: String(p.provider_id), name: p.provider_name })));

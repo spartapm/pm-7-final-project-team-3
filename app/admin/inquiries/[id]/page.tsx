@@ -18,6 +18,7 @@ function Inner({ id }: { id: string }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [popup, setPopup] = useState(false);
+  const [view, setView] = useState<number | null>(null);
 
   const load = () => {
     fetch(`/api/admin/inquiries/${encodeURIComponent(id)}`)
@@ -84,9 +85,9 @@ function Inner({ id }: { id: string }) {
             {row.images.length ? (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                 {row.images.map((src, i) => (
-                  <a key={src.slice(0, 24) + i} href={src} target="_blank" rel="noreferrer">
-                    <img src={src} alt="" style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 10 }} />
-                  </a>
+                  <button key={src.slice(0, 24) + i} className="adm-thumb" type="button" onClick={() => setView(i)}>
+                    <img src={src} alt="" />
+                  </button>
                 ))}
               </div>
             ) : null}
@@ -134,6 +135,12 @@ function Inner({ id }: { id: string }) {
           ))}
         </div>
       </div>
+      {view !== null && row.images[view] ? (
+        <div className="adm-viewer" onClick={() => setView(null)}>
+          <button className="adm-viewer-close" type="button" aria-label="닫기" onClick={() => setView(null)}>✕</button>
+          <img src={row.images[view]} alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
+      ) : null}
       {popup ? (
         <div className="adm-modal-bg">
           <div className="adm-modal" style={{ textAlign: "center" }}>

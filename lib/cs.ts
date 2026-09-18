@@ -145,25 +145,48 @@ export function rowToInquiry(row: Record<string, unknown>, email?: string): Inqu
   };
 }
 
+export function inlineFromDataUrl(dataUrl: string) {
+  const i = dataUrl.indexOf(",");
+  const header = i >= 0 ? dataUrl.slice(0, i) : "";
+  const mime = header.match(/data:(image\/[a-zA-Z0-9.+-]+)/i)?.[1] || "image/jpeg";
+  return { mime, data: i >= 0 ? dataUrl.slice(i + 1) : dataUrl };
+}
+
+export async function compressImageBlob(source: Blob, max = 1280, quality = 0.82) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("이미지를 읽지 못했어요.");
+  try {
+    const bmp = await createImageBitmap(source);
+    const scale = Math.min(max / bmp.width, max / bmp.height, 1);
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+  } catch {
+    const url = URL.createObjectURL(source);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("이미지를 읽지 못했어요."));
+        el.src = url;
+      });
+      const scale = Math.min(max / img.width, max / img.height, 1);
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
 export async function fileToCsImage(file: File) {
   if (!/^image\/(jpeg|jpg|png)$/i.test(file.type) && !/\.(jpe?g|png)$/i.test(file.name)) {
     throw new Error("JPG/PNG 이미지만 첨부할 수 있어요");
   }
   if (file.size > 10 * 1024 * 1024) throw new Error("10MB 이하 이미지만 첨부할 수 있어요");
-  const bmp = await createImageBitmap(file);
-  const max = 1280;
-  const scale = Math.min(max / bmp.width, max / bmp.height, 1);
-  const w = Math.max(1, Math.round(bmp.width * scale));
-  const h = Math.max(1, Math.round(bmp.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    bmp.close();
-    throw new Error("이미지를 읽지 못했어요.");
-  }
-  ctx.drawImage(bmp, 0, 0, w, h);
-  bmp.close();
-  return canvas.toDataURL("image/jpeg", 0.82);
+  return compressImageBlob(file);
 }

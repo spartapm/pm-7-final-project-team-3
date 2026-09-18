@@ -558,9 +558,9 @@ img { display: block; max-width: 100%; }
   display: grid; place-items: center; flex-shrink: 0; position: relative;
 }
 .benefit-ico img {
-  width: 52px; height: 52px; object-fit: contain; background: #fff;
-  border-radius: 50%; padding: 6px; box-sizing: border-box;
-  border: 2px solid #fff; box-shadow: 0 0 0 1px #e6eef8;
+  width: 52px; height: 52px; object-fit: contain; background: transparent;
+  border-radius: 10px; padding: 0; box-sizing: border-box;
+  border: 0; box-shadow: none;
 }
 .benefit-ico.pair img {
   position: absolute; top: 2px; width: 48px; height: 48px;
@@ -1058,12 +1058,12 @@ select.when-chip { appearance: none; padding: 0 12px; }
   width: 56px;
   height: 56px;
   object-fit: contain;
-  background: #fff;
-  border-radius: 50%;
-  padding: 6px;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0;
   box-sizing: border-box;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #e6eef8;
+  border: 0;
+  box-shadow: none;
   display: block;
 }
 .bnf-icons.pair { width: 96px; }
@@ -1278,10 +1278,16 @@ select.when-chip { appearance: none; padding: 0 12px; }
 .cs-answer-head b { display: block; font-size: 14px; }
 .cs-answer-head span { font-size: 11px; color: var(--muted); font-weight: 600; }
 .cs-viewer {
-  position: absolute; inset: 0; background: rgba(8,10,14,.92); z-index: 40;
-  display: grid; place-items: center;
+  position: absolute; inset: 0; background: rgba(8,10,14,.92); z-index: 50;
+  display: flex; align-items: center; justify-content: center;
 }
-.cs-viewer img { max-width: 100%; max-height: 80%; object-fit: contain; }
+.cs-viewer img {
+  max-width: calc(100% - 28px);
+  max-height: calc(100% - 96px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
 .cs-viewer-close {
   position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%;
   background: rgba(255,255,255,.16); color: #fff; font-size: 18px;
