@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 30;
+export const maxDuration = 10;
 
 const MODELS = [
   process.env.GEMINI_MODEL,
@@ -61,9 +61,8 @@ export async function POST(req: Request) {
 
   let res: Response | null = null;
   const started = Date.now();
-  const many = images.length > 1;
-  const budget = many ? 28000 : 16000;
-  const perTry = many ? 18000 : 12000;
+  const budget = 9000;
+  const perTry = 8000;
   outer: for (const model of MODELS) {
     for (const key of keys) {
       const left = budget - (Date.now() - started);

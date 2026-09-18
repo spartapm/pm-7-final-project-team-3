@@ -67,7 +67,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       .then((r) => r.json())
       .then((d: { benefits?: Benefit[]; bundleProducts?: BundleProduct[]; products?: ProductRow[]; providers?: ProviderRow[]; source?: "code" | "db"; benefitFilters?: string[] }) => {
         if (!live) return;
-        setItems((d.benefits ?? []).length ? d.benefits : BENEFITS);
+        const nextBenefits = d.benefits?.length ? d.benefits : BENEFITS;
+        setItems(nextBenefits);
         setBundles(d.bundleProducts ?? []);
         setSoloProducts(soloHitsOf(d.products ?? []));
         setProviders((d.providers ?? []).map((p) => ({ id: String(p.provider_id), name: p.provider_name })));

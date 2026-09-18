@@ -92,9 +92,7 @@ function Inner() {
     try {
       const images = files.slice(0, MAX).map((f) => inlineFromDataUrl(f.url));
       let rows: Row[] = [];
-      const first = await readResult(images);
-      rows = first.rows;
-      if (!first.ok && images.length > 1) {
+      if (images.length > 1) {
         const merged: Row[] = [];
         for (const img of images) {
           if (ctrl.signal.aborted || goneRef.current) break;
@@ -102,6 +100,8 @@ function Inner() {
           if (one.ok) merged.push(...one.rows);
         }
         rows = merged;
+      } else {
+        rows = (await readResult(images)).rows;
       }
       if (goneRef.current || phaseRef.current !== "wait") return;
       if (rows.length === 0) {
