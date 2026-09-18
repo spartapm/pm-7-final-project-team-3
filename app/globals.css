@@ -749,6 +749,26 @@ img { display: block; max-width: 100%; }
 }
 .field > .when-chip, .when-row .when-chip, .when-pair .when-chip, select.when-chip { width: 100%; }
 select.when-chip { appearance: none; padding: 0 12px; }
+.when-lines { display: grid; gap: 8px; margin-bottom: 8px; }
+.when-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; height: 48px; padding: 0 16px;
+  border-radius: 12px; border: 1px solid #e3e8f0; background: #f7f9fc;
+  text-align: left;
+}
+.when-line span { font-size: 14px; font-weight: 700; color: #4b4e58; flex: none; }
+.when-line b { font-size: 14px; font-weight: 800; color: #171a21; }
+.when-line.bad { border-color: #ff0000; }
+.alert-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.alert-head label { margin: 0; }
+.alert-head em { font-style: normal; font-size: 13px; font-weight: 700; color: #667085; }
+.alert-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.alert-toggles button {
+  height: 36px; padding: 0 12px; border-radius: 99px;
+  border: 1px solid #e3e8f0; background: #fff;
+  font-size: 13px; font-weight: 700; color: #4b4e58;
+}
+.alert-toggles button.on { background: #eaf3ff; border-color: #3182f6; color: #2f80ed; }
 .when-sheet {
   background: #fff; border-radius: 20px; padding: 16px 14px 18px; width: 100%;
   box-shadow: 0 20px 48px rgba(20, 23, 28, 0.18);

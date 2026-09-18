@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { WhenPick } from "@/components/WhenPick";
 import { Back, Gate, PhoneShell } from "@/components/ui";
 import { eventItemFromForm, readExtract, upsertExtractItem } from "@/lib/extract";
-import { dateLabel, pad, parseYmd, timeLabel, uid, ymd } from "@/lib/format";
+import { EVENT_ALERTS, eventAlertLabel, pad, parseYmd, stampWhen, uid, ymd } from "@/lib/format";
 import { track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 import type { ExtractEventItem, LifeEvent } from "@/lib/types";
@@ -52,7 +52,6 @@ export function EventForm({
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pick, setPick] = useState<"start" | "end" | null>(null);
-  const [pickFocus, setPickFocus] = useState<"date" | "time">("date");
   const extract = fromResult ? readExtract() : null;
   const formMethod = fromResult ? (extract?.from === "voice" ? "voice" : "image") : "manual";
   useGaView("registration_form_view", {
@@ -204,41 +203,35 @@ export function EventForm({
                 });
               }}><i /></button>
             </label>
-            <div className={`when-stack ${allDay ? "allday" : ""} ${!timeOk && date && endD ? "bad" : ""}`}>
-              <em>시작</em>
-              <div className="when-pair">
-                <button type="button" className="when-chip" onClick={() => { setPickFocus("date"); setPick("start"); }}>
-                  {date ? dateLabel(date) : "날짜"}
-                </button>
-                {allDay ? null : (
-                  <button type="button" className="when-chip" onClick={() => { setPickFocus("time"); setPick("start"); }}>
-                    {start ? timeLabel(start) : "시간"}
-                  </button>
-                )}
-              </div>
-              <em>종료</em>
-              <div className="when-pair">
-                <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("date"); setPick("end"); }}>
-                  {endD ? dateLabel(endD) : "날짜"}
-                </button>
-                {allDay ? null : (
-                  <button type="button" className={`when-chip ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => { setPickFocus("time"); setPick("end"); }}>
-                    {end ? timeLabel(end) : "시간"}
-                  </button>
-                )}
-              </div>
+            <div className="when-lines">
+              <button type="button" className={`when-line ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("start")}>
+                <span>시작</span>
+                <b>{stampWhen(date, start, allDay)}</b>
+              </button>
+              <button type="button" className={`when-line ${!timeOk && date && endD ? "bad" : ""}`} onClick={() => setPick("end")}>
+                <span>종료</span>
+                <b>{stampWhen(endD, end, allDay)}</b>
+              </button>
             </div>
           </div>
           {!timeOk && date && endD ? <p className="err-msg">종료 시간은 시작 시간보다 늦어야 해요</p> : null}
           <div className="field">
-            <label>알림</label>
-            <select className="when-chip" value={alertMin} onChange={(e) => setAlertMin(Number(e.target.value))}>
-              <option value={5}>5분 전</option>
-              <option value={10}>10분 전</option>
-              <option value={15}>15분 전</option>
-              <option value={30}>30분 전</option>
-              <option value={60}>1시간 전</option>
-            </select>
+            <div className="alert-head">
+              <label>알림</label>
+              <em>{eventAlertLabel(alertMin)} 알림</em>
+            </div>
+            <div className="alert-toggles">
+              {EVENT_ALERTS.map((opt) => (
+                <button
+                  key={opt.min}
+                  type="button"
+                  className={alertMin === opt.min ? "on" : ""}
+                  onClick={() => setAlertMin(opt.min)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="field">
             <label>메모</label>
@@ -254,7 +247,6 @@ export function EventForm({
         <WhenPick
           open={pick !== null}
           allDay={allDay}
-          startStep={pickFocus}
           date={pick === "end" ? (endD || date) : date}
           time={pick === "end" ? end : start}
           onCancel={() => setPick(null)}

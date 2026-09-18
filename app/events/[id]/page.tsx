@@ -4,7 +4,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Back, Gate, Modal, PhoneShell } from "@/components/ui";
-import { dateLabel, timeLabel, ymd } from "@/lib/format";
+import { dateLabel, eventAlertLabel, timeLabel, ymd } from "@/lib/format";
 import { useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
@@ -50,7 +50,12 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
             <Row k="종료" v={endText} />
             <Row k="캘린더" v="개인 캘린더" />
           </div>
-          <img className="alert-banner" src="/banners/alarm.png" alt="일정 30분 전에 알려드려요" />
+          <div className="alert-banner-card">
+            <img src="/icons/bell.png" alt="" />
+            <div>
+              <b>일정 {eventAlertLabel(ev.alertMin)}에 알려드려요</b>
+            </div>
+          </div>
           <div className="card" style={{ marginTop: 12 }}>
             <div className="muted" style={{ fontWeight: 700, marginBottom: 8 }}>메모</div>
             <p style={{ margin: 0, lineHeight: 1.55 }}>{ev.memo || "작성된 메모가 없어요."}</p>

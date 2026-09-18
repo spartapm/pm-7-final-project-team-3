@@ -137,6 +137,28 @@ export function timeLabel(t: string) {
   return `${ap} ${h12}:${m}`;
 }
 
+export const EVENT_ALERTS = [
+  { min: 5, label: "5분 전" },
+  { min: 10, label: "10분 전" },
+  { min: 15, label: "15분 전" },
+  { min: 30, label: "30분 전" },
+  { min: 60, label: "1시간 전" },
+] as const;
+
+export function eventAlertLabel(min?: number) {
+  const hit = EVENT_ALERTS.find((x) => x.min === (min ?? 30));
+  return hit?.label ?? "30분 전";
+}
+
+export function stampWhen(date: string, time: string, allDay: boolean) {
+  if (!date) return allDay ? "날짜" : "날짜 · 시간";
+  const d = parseYmd(date);
+  const part = `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
+  if (allDay) return part;
+  if (!time) return `${part} 시간`;
+  return `${part} ${timeLabel(time)}`;
+}
+
 export function weekday(s: string) {
   return ["일", "월", "화", "수", "목", "금", "토"][parseYmd(s).getDay()];
 }
