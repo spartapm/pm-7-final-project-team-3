@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminOk, deny } from "@/lib/admin-auth";
 import { categoryIdsOf, loadAdminCategories, replaceCategoryMaps } from "@/lib/admin-cats";
 import { sanitizeBundleIcon } from "@/lib/bundle-icon";
+import { storeCatalogIcon } from "@/lib/catalog-storage";
 import { getSupabase, isMissingTable } from "@/lib/supabase";
 
 function iconOf(body: Record<string, unknown>) {
@@ -93,7 +94,8 @@ export async function POST(req: Request) {
   const icon = iconOf(body);
   if (icon instanceof Error) return NextResponse.json({ ok: false, error: icon.message }, { status: 400 });
   try {
-    const row = await writeProduct("insert", body, icon);
+    const stored = await storeCatalogIcon(icon, "product", String(body.product_id || body.product_name || "new"));
+    const row = await writeProduct("insert", body, stored);
     return NextResponse.json({ ok: true, row });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "저장 실패" }, { status: 400 });
@@ -106,7 +108,8 @@ export async function PATCH(req: Request) {
   const icon = iconOf(body);
   if (icon instanceof Error) return NextResponse.json({ ok: false, error: icon.message }, { status: 400 });
   try {
-    const row = await writeProduct("update", body, icon);
+    const stored = await storeCatalogIcon(icon, "product", Number(body.product_id) || String(body.product_name || "product"));
+    const row = await writeProduct("update", body, stored);
     return NextResponse.json({ ok: true, row });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "저장 실패" }, { status: 400 });

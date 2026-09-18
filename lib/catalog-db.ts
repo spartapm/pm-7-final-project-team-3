@@ -6,6 +6,7 @@ import {
   rowToCategory,
 } from "./catalog-cats";
 import type { Benefit, BenefitKind } from "./types";
+import { publicIcon } from "./catalog-storage";
 import { getSupabase, isMissingTable } from "./supabase";
 
 export type ProviderRow = {
@@ -151,7 +152,7 @@ export function bundleToBenefit(
     title,
     body,
     href: b.official_url || "",
-    icon: b.icon || "",
+    icon: publicIcon(b.icon),
     expires,
     howTo: steps.join(" "),
     terms: terms.join(" "),
@@ -159,9 +160,9 @@ export function bundleToBenefit(
     brandColor: color,
     parent: primary?.product ? { name: primary.product.product_name, sub: "월 자동결제" } : undefined,
     perk: perk?.product ? { name: perk.product.product_name, sub: perk.item_role === "BENEFIT" ? "혜택상품" : "월 정기결제" } : undefined,
-    providerLogo: primary?.product?.provider?.logo_url || "",
-    parentIcon: primary?.product?.icon || "",
-    perkIcon: perk?.product?.icon || "",
+    providerLogo: publicIcon(primary?.product?.provider?.logo_url),
+    parentIcon: publicIcon(primary?.product?.icon),
+    perkIcon: publicIcon(perk?.product?.icon),
     priceSingle: solo || money(b.price_bundled),
     priceBundle: money(b.price_bundled),
     steps: steps.length ? steps : undefined,
@@ -226,7 +227,10 @@ export async function loadCatalog() {
   }
 
   const planRows = plans.error ? [] as ProductPlanRow[] : ((plans.data ?? []) as ProductPlanRow[]);
-  const providerRows = (providers.data ?? []) as ProviderRow[];
+  const providerRows = ((providers.data ?? []) as ProviderRow[]).map((p) => ({
+    ...p,
+    logo_url: publicIcon(p.logo_url),
+  }));
   const catRows = cats.error ? [] as CatalogCategory[] : ((cats.data ?? []) as CatalogCategoryRow[]).map((r) => rowToCategory(r));
   const productMaps = (pc.error ? [] : (pc.data ?? [])).map((r) => ({
     id: Number((r as { product_id: number }).product_id),
@@ -239,6 +243,7 @@ export async function loadCatalog() {
   const productRows = ((products.data ?? []) as ProductRow[]).map((p) => ({
     ...p,
     product_name_en: p.product_name_en ?? "",
+    icon: publicIcon(p.icon),
     provider: providerRows.find((x) => x.provider_id === p.provider_id) ?? null,
     plans: planRows.filter((x) => x.product_id === p.product_id),
     serviceCategoryIds: idsOf(productMaps, p.product_id, catRows, "service"),
@@ -246,6 +251,7 @@ export async function loadCatalog() {
   }));
   const bundleRows = ((bundles.data ?? []) as BundleRow[]).map((b) => ({
     ...b,
+    icon: publicIcon(b.icon),
     serviceCategoryIds: idsOf(bundleMaps, b.bundle_id, catRows, "service"),
     benefitCategoryIds: idsOf(bundleMaps, b.bundle_id, catRows, "benefit"),
   }));

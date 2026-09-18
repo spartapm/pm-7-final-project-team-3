@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminOk, deny } from "@/lib/admin-auth";
 import { sanitizeBundleIcon } from "@/lib/bundle-icon";
+import { storeCatalogIcon } from "@/lib/catalog-storage";
 import { getSupabase } from "@/lib/supabase";
 
 function logoOf(body: Record<string, unknown>) {
@@ -27,10 +28,14 @@ export async function POST(req: Request) {
   const body = await req.json() as Record<string, unknown>;
   const logo = logoOf(body);
   if (logo instanceof Error) return NextResponse.json({ ok: false, error: logo.message }, { status: 400 });
+  let stored = logo;
+  try { stored = await storeCatalogIcon(logo, "provider", String(body.provider_name ?? "new")); } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 올리지 못했어요." }, { status: 400 });
+  }
   const res = await sb.from("provider").insert({
     provider_name: String(body.provider_name ?? "").trim(),
     provider_type: String(body.provider_type ?? ""),
-    logo_url: logo,
+    logo_url: stored,
     official_url: String(body.official_url ?? ""),
     brand_color: String(body.brand_color ?? "#2576f2"),
     is_active: body.is_active !== false,
@@ -47,10 +52,14 @@ export async function PATCH(req: Request) {
   const logo = logoOf(body);
   if (logo instanceof Error) return NextResponse.json({ ok: false, error: logo.message }, { status: 400 });
   const id = Number(body.provider_id);
+  let stored = logo;
+  try { stored = await storeCatalogIcon(logo, "provider", id || String(body.provider_name ?? "provider")); } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 올리지 못했어요." }, { status: 400 });
+  }
   const res = await sb.from("provider").update({
     provider_name: body.provider_name,
     provider_type: body.provider_type,
-    logo_url: logo,
+    logo_url: stored,
     official_url: body.official_url,
     brand_color: body.brand_color,
     is_active: body.is_active,

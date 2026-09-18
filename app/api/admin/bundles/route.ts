@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminOk, deny } from "@/lib/admin-auth";
 import { categoryIdsOf, loadAdminCategories, replaceCategoryMaps } from "@/lib/admin-cats";
 import { sanitizeBundleIcon } from "@/lib/bundle-icon";
+import { storeCatalogIcon } from "@/lib/catalog-storage";
 import { getSupabase } from "@/lib/supabase";
 
 type ItemIn = { product_id: number; item_role: string; required?: boolean };
@@ -27,6 +28,9 @@ export async function POST(req: Request) {
   let icon = "";
   try { icon = sanitizeBundleIcon(body.icon); } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 저장하지 못했어요." }, { status: 400 });
+  }
+  try { icon = await storeCatalogIcon(icon, "bundle", String(body.bundle_name ?? "new")); } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 올리지 못했어요." }, { status: 400 });
   }
   const cats = await loadAdminCategories();
   const mapped = categoryIdsOf(body, cats);
@@ -58,6 +62,9 @@ export async function PATCH(req: Request) {
   let icon: string;
   try { icon = sanitizeBundleIcon(body.icon); } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 저장하지 못했어요." }, { status: 400 });
+  }
+  try { icon = await storeCatalogIcon(icon, "bundle", id || String(body.bundle_name ?? "bundle")); } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "아이콘을 올리지 못했어요." }, { status: 400 });
   }
   const cats = await loadAdminCategories();
   const mapped = categoryIdsOf(body, cats);

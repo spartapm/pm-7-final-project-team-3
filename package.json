@@ -6,7 +6,8 @@
     "dev": "next dev -p 3003",
     "build": "next build",
     "start": "next start -p 3003",
-    "db:schema": "node scripts/apply-schema.mjs"
+    "db:schema": "node scripts/apply-schema.mjs",
+    "db:icons": "node scripts/apply-schema.mjs supabase/storage-icons.sql && node scripts/migrate-icons.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",

@@ -16,5 +16,9 @@ export async function GET() {
     bundleProducts: data.bundleProducts,
     categories: data.categories,
     benefitFilters: data.benefitFilters,
+  }, {
+    headers: {
+      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",
+    },
   });
 }
