@@ -38,7 +38,7 @@ export default function HomePage() {
   }, []);
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
-  const leak = benefitsLoaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
+  const leak = benefitsLoaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, tipCount: 0, tips: [] };
   const week = useMemo(() => thisWeek(), []);
   const weekKeys = new Set(week.map((d) => d.key));
   const upcoming = live.filter((s) => weekKeys.has(s.nextPay)).sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);
@@ -168,10 +168,10 @@ export default function HomePage() {
                   <span className="leak-copy">아직 등록된 구독이 없어요</span>
                   <span className="cta">등록하기 ›</span>
                 </button>
-              ) : leak.count > 0 ? (
+              ) : leak.save > 0 ? (
                 <button className="leak" type="button" onClick={() => goInspect("home")}>
                   <span>●</span>
-                  <span className="leak-copy">새는 구독 {leak.count}개 · 최대 {won(leak.save)} 절약</span>
+                  <span className="leak-copy">새는 구독 {Math.max(leak.count, 1)}개 · 최대 {won(leak.save)} 절약</span>
                   <span className="cta">확인하기 ›</span>
                 </button>
               ) : (

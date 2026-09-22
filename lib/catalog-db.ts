@@ -180,11 +180,16 @@ export function bundleRowsToProducts(bundles: BundleRow[], items: BundleItemRow[
       .filter((n): n is string => Boolean(n));
     const rowItems = items.filter((i) => i.bundle_id === b.bundle_id);
     const primary = rowItems.find((i) => i.item_role === "PRIMARY") ?? rowItems[0];
+    const fromName = String(b.bundle_name || "")
+      .split(/[·+,/|&]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length >= 2);
+    const included = [...new Set([...names, ...fromName])].join(", ") || b.card_title || b.bundle_name;
     return {
       id: `b-${b.bundle_id}`,
       providerId: String(primary?.product?.provider_id ?? b.category),
       name: b.bundle_name,
-      included: names.join(", ") || b.card_title || b.bundle_name,
+      included,
       amount: money(b.price_bundled),
       everyMonths: 1,
     };

@@ -24,7 +24,7 @@ export default function BenefitsPage() {
   const { benefits, bundles, benefitFilters, loaded } = useBenefits();
   const [kind, setKind] = useState("전체");
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
-  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
+  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, tipCount: 0, tips: [] };
   const filters = benefitFilters.length ? benefitFilters : [...DEFAULT_BENEFIT_FILTERS];
   const kindLabel = kind;
   useGaView("benefit_list_view", {}, loaded);
@@ -48,10 +48,10 @@ export default function BenefitsPage() {
               src="/brand/logo-banner-white.png"
               alt=""
             />
-            {leak.count > 0 ? (
+            {leak.save > 0 ? (
               <>
-                <h2>새는 구독 {leak.count}개를 찾았어요</h2>
-                <p>지금 새는 구독비를 잠그면 매달 최대 {won(Math.max(leak.save, 9900))}까지 절약할 수 있어요</p>
+                <h2>새는 구독 {Math.max(leak.count, 1)}개를 찾았어요</h2>
+                <p>지금 새는 구독비를 잠그면 매달 최대 {won(leak.save)}까지 절약할 수 있어요</p>
               </>
             ) : (
               <>

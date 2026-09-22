@@ -1,5 +1,5 @@
 import type { BundleProduct } from "./bundles";
-import { bestBundleLeak } from "./recommend";
+import { bundleTips, tipSavingsTotal } from "./recommend";
 import type { Benefit, Subscription } from "./types";
 
 export function monthlyAmount(amount: number, cycle: string) {
@@ -23,15 +23,16 @@ export function inspectLeaks(
   const live = subs.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const unused = live.filter((s) => s.unused && s.status !== "trial");
   const unusedSave = unused.reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
-  const best = benefits || bundles ? bestBundleLeak(live, benefits, bundles) : null;
-  const bundleSave = best?.save ?? 0;
-  const bundleCount = bundleSave > 0 ? 1 : 0;
+  const tips = benefits || bundles ? bundleTips(live, benefits, bundles) : [];
+  const bundleSave = tipSavingsTotal(tips);
+  const tipCount = tips.filter((t) => t.save > 0).length;
   return {
-    count: unused.length + bundleCount,
+    count: unused.length + tipCount,
     save: unusedSave + bundleSave,
     unusedCount: unused.length,
     bundleSave,
-    bundle: best,
+    tipCount,
+    tips,
   };
 }
 

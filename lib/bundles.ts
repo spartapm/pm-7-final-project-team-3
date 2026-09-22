@@ -43,7 +43,7 @@ export const BUNDLE_PRODUCTS: BundleProduct[] = [
   { id: "naver-snow", providerId: "naver", name: "스튜던트 · SNOW", included: "SNOW", amount: 4900, everyMonths: 1 },
   { id: "naver-cake", providerId: "naver", name: "스튜던트 · Cake", included: "Cake", amount: 4900, everyMonths: 1 },
   { id: "coupang-play", providerId: "coupang", name: "쿠팡플레이", included: "쿠팡플레이", amount: 7890, everyMonths: 1 },
-  { id: "baemin-yt", providerId: "etc", name: "배민클럽 · 유튜브 프리미엄", included: "유튜브 프리미엄", amount: 13990, everyMonths: 1 },
+  { id: "baemin-yt", providerId: "etc", name: "배민클럽 · 유튜브 프리미엄", included: "배민클럽, 유튜브 프리미엄", amount: 13990, everyMonths: 1 },
   { id: "skt-yt-ott", providerId: "skt", name: "T 우주 · 유튜브 + OTT 1개", included: "유튜브 프리미엄 + 넷플릭스 / 디즈니+ / 티빙 / 웨이브 중 1개", amount: 1000, everyMonths: 1 },
   { id: "skt-nf-ott", providerId: "skt", name: "T 우주 · 넷플릭스 + OTT 1개", included: "넷플릭스 + 유튜브 프리미엄 / 디즈니+ / 티빙 / 웨이브 중 1개", amount: 1000, everyMonths: 1 },
   { id: "skt-ds-ott", providerId: "skt", name: "T 우주 · 디즈니+ + OTT 1개", included: "디즈니+ + 유튜브 프리미엄 / 넷플릭스 / 티빙 / 웨이브 중 1개", amount: 1000, everyMonths: 1 },

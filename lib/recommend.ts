@@ -5,7 +5,11 @@ import { monthlyAmount } from "./stats";
 import type { Benefit, Subscription } from "./types";
 
 function partsOf(included: string) {
-  return included.split(/[·+,/|&]/).map((s) => s.trim()).filter((s) => s.length >= 2);
+  return included
+    .split(/[·+,/|&]| 그리고 | 및 | 과 | 와 /)
+    .map((s) => s.replace(/\s*중\s*\d+개?\s*$/g, "").replace(/통합형|광고형|스탠다드|베이직|라이트|추가혜택|생활혜택|상품권.*/g, "").trim())
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2);
 }
 
 function keysOf(token: string) {
@@ -17,10 +21,21 @@ function keysOf(token: string) {
 
 function owns(names: string[], token: string) {
   const keys = keysOf(String(token ?? ""));
+  if (keys.length === 0) return false;
   return names.some((name) => {
     const x = String(name ?? "").replace(/\s/g, "").toLowerCase();
     return keys.some((n) => x.includes(n) || n.includes(x));
   });
+}
+
+function uniqueParts(parts: string[]) {
+  const out: string[] = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (out.some((p) => owns([p], part) || owns([part], p))) continue;
+    out.push(part);
+  }
+  return out;
 }
 
 export type BundleTip = {
@@ -41,16 +56,6 @@ function liveMonthly(live: Subscription[], token: string) {
   return monthlyAmount(sub.amount, sub.cycle);
 }
 
-function amountFor(live: Subscription[], token: string) {
-  const liveAmt = liveMonthly(live, token);
-  if (liveAmt > 0) return liveAmt;
-  return findBrand(token)?.amount ?? 0;
-}
-
-function qualifiesAll(parts: string[], names: string[]) {
-  return parts.length >= 2 && parts.every((p) => owns(names, p));
-}
-
 function alreadyHasBundle(live: Subscription[], id: string, name: string) {
   return live.some((s) => s.bundleId === id || (isBundleLike(s) && (s.name === name || s.included === name)));
 }
@@ -62,13 +67,14 @@ function capSave(save: number, live: Subscription[]) {
 
 function partsFromBenefit(b: Benefit, catalog?: BundleProduct[] | null) {
   const named = [b.parent?.name, b.perk?.name].filter((n): n is string => Boolean(n?.trim()));
-  if (named.length) return named;
   const row = catalog?.find((p) => p.id === b.id);
-  if (row?.included) {
-    const fromCatalog = partsOf(row.included);
-    if (fromCatalog.length) return fromCatalog;
-  }
-  return partsOf([b.title, b.provider].filter(Boolean).join("·"));
+  const fromIncluded = row?.included ? partsOf(row.included) : [];
+  const fromTitle = partsOf([row?.name, b.title].filter(Boolean).join(" · "));
+  const merged = uniqueParts([...named, ...fromIncluded, ...fromTitle]);
+  if (merged.length >= 2) return merged;
+  if (named.length) return named;
+  if (fromIncluded.length) return fromIncluded;
+  return fromTitle;
 }
 
 function advertisedSave(solo: number, bundle: number, live: Subscription[]) {
@@ -77,21 +83,31 @@ function advertisedSave(solo: number, bundle: number, live: Subscription[]) {
   return capSave(solo - bundle, live);
 }
 
+/** 결합 구성품을 유저가 모두 갖고 있을 때만 추천 */
+function qualifiesAll(parts: string[], names: string[]) {
+  const concrete = parts.filter((p) => findBrand(p) || names.some((n) => owns([n], p)));
+  const need = concrete.length >= 2 ? concrete : parts;
+  if (need.length < 2) return false;
+  return need.every((p) => owns(names, p));
+}
+
 function pushCatalogTips(out: BundleTip[], live: Subscription[], names: string[], catalog: BundleProduct[]) {
   for (const product of catalog) {
     if (alreadyHasBundle(live, product.id, product.name)) continue;
     if (out.some((t) => t.id === product.id)) continue;
-    const parts = partsOf(product.included);
+    const parts = uniqueParts([...partsOf(product.included), ...partsOf(product.name)]);
     if (!qualifiesAll(parts, names)) continue;
-    const solo = parts.reduce((sum, p) => sum + liveMonthly(live, p), 0);
+    const matched = parts.filter((p) => owns(names, p));
+    const solo = matched.reduce((sum, p) => sum + liveMonthly(live, p), 0);
     if (solo <= 0) continue;
     const save = advertisedSave(solo, product.amount, live);
+    if (save <= 0) continue;
     out.push({
       id: product.id,
       href: `/benefits/${product.id}`,
       headline: product.name,
-      names: parts.slice(0, 2),
-      colors: parts.slice(0, 2).map((p) => findBrand(p)?.color || "#2576f2"),
+      names: matched.slice(0, 2),
+      colors: matched.slice(0, 2).map((p) => findBrand(p)?.color || "#2576f2"),
       solo,
       bundle: product.amount,
       save,
@@ -100,7 +116,7 @@ function pushCatalogTips(out: BundleTip[], live: Subscription[], names: string[]
 }
 
 export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, catalog?: BundleProduct[] | null): BundleTip[] {
-  const live = subs.filter((s) => s.status !== "ended" && !s.paused);
+  const live = subs.filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const names = live.map((s) => s.name);
   const out: BundleTip[] = [];
   const products = catalog ?? [];
@@ -110,25 +126,32 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
       if (alreadyHasBundle(live, b.id, b.title)) continue;
       const parts = partsFromBenefit(b, products);
       if (!qualifiesAll(parts, names)) continue;
-      const liveSolo = parts.reduce((sum, p) => sum + liveMonthly(live, p), 0);
+      const matched = parts.filter((p) => owns(names, p));
+      const liveSolo = matched.reduce((sum, p) => sum + liveMonthly(live, p), 0);
       if (liveSolo <= 0) continue;
-      const solo = liveSolo || b.priceSingle || 0;
+      const solo = liveSolo;
       const bundle = b.priceBundle ?? 0;
       const save = advertisedSave(solo, bundle, live);
-      const colors = parts.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
+      if (save <= 0) continue;
+      const colors = matched.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
       const carrier = b.kind === "carrier";
-      const tipNames = carrier
-        ? [b.provider, b.perk?.name || b.parent?.name || parts[0] || ""].filter(Boolean)
-        : parts;
-      const logos = carrier
-        ? [b.providerLogo || "", b.perkIcon || b.parentIcon || ""]
-        : [b.parentIcon || "", b.perkIcon || ""];
+      const tipNames = matched.length >= 2
+        ? matched.slice(0, 2)
+        : carrier
+          ? [b.provider, b.perk?.name || b.parent?.name || matched[0] || ""].filter(Boolean)
+          : matched;
+      const logos = tipNames.map((name) => {
+        if (owns([b.parent?.name || ""], name)) return b.parentIcon || "";
+        if (owns([b.perk?.name || ""], name)) return b.perkIcon || "";
+        if (carrier && owns([b.provider], name)) return b.providerLogo || "";
+        return "";
+      });
       out.push({
         id: b.id,
         href: `/benefits/${b.id}`,
         headline: b.title,
         names: tipNames,
-        colors: carrier ? [b.providerColor || colors[0], colors[1] || colors[0]] : colors,
+        colors: tipNames.map((_, i) => colors[i] || b.providerColor || "#2576f2"),
         logos,
         solo,
         bundle,
@@ -137,20 +160,15 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
     }
   }
 
-  if (out.length === 0 && products.length) {
+  if (products.length) {
     pushCatalogTips(out, live, names, products);
   }
 
   return out.sort((a, b) => b.save - a.save || a.headline.localeCompare(b.headline)).slice(0, 6);
 }
 
-export function bestBundleLeak(
-  subs: Subscription[],
-  benefits?: Benefit[] | null,
-  catalog?: BundleProduct[] | null,
-) {
-  const tips = bundleTips(subs, benefits, catalog);
-  return tips.find((t) => t.save > 0) ?? null;
+export function tipSavingsTotal(tips: BundleTip[]) {
+  return tips.reduce((sum, t) => sum + Math.max(0, t.save), 0);
 }
 
 export function relevantBenefits(subs: Subscription[], benefitIds: string[]) {

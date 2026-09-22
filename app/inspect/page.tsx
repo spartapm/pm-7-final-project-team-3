@@ -25,17 +25,13 @@ export default function InspectPage() {
   const [open, setOpen] = useState(false);
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const cold = live.length === 0;
-  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
+  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, tipCount: 0, tips: [] };
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || String(a.name ?? "").localeCompare(String(b.name ?? "")));
   const shown = open ? ranked : ranked.slice(0, 3);
-  let tips: ReturnType<typeof bundleTips> = [];
-  if (loaded) {
-    try { tips = bundleTips(live, benefits, bundles); } catch { tips = []; }
-  }
-  const leakNote = leak.bundleSave > 0 && leak.bundle
-    ? `${leak.bundle.headline} 결합 시 매달 ${won(leak.bundleSave)} 절약 가능`
-    : "";
+  const tips = leak.tips.length ? leak.tips : (() => {
+    try { return loaded ? bundleTips(live, benefits, bundles) : []; } catch { return []; }
+  })();
   const today = ymd(new Date());
   const curStamp = stampOf(today, live.map((s) => s.id));
 
@@ -120,15 +116,15 @@ export default function InspectPage() {
             <h2>
               {cold
                 ? "등록된 구독이 없어요"
-                : leak.count > 0
-                  ? `새는 구독 ${leak.count}개를 찾았어요`
+                : leak.save > 0
+                  ? `새는 구독 ${Math.max(leak.count, 1)}개를 찾았어요`
                   : "빈틈이 없어요!"}
             </h2>
             <p>
               {cold
                 ? "구독을 먼저 등록하면 새는 틈을 찾아드려요."
-                : leak.count > 0
-                  ? leakNote || `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
+                : leak.save > 0
+                  ? `지금 새는 구독비를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
                   : "구독을 잘 관리하고 계시네요."}
             </p>
             <button className="btn" type="button" disabled={cold} onClick={() => rerun()}>다시 점검하기</button>
