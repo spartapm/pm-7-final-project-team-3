@@ -8,17 +8,27 @@ const GEMINI_MODELS = [
   "gemini-2.0-flash",
 ].filter((k): k is string => Boolean(k?.trim()));
 
-const NVIDIA_MODEL = process.env.NVIDIA_VISION_MODEL?.trim() || "meta/llama-3.2-11b-vision-instruct";
-
 type ImageIn = { mime?: string; data?: string };
 
-function geminiKeys() {
+/** 음성 파싱용 — 계정별 Gemini 키 */
+function voiceKeys() {
   return [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY_3,
     process.env.GEMINI_API_KEY_4,
   ].filter((k): k is string => Boolean(k?.trim()));
+}
+
+/** OCR용 — Teum 11이 들어 있는 3번째 키를 먼저 사용 */
+function ocrKeys() {
+  const primary = process.env.GEMINI_API_KEY_3?.trim();
+  const rest = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_4,
+  ].filter((k): k is string => Boolean(k?.trim()) && k !== primary);
+  return primary ? [primary, ...rest] : rest;
 }
 
 function parseItems(text: string) {
@@ -65,55 +75,18 @@ function reply(kind: string | undefined, text: string) {
   return NextResponse.json({ ok: true, items: cleaned, data: cleaned[0] });
 }
 
-function messageText(content: unknown) {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content.map((part) => {
-    if (typeof part === "string") return part;
-    if (part && typeof part === "object" && "text" in part) return String((part as { text?: string }).text ?? "");
-    return "";
-  }).join("");
-}
-
-async function fromNvidia(kind: string | undefined, prompt: string, images: ImageIn[]) {
-  const key = process.env.NVIDIA_API_KEY?.trim();
-  if (!key) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
-  const content = [
-    { type: "text", text: prompt },
-    ...images.slice(0, 4).filter((img) => img.data).map((img) => ({
-      type: "image_url",
-      image_url: { url: `data:${img.mime || "image/jpeg"};base64,${img.data}` },
-    })),
-  ];
-  let res: Response;
-  try {
-    res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        model: NVIDIA_MODEL,
-        messages: [{ role: "user", content }],
-        temperature: 0,
-        max_tokens: 1024,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-  } catch {
-    return NextResponse.json({ ok: false, error: "nvidia" }, { status: 502 });
-  }
-  if (!res.ok) return NextResponse.json({ ok: false, error: "nvidia" }, { status: 502 });
-  const json = await res.json() as { choices?: { message?: { content?: unknown } }[] };
-  return reply(kind, messageText(json.choices?.[0]?.message?.content));
-}
-
-async function fromGemini(kind: string | undefined, prompt: string) {
-  const keys = geminiKeys();
+async function fromGemini(
+  kind: string | undefined,
+  prompt: string,
+  keys: string[],
+  images: ImageIn[] = [],
+) {
   if (keys.length === 0) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
+  const parts: object[] = [{ text: prompt }];
+  for (const img of images.slice(0, 4)) {
+    if (!img.data) continue;
+    parts.push({ inline_data: { mime_type: img.mime || "image/jpeg", data: img.data } });
+  }
   let res: Response | null = null;
   const started = Date.now();
   const budget = 9000;
@@ -126,7 +99,7 @@ async function fromGemini(kind: string | undefined, prompt: string) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts }],
             generationConfig: {
               temperature: 0,
               maxOutputTokens: 1024,
@@ -155,6 +128,6 @@ export async function POST(req: Request) {
   const spoken = body.text?.trim() ?? "";
   if (images.length === 0 && !spoken) return NextResponse.json({ ok: false, error: "no-input" }, { status: 400 });
   const prompt = prompts(body.kind, images.length ? "" : spoken);
-  if (images.length > 0) return fromNvidia(body.kind, prompt, images);
-  return fromGemini(body.kind, prompt);
+  if (images.length > 0) return fromGemini(body.kind, prompt, ocrKeys(), images);
+  return fromGemini(body.kind, prompt, voiceKeys());
 }
