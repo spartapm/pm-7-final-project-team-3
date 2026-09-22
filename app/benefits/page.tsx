@@ -8,7 +8,7 @@ import { benefitStatus } from "@/lib/catalog";
 import { DEFAULT_BENEFIT_FILTERS } from "@/lib/catalog-cats";
 import { daysUntil, won } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
-import { leaksOf } from "@/lib/stats";
+import { inspectLeaks } from "@/lib/stats";
 import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
 
@@ -21,9 +21,10 @@ const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg:
 export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits, benefitFilters, loaded } = useBenefits();
+  const { benefits, bundles, benefitFilters, loaded } = useBenefits();
   const [kind, setKind] = useState("전체");
-  const leak = leaksOf(subscriptions ?? []);
+  const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
+  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
   const filters = benefitFilters.length ? benefitFilters : [...DEFAULT_BENEFIT_FILTERS];
   const kindLabel = kind;
   useGaView("benefit_list_view", {}, loaded);

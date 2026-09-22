@@ -96,6 +96,31 @@ function knownOf(name: string) {
   return findBrand(name);
 }
 
+function stripVoiceNoise(text: string) {
+  return String(text ?? "")
+    .replace(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/g, " ")
+    .replace(/매월\s*\d{1,2}\s*일/g, " ")
+    .replace(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function shortServiceName(raw: string) {
+  const t = stripVoiceNoise(raw);
+  if (!t) return "";
+  const hit = findBrand(t);
+  if (hit) return hit.name;
+  if (t.length <= 16 && t.split(/\s+/).length <= 3) return t.slice(0, 30);
+  return "";
+}
+
+export function shortEventTitle(raw: string) {
+  const t = stripVoiceNoise(raw);
+  if (!t) return "";
+  if (t.length <= 20 && t.split(/\s+/).length <= 4) return t.slice(0, 30);
+  return "";
+}
+
 export function subItemFromRaw(raw: {
   name?: string;
   plan?: string;
@@ -103,7 +128,7 @@ export function subItemFromRaw(raw: {
   day?: number | string | null;
   title?: string;
 }): ExtractSubItem {
-  const name = String(raw.name || raw.title || "").trim().slice(0, 30);
+  const name = shortServiceName(String(raw.name ?? "")) || shortServiceName(String(raw.title ?? ""));
   const amount = String(raw.amount ?? "").replace(/[^\d]/g, "");
   const dayNum = typeof raw.day === "number" ? raw.day : Number(raw.day);
   const day = Number.isFinite(dayNum) && dayNum >= 1 && dayNum <= 31 ? Math.trunc(dayNum) : null;
@@ -138,7 +163,7 @@ export function eventItemFromRaw(raw: {
   start?: string;
   end?: string;
 }): ExtractEventItem {
-  const title = String(raw.title || raw.name || "").trim().slice(0, 30);
+  const title = shortEventTitle(String(raw.title ?? "")) || shortEventTitle(String(raw.name ?? ""));
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(raw.date || "")) ? String(raw.date) : "";
   const endDate = /^\d{4}-\d{2}-\d{2}$/.test(String(raw.endDate || "")) ? String(raw.endDate) : date;
   const start = hmOf(raw.start);
@@ -225,7 +250,7 @@ export function parseVoiceItems(raw: string, kind: AddKind): ExtractItem[] {
   if (!text) return [];
   if (kind === "event") {
     const m = text.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
-    const title = text.replace(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/g, "").replace(/\s+/g, " ").trim().slice(0, 30) || text.slice(0, 30);
+    const title = shortEventTitle(text.replace(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/g, " "));
     const y = new Date().getFullYear();
     const date = m ? `${y}-${pad(Number(m[1]))}-${pad(Number(m[2]))}` : "";
     return [eventItemFromRaw({ title, date })];
@@ -233,18 +258,7 @@ export function parseVoiceItems(raw: string, kind: AddKind): ExtractItem[] {
   const amount = text.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/)?.[1]?.replace(/,/g, "") ?? "";
   const dayHit = text.match(/매월\s*(\d{1,2})\s*일/) ?? text.match(/(\d{1,2})\s*일(?:에|마다)?/);
   const day = dayHit ? Number(dayHit[1]) : null;
-  const name = /유튜브|youtube/i.test(text)
-    ? "YouTube Premium"
-    : /스포티|spotify/i.test(text)
-      ? "Spotify"
-      : /넷플릭|netflix/i.test(text)
-        ? "Netflix"
-        : /디즈니|disney/i.test(text)
-          ? "Disney+"
-          : /챗|chatgpt|gpt/i.test(text)
-            ? "ChatGPT"
-            : text.replace(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/g, "").replace(/매월\s*\d{1,2}\s*일/g, "").replace(/\s+/g, " ").trim().slice(0, 30);
-  return [subItemFromRaw({ name, amount, day })];
+  return [subItemFromRaw({ name: shortServiceName(text), amount, day })];
 }
 
 export function beginExtract(kind: AddKind, from: ExtractState["from"], items: ExtractItem[]) {

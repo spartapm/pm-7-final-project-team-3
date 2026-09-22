@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Back, Brand, Gate, PhoneShell, TabBar } from "@/components/ui";
-import { leaksOf, monthlyAmount } from "@/lib/stats";
+import { inspectLeaks, monthlyAmount } from "@/lib/stats";
 import { useStore } from "@/lib/store";
 import { cycleEvery, won, ymd } from "@/lib/format";
 import { bundleTips } from "@/lib/recommend";
@@ -25,7 +25,7 @@ export default function InspectPage() {
   const [open, setOpen] = useState(false);
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const cold = live.length === 0;
-  const leak = leaksOf(live);
+  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
   const total = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const ranked = live.slice().sort((a, b) => Number(b.unused) - Number(a.unused) || String(a.name ?? "").localeCompare(String(b.name ?? "")));
   const shown = open ? ranked : ranked.slice(0, 3);
@@ -33,6 +33,9 @@ export default function InspectPage() {
   if (loaded) {
     try { tips = bundleTips(live, benefits, bundles); } catch { tips = []; }
   }
+  const leakNote = leak.bundleSave > 0 && leak.bundle
+    ? `${leak.bundle.headline} 결합 시 매달 ${won(leak.bundleSave)} 절약 가능`
+    : "";
   const today = ymd(new Date());
   const curStamp = stampOf(today, live.map((s) => s.id));
 
@@ -125,7 +128,7 @@ export default function InspectPage() {
               {cold
                 ? "구독을 먼저 등록하면 새는 틈을 찾아드려요."
                 : leak.count > 0
-                  ? `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
+                  ? leakNote || `지금 새는 구독료를 잠그면 매달 최대 ${won(leak.save)}까지 절약할 수 있어요`
                   : "구독을 잘 관리하고 계시네요."}
             </p>
             <button className="btn" type="button" disabled={cold} onClick={() => rerun()}>다시 점검하기</button>

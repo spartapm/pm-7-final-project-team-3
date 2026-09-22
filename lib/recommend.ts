@@ -35,10 +35,20 @@ export type BundleTip = {
   save: number;
 };
 
-function amountFor(live: Subscription[], token: string) {
+function liveMonthly(live: Subscription[], token: string) {
   const sub = live.find((s) => owns([s.name], token));
-  if (sub) return sub.amount;
+  if (!sub || sub.status === "trial") return 0;
+  return monthlyAmount(sub.amount, sub.cycle);
+}
+
+function amountFor(live: Subscription[], token: string) {
+  const liveAmt = liveMonthly(live, token);
+  if (liveAmt > 0) return liveAmt;
   return findBrand(token)?.amount ?? 0;
+}
+
+function qualifiesAll(parts: string[], names: string[]) {
+  return parts.length >= 2 && parts.every((p) => owns(names, p));
 }
 
 function alreadyHasBundle(live: Subscription[], id: string, name: string) {
@@ -72,9 +82,9 @@ function pushCatalogTips(out: BundleTip[], live: Subscription[], names: string[]
     if (alreadyHasBundle(live, product.id, product.name)) continue;
     if (out.some((t) => t.id === product.id)) continue;
     const parts = partsOf(product.included);
-    const hits = parts.filter((p) => owns(names, p));
-    if (hits.length === 0) continue;
-    const solo = parts.reduce((sum, p) => sum + amountFor(live, p), 0) || product.amount;
+    if (!qualifiesAll(parts, names)) continue;
+    const solo = parts.reduce((sum, p) => sum + liveMonthly(live, p), 0);
+    if (solo <= 0) continue;
     const save = advertisedSave(solo, product.amount, live);
     out.push({
       id: product.id,
@@ -99,11 +109,10 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
     for (const b of benefits) {
       if (alreadyHasBundle(live, b.id, b.title)) continue;
       const parts = partsFromBenefit(b, products);
-      if (parts.length === 0) continue;
-      const hits = parts.filter((p) => owns(names, p));
-      if (hits.length === 0) continue;
-      const liveSolo = parts.reduce((sum, p) => sum + amountFor(live, p), 0);
-      const solo = b.priceSingle || liveSolo;
+      if (!qualifiesAll(parts, names)) continue;
+      const liveSolo = parts.reduce((sum, p) => sum + liveMonthly(live, p), 0);
+      if (liveSolo <= 0) continue;
+      const solo = liveSolo || b.priceSingle || 0;
       const bundle = b.priceBundle ?? 0;
       const save = advertisedSave(solo, bundle, live);
       const colors = parts.map((p) => findBrand(p)?.color || b.brandColor || b.providerColor || "#2576f2");
@@ -133,6 +142,15 @@ export function bundleTips(subs: Subscription[], benefits?: Benefit[] | null, ca
   }
 
   return out.sort((a, b) => b.save - a.save || a.headline.localeCompare(b.headline)).slice(0, 6);
+}
+
+export function bestBundleLeak(
+  subs: Subscription[],
+  benefits?: Benefit[] | null,
+  catalog?: BundleProduct[] | null,
+) {
+  const tips = bundleTips(subs, benefits, catalog);
+  return tips.find((t) => t.save > 0) ?? null;
 }
 
 export function relevantBenefits(subs: Subscription[], benefitIds: string[]) {

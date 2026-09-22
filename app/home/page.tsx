@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { Brand, Fab, Gate, Logo, PhoneShell, TabBar } from "@/components/ui";
 import { PROMOS } from "@/lib/catalog";
 import { dateLabel, monthLabel, relativeTime, subscriptionPayDates, thisWeek, won, ymd } from "@/lib/format";
-import { leaksOf, monthlyAmount } from "@/lib/stats";
+import { inspectLeaks, monthlyAmount } from "@/lib/stats";
 import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
+import { useBenefits } from "@/lib/use-benefits";
 
 export default function HomePage() {
   const router = useRouter();
   const { hydrated, subscriptions, events, notices, markNotice, markAllNotices, accountId, showToast, onboarded, setOnboarded } = useStore();
+  const { benefits, bundles, loaded: benefitsLoaded } = useBenefits();
   const [promo, setPromo] = useState(0);
   const [day, setDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
@@ -36,7 +38,7 @@ export default function HomePage() {
   }, []);
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
-  const leak = leaksOf(live);
+  const leak = benefitsLoaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, bundle: null };
   const week = useMemo(() => thisWeek(), []);
   const weekKeys = new Set(week.map((d) => d.key));
   const upcoming = live.filter((s) => weekKeys.has(s.nextPay)).sort((a, b) => a.nextPay.localeCompare(b.nextPay)).slice(0, 2);

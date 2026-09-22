@@ -179,11 +179,10 @@ function Inner() {
     abortRef.current = ctrl;
     const timer = window.setTimeout(() => ctrl.abort(), 25000);
     const finish = (items: ReturnType<typeof parseVoiceItems>) => {
-      if (goneRef.current || phaseRef.current !== "wait" || items.length === 0) {
-        if (!goneRef.current && phaseRef.current === "wait") {
-          track("voice_recognition_failed", { failure_type: "parse", processing_time_ms: Date.now() - startedAt.current });
-          setPhase("fail");
-        }
+      if (goneRef.current || phaseRef.current !== "wait") return;
+      if (items.length === 0) {
+        track("voice_recognition_failed", { failure_type: "parse", processing_time_ms: Date.now() - startedAt.current });
+        setPhase("fail");
         return;
       }
       beginExtract(kind, "voice", items);
