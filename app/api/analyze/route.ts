@@ -10,13 +10,13 @@ const GEMINI_MODELS = [
 
 type ImageIn = { mime?: string; data?: string };
 
-/** 음성 파싱용 — 계정별 Gemini 키 */
+/** 음성 파싱용 — 키를 뒤에서부터 순회 */
 function voiceKeys() {
   return [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
     process.env.GEMINI_API_KEY_4,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY,
   ].filter((k): k is string => Boolean(k?.trim()));
 }
 
