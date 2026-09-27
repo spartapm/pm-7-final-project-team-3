@@ -91,7 +91,7 @@ export default function BenefitDetail({ params }: { params: Promise<{ id: string
                 )}
                 {b.parent ? (
                   <div className="bnf-row">
-                    <span className="bnf-chip">모상품</span>
+                    <span className="bnf-chip">가입상품</span>
                     <span className="grow">
                       <b>{b.parent.name}</b>
                       <em>{b.parent.sub}</em>

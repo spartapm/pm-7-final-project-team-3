@@ -6,25 +6,16 @@ import { ChipScroller, Gate, PhoneShell, TabBar } from "@/components/ui";
 import { BenefitIcons } from "@/components/BenefitIcons";
 import { benefitStatus } from "@/lib/catalog";
 import { DEFAULT_BENEFIT_FILTERS } from "@/lib/catalog-cats";
-import { daysUntil, won } from "@/lib/format";
+import { daysUntil } from "@/lib/format";
 import { useBenefits } from "@/lib/use-benefits";
-import { inspectLeaks } from "@/lib/stats";
 import { markInspectStart, track, useGaView } from "@/lib/ga";
 import { useStore } from "@/lib/store";
-
-const STATE_TAG: Record<"owned" | "available" | "expiring", { label: string; bg: string }> = {
-  owned: { label: "보유 중", bg: "#2576f2" },
-  available: { label: "사용 가능", bg: "#667085" },
-  expiring: { label: "만료 예정", bg: "#ff7700" },
-};
 
 export default function BenefitsPage() {
   const router = useRouter();
   const { subscriptions } = useStore();
-  const { benefits, bundles, benefitFilters, loaded } = useBenefits();
+  const { benefits, benefitFilters, loaded } = useBenefits();
   const [kind, setKind] = useState("전체");
-  const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
-  const leak = loaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, tipCount: 0, tips: [] };
   const filters = benefitFilters.length ? benefitFilters : [...DEFAULT_BENEFIT_FILTERS];
   const kindLabel = kind;
   useGaView("benefit_list_view", {}, loaded);
@@ -48,18 +39,9 @@ export default function BenefitsPage() {
               src="/brand/logo-banner-white.png"
               alt=""
             />
-            {leak.save > 0 ? (
-              <>
-                <h2>새는 구독 {Math.max(leak.count, 1)}개를 찾았어요</h2>
-                <p>지금 새는 구독비를 잠그면 매달 최대 {won(leak.save)}까지 절약할 수 있어요</p>
-              </>
-            ) : (
-              <>
-                <h2>빈틈이 없어요!</h2>
-                <p>구독을 잘 관리하고 계시네요.</p>
-              </>
-            )}
-            <button className="btn" type="button" onClick={() => { markInspectStart("benefits"); track("subscription_inspection_start", { source: "benefits" }); router.push("/inspect"); }}>구독 점검받기</button>
+            <h2>지금 새는 구독을 찾아보세요</h2>
+            <p>AI로 구독을 점검하고 더 알뜰하게 이용할 방법을 확인해보세요.</p>
+            <button className="btn" type="button" onClick={() => { markInspectStart("benefits"); track("subscription_inspection_start", { source: "benefits" }); router.push("/inspect"); }}>구독 점검하기</button>
           </div>
           <ChipScroller style={{ margin: "14px 0 8px" }}>
             {filters.map((f) => (
@@ -73,14 +55,13 @@ export default function BenefitsPage() {
               <p>{kindLabel}에서 받을 수 있는 등록된 구독이 없어요.</p>
             </div>
           ) : list.map((b) => {
-            const st = benefitStatus(b, subscriptions ?? []);
-            const tag = STATE_TAG[st] ?? STATE_TAG.available;
+            const expiring = benefitStatus(b, subscriptions ?? []) === "expiring";
             return (
               <button key={b.id} className="benefit-card" type="button" onClick={() => router.push(`/benefits/${b.id}`)} style={{ width: "100%", textAlign: "left" }}>
                 <BenefitIcons b={b} />
                 <span className="body">
                   <span className="tag" style={{ background: b.providerColor }}>{b.provider}</span>
-                  <span className="tag" style={{ background: tag.bg, marginLeft: 6 }}>{tag.label}</span>
+                  {expiring ? <span className="tag" style={{ background: "#ff7700", marginLeft: 6 }}>만료 예정</span> : null}
                   <div style={{ fontWeight: 800, margin: "4px 0" }}>{b.title}</div>
                   <div className="muted">{b.body}</div>
                   {b.expires ? <div className="muted" style={{ marginTop: 6 }}>{daysUntil(b.expires) >= 0 ? `${daysUntil(b.expires)}일 뒤 만료` : "만료됨"}</div> : null}

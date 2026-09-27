@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Back, Gate, PhoneShell } from "@/components/ui";
-import { fileToCsImage, inlineFromDataUrl } from "@/lib/cs";
+import { compressImageBlob, fileToCsImage, inlineFromDataUrl } from "@/lib/cs";
 import { afterExtractPath, beginExtract, eventItemFromRaw, subItemFromRaw } from "@/lib/extract";
 import { bumpRetry, countGroup, readRetry, retryGroup, track } from "@/lib/ga";
 import { useStore } from "@/lib/store";
@@ -90,7 +90,12 @@ function Inner() {
       return { ok: Boolean(json.ok && rows.length), rows };
     };
     try {
-      const images = files.slice(0, MAX).map((f) => inlineFromDataUrl(f.url));
+      const images = [];
+      for (const f of files.slice(0, MAX)) {
+        const blob = await fetch(f.url).then((r) => r.blob());
+        const url = await compressImageBlob(blob, 900, 0.7);
+        images.push(inlineFromDataUrl(url));
+      }
       let rows: Row[] = [];
       if (images.length > 1) {
         const merged: Row[] = [];
@@ -109,7 +114,7 @@ function Inner() {
         setPhase("fail");
         return;
       }
-      const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map(subItemFromRaw);
+      const items = kind === "event" ? rows.map(eventItemFromRaw) : rows.map((row) => subItemFromRaw(row, { fromImage: true }));
       beginExtract(kind, "image", items);
       router.push(afterExtractPath(kind, "image"));
     } catch {

@@ -174,7 +174,7 @@ export function SubForm({
     }
     const amount = Number(digitsOf(local.amount)) || 0;
     const twin = subscriptions.find((s) => s.id !== existing?.id && (
-      (s.name.trim().toLowerCase() === local.name.trim().toLowerCase() && s.amount === amount)
+      s.name.trim().toLowerCase() === local.name.trim().toLowerCase()
       || namesOverlap(s.name, local.name, soloProducts)
     ));
     if (twin && !force) {
@@ -500,7 +500,7 @@ export function SubForm({
         {dup ? (
           <Modal
             title="비슷한 구독이 있어요"
-            body={"같은 이름과 금액의 구독이 이미 등록되어 있어요.\n그래도 저장할까요?"}
+            body={"같은 이름의 구독이 이미 등록되어 있어요.\n그래도 저장할까요?"}
             cancel="취소"
             confirm="계속 저장"
             onCancel={() => setDup(false)}

@@ -18,6 +18,7 @@ export default function HomePage() {
   const [day, setDay] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
   const [invite, setInvite] = useState(false);
+  const [guideClosed, setGuideClosed] = useState(false);
   const inviteCode = `TEUM-${(accountId || "guest").replace(/[^a-z0-9]/gi, "").slice(-6).toUpperCase() || "FRIEND"}`;
 
   const decideMarketing = (ok: boolean) => {
@@ -37,6 +38,8 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, []);
   const live = (subscriptions ?? []).filter((s) => s.status !== "ended" && !s.paused && !s.parentId);
+  const noSubs = (subscriptions ?? []).length === 0;
+  const showGuide = noSubs && !guideClosed && onboarded && !sheet && !invite;
   const monthPay = live.filter((s) => s.status !== "trial").reduce((a, s) => a + monthlyAmount(s.amount, s.cycle), 0);
   const leak = benefitsLoaded ? inspectLeaks(live, benefits, bundles) : { count: 0, save: 0, unusedCount: 0, bundleSave: 0, tipCount: 0, tips: [] };
   const week = useMemo(() => thisWeek(), []);
@@ -206,7 +209,20 @@ export default function HomePage() {
         <button className="btn primary inspect-cta" type="button" onClick={() => goInspect("home")}>
           구독비 점검받기
         </button>
-        <Fab />
+        {showGuide ? (
+          <div className="fab-guide" role="status">
+            <div>
+              <b>여기서 구독을 추가해요</b>
+              <span>+ 버튼으로 구독·결제 일정을 등록해요</span>
+            </div>
+            <button type="button" aria-label="닫기" onClick={() => setGuideClosed(true)}>
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+                <path d="M2 2l10 10M12 2 2 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
+        <Fab pulse={noSubs} onPress={() => setGuideClosed(true)} />
         <TabBar />
         {sheet ? (
           <>

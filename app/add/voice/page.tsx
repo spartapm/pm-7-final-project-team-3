@@ -293,7 +293,7 @@ function Inner() {
                   {phase === "save" ? (
                     <button className="btn ghost" type="button" onClick={retrySpeak}>다시 말하기</button>
                   ) : (
-                    <button className="btn ghost" type="button" onClick={toSave}>중단</button>
+                    <button className="btn ghost" type="button" onClick={toSave}>완료</button>
                   )}
                   <button
                     className="btn primary"

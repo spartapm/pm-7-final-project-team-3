@@ -195,7 +195,7 @@ export function ChipScroller({ children, style }: { children: ReactNode; style?:
   return <div ref={ref} className="chip-row drag" style={style}>{children}</div>;
 }
 
-export function Fab({ children }: { children?: ReactNode }) {
+export function Fab({ children, pulse, onPress }: { children?: ReactNode; pulse?: boolean; onPress?: () => void }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"subscription" | "event">("subscription");
   const router = useRouter();
@@ -254,7 +254,7 @@ export function Fab({ children }: { children?: ReactNode }) {
           </button>
         </div>
       ) : null}
-      <button className={`fab ${open ? "open" : ""}`} type="button" aria-label="추가" onClick={() => setOpen((v) => !v)}>
+      <button className={`fab ${open ? "open" : ""} ${pulse && !open ? "pulse" : ""}`} type="button" aria-label="추가" onClick={() => { onPress?.(); setOpen((v) => !v); }}>
         <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
           {open ? (
             <path d="M4 4l14 14M18 4 4 18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />

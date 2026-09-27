@@ -121,14 +121,28 @@ export function shortEventTitle(raw: string) {
   return "";
 }
 
+export function ocrServiceName(raw: string) {
+  const t = String(raw ?? "").trim();
+  if (!t) return "";
+  const hit = findBrand(t);
+  if (hit) return hit.name;
+  const cleaned = t
+    .replace(/구독\s*결제\s*영수증|결제\s*완료|정기\s*결제|서비스명/g, " ")
+    .replace(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (findBrand(cleaned)?.name || cleaned).slice(0, 30);
+}
+
 export function subItemFromRaw(raw: {
   name?: string;
   plan?: string;
   amount?: string | number;
   day?: number | string | null;
   title?: string;
-}): ExtractSubItem {
-  const name = shortServiceName(String(raw.name ?? "")) || shortServiceName(String(raw.title ?? ""));
+}, opts?: { fromImage?: boolean }): ExtractSubItem {
+  const pick = opts?.fromImage ? ocrServiceName : shortServiceName;
+  const name = pick(String(raw.name ?? "")) || pick(String(raw.title ?? ""));
   const amount = String(raw.amount ?? "").replace(/[^\d]/g, "");
   const dayNum = typeof raw.day === "number" ? raw.day : Number(raw.day);
   const day = Number.isFinite(dayNum) && dayNum >= 1 && dayNum <= 31 ? Math.trunc(dayNum) : null;
