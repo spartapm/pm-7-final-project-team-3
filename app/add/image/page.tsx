@@ -93,7 +93,7 @@ function Inner() {
       const images = [];
       for (const f of files.slice(0, MAX)) {
         const blob = await fetch(f.url).then((r) => r.blob());
-        const url = await compressImageBlob(blob, 720, 0.58);
+        const url = await compressImageBlob(blob, 560, 0.52);
         images.push(inlineFromDataUrl(url));
       }
       let rows: Row[] = [];
