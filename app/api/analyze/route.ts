@@ -5,10 +5,11 @@ export const maxDuration = 300;
 function modelsOf(kind: "stt" | "ocr") {
   const extra = kind === "stt"
     ? [process.env.GEMINI_STT_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
-    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
+    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash"];
   const retired = /gemini-2\.[05]|gemini-1\./i;
   return [...new Set(extra.filter((k): k is string => Boolean(k?.trim())))]
-    .filter((k) => !retired.test(k));
+    .filter((k) => !retired.test(k))
+    .filter((k) => kind !== "ocr" || !/lite/i.test(k));
 }
 
 type ImageIn = { mime?: string; data?: string };
@@ -55,7 +56,14 @@ function prompts(kind: string | undefined, spoken: string, hasImage: boolean) {
     return `다음 말에서 구독을 모두 찾아 JSON 배열만 답하세요. name은 서비스명만 짧게 적고, 말한 내용 전체를 name에 넣지 마세요. 결제일이 불명확하면 day는 null, 금액이 불명확하면 amount는 빈 문자열. 추측하지 마세요. [{"name":"","plan":"","amount":"","day":1}]\n\n사용자 발화:\n${spoken}`;
   }
   if (hasImage) {
-    return `구독 영수증에서 JSON 배열만. name=서비스명, plan=요금제, amount=결제금액 숫자, day=정기결제일.
+    return `이 이미지는 구독 결제 영수증·멤버십 영수증·앱 결제 화면·브랜드 결제 포스터입니다. 포스터처럼 디자인된 영수증도 실제 구독으로 추출하세요. JSON 배열만 답하세요.
+라벨 힌트: "서비스명", "결제금액", "정기 결제일"/"매월 N일", "상품명".
+규칙:
+- name: 서비스명만. 예: 넷플릭스, 배민클럽, 티빙
+- plan: 요금제/상품명이 보이면 짧게(프리미엄 등), 없으면 빈 문자열
+- amount: "결제금액" 숫자만. 쉼표·원 없이. 공급가액·부가세는 무시
+- day: "정기 결제일"의 일(1-31). "매월 15일"이면 15. 없으면 null
+- 여러 장이거나 여러 구독이면 모두 넣고, 하나도 없으면 []
 [{"name":"넷플릭스","plan":"프리미엄","amount":"17000","day":15}]`;
   }
   return '이 이미지들에서 구독을 모두 찾아 JSON 배열만 답하세요. 결제일이 불명확하면 day는 null, 금액이 불명확하면 amount는 빈 문자열. 추측하지 마세요. [{"name":"","plan":"","amount":"","day":1}]';
