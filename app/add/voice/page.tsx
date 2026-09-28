@@ -177,7 +177,7 @@ function Inner() {
     phaseRef.current = "wait";
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const timer = window.setTimeout(() => ctrl.abort(), 25000);
+    const timer = window.setTimeout(() => ctrl.abort(), 120_000);
     const finish = (items: ReturnType<typeof parseVoiceItems>) => {
       if (goneRef.current || phaseRef.current !== "wait") return;
       if (items.length === 0) {

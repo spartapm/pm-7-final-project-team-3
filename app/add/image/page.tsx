@@ -76,7 +76,7 @@ function Inner() {
     phaseRef.current = "wait";
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const timer = window.setTimeout(() => ctrl.abort(), files.length > 1 ? 70000 : 45000);
+    const timer = window.setTimeout(() => ctrl.abort(), files.length > 1 ? 270_000 : 180_000);
     type Row = { name?: string; plan?: string; amount?: string; day?: number | null; title?: string; date?: string; endDate?: string; start?: string; end?: string };
     const readResult = async (images: { mime: string; data: string }[]) => {
       const res = await fetch("/api/analyze", {
@@ -93,7 +93,7 @@ function Inner() {
       const images = [];
       for (const f of files.slice(0, MAX)) {
         const blob = await fetch(f.url).then((r) => r.blob());
-        const url = await compressImageBlob(blob, 560, 0.52);
+        const url = await compressImageBlob(blob, 1024, 0.75);
         images.push(inlineFromDataUrl(url));
       }
       let rows: Row[] = [];

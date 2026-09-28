@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function modelsOf(kind: "stt" | "ocr") {
   const extra = kind === "stt"
@@ -93,11 +93,11 @@ async function fromGemini(
   }
   let res: Response | null = null;
   const started = Date.now();
-  const budget = 50_000;
+  const budget = 270_000;
   outer: for (const model of models) {
     for (const key of keys) {
       const left = budget - (Date.now() - started);
-      if (left < 3000) break outer;
+      if (left < 5000) break outer;
       try {
         res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
           method: "POST",
@@ -106,12 +106,12 @@ async function fromGemini(
             contents: [{ parts }],
             generationConfig: {
               temperature: 0,
-              maxOutputTokens: 512,
+              maxOutputTokens: 1024,
               responseMimeType: "application/json",
               ...(/lite/i.test(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
             },
           }),
-          signal: AbortSignal.timeout(Math.min(25_000, Math.max(3000, left - 500))),
+          signal: AbortSignal.timeout(Math.min(60_000, Math.max(5000, left - 2000))),
         });
       } catch {
         continue;
