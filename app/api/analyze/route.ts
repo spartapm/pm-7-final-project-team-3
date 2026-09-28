@@ -2,31 +2,27 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 10;
 
-const GEMINI_MODELS = [
-  process.env.GEMINI_MODEL,
-  "gemini-2.0-flash",
-  "gemini-2.5-flash",
-].filter((k): k is string => Boolean(k?.trim()));
+function modelsOf(kind: "stt" | "ocr") {
+  const extra = kind === "stt"
+    ? [process.env.GEMINI_STT_MODEL, "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"]
+    : [process.env.GEMINI_OCR_MODEL, process.env.GEMINI_MODEL, "gemini-2.0-flash", "gemini-2.5-flash"];
+  return extra
+    .filter((k): k is string => Boolean(k?.trim()))
+    .filter((k) => kind !== "ocr" || !/lite/i.test(k));
+}
 
 type ImageIn = { mime?: string; data?: string };
 
 function voiceKeys() {
-  return [
-    process.env.GEMINI_API_KEY_4,
-    process.env.GEMINI_API_KEY_3,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY,
-  ].filter((k): k is string => Boolean(k?.trim()));
+  return [process.env.GEMINI_API_KEY].filter((k): k is string => Boolean(k?.trim()));
 }
 
 function ocrKeys() {
-  const primary = process.env.GEMINI_API_KEY_3?.trim();
-  const rest = [
-    process.env.GEMINI_API_KEY,
+  return [
     process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
     process.env.GEMINI_API_KEY_4,
-  ].filter((k): k is string => Boolean(k?.trim()) && k !== primary);
-  return primary ? [primary, ...rest] : rest;
+  ].filter((k): k is string => Boolean(k?.trim()));
 }
 
 function parseItems(text: string) {
@@ -94,6 +90,7 @@ async function fromGemini(
   prompt: string,
   keys: string[],
   images: ImageIn[] = [],
+  models: string[] = modelsOf("ocr"),
 ) {
   if (keys.length === 0) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
   const parts: object[] = [{ text: prompt }];
@@ -104,7 +101,7 @@ async function fromGemini(
   let res: Response | null = null;
   const started = Date.now();
   const budget = 9000;
-  outer: for (const model of GEMINI_MODELS) {
+  outer: for (const model of models) {
     for (const key of keys) {
       const left = budget - (Date.now() - started);
       if (left < 1800) break outer;
@@ -143,6 +140,6 @@ export async function POST(req: Request) {
   const spoken = body.text?.trim() ?? "";
   if (images.length === 0 && !spoken) return NextResponse.json({ ok: false, error: "no-input" }, { status: 400 });
   const prompt = prompts(body.kind, spoken, images.length > 0);
-  if (images.length > 0) return fromGemini(body.kind, prompt, ocrKeys(), images);
-  return fromGemini(body.kind, prompt, voiceKeys());
+  if (images.length > 0) return fromGemini(body.kind, prompt, ocrKeys(), images, modelsOf("ocr"));
+  return fromGemini(body.kind, prompt, voiceKeys(), [], modelsOf("stt"));
 }
