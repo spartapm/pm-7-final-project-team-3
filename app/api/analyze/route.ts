@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { vertexGenerate, vertexReady } from "@/lib/vertex";
 
+export const runtime = "nodejs";
 export const maxDuration = 300;
 
 function modelsOf(kind: "stt" | "ocr") {
@@ -93,15 +95,30 @@ async function fromGemini(
   images: ImageIn[] = [],
   models: string[] = modelsOf("ocr"),
 ) {
-  if (keys.length === 0) return NextResponse.json({ ok: false, error: "missing-key" }, { status: 500 });
+  const started = Date.now();
+  const budget = 270_000;
+  if (vertexReady()) {
+    const vertexModels = [...new Set([...models, "gemini-2.5-flash"])];
+    for (const model of vertexModels) {
+      const left = budget - (Date.now() - started);
+      if (left < 5000) break;
+      const hit = await vertexGenerate({
+        model,
+        prompt,
+        images,
+        timeoutMs: Math.min(60_000, Math.max(5000, left - 2000)),
+      });
+      if (hit.ok && hit.text) return reply(kind, hit.text);
+      if (hit.status === 404) continue;
+    }
+  }
+  if (keys.length === 0) return NextResponse.json({ ok: false, error: vertexReady() ? "gemini" : "missing-key" }, { status: vertexReady() ? 502 : 500 });
   const parts: object[] = [{ text: prompt }];
   for (const img of images.slice(0, 4)) {
     if (!img.data) continue;
     parts.push({ inline_data: { mime_type: img.mime || "image/jpeg", data: img.data } });
   }
   let res: Response | null = null;
-  const started = Date.now();
-  const budget = 270_000;
   outer: for (const model of models) {
     for (const key of keys) {
       const left = budget - (Date.now() - started);
