@@ -5,11 +5,11 @@ export const maxDuration = 10;
 function modelsOf(kind: "stt" | "ocr") {
   const extra = kind === "stt"
     ? [process.env.GEMINI_STT_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
-    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash"];
+    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
   const retired = /gemini-2\.[05]|gemini-1\./i;
   return [...new Set(extra.filter((k): k is string => Boolean(k?.trim())))]
     .filter((k) => !retired.test(k))
-    .filter((k) => kind !== "ocr" || !/lite/i.test(k));
+    .filter((k) => kind !== "ocr" || /lite/i.test(k));
 }
 
 type ImageIn = { mime?: string; data?: string };
@@ -109,7 +109,7 @@ async function fromGemini(
               temperature: 0,
               maxOutputTokens: 512,
               responseMimeType: "application/json",
-              thinkingConfig: { thinkingBudget: 0 },
+              ...(/lite/i.test(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
             },
           }),
           signal: AbortSignal.timeout(Math.min(9000, Math.max(1200, left - 200))),
