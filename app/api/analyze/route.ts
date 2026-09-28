@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 10;
+export const maxDuration = 60;
 
 function modelsOf(kind: "stt" | "ocr") {
   const extra = kind === "stt"
     ? [process.env.GEMINI_STT_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
-    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+    : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
   const retired = /gemini-2\.[05]|gemini-1\./i;
   return [...new Set(extra.filter((k): k is string => Boolean(k?.trim())))]
-    .filter((k) => !retired.test(k))
-    .filter((k) => kind !== "ocr" || /lite/i.test(k));
+    .filter((k) => !retired.test(k));
 }
 
 type ImageIn = { mime?: string; data?: string };
@@ -94,11 +93,11 @@ async function fromGemini(
   }
   let res: Response | null = null;
   const started = Date.now();
-  const budget = 9800;
+  const budget = 50_000;
   outer: for (const model of models) {
     for (const key of keys) {
       const left = budget - (Date.now() - started);
-      if (left < 1200) break outer;
+      if (left < 3000) break outer;
       try {
         res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
           method: "POST",
@@ -112,7 +111,7 @@ async function fromGemini(
               ...(/lite/i.test(model) ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
             },
           }),
-          signal: AbortSignal.timeout(Math.min(9000, Math.max(1200, left - 200))),
+          signal: AbortSignal.timeout(Math.min(25_000, Math.max(3000, left - 500))),
         });
       } catch {
         continue;
