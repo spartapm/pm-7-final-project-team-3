@@ -6,18 +6,18 @@ export const maxDuration = 300;
 
 function modelsOf(kind: "stt" | "ocr") {
   const extra = kind === "stt"
-    ? [process.env.GEMINI_STT_MODEL, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
+    ? [process.env.GEMINI_STT_MODEL, process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash"]
     : [process.env.GEMINI_OCR_MODEL, "gemini-3.5-flash", "gemini-3.8-flash"];
   const retired = /gemini-2\.[05]|gemini-1\./i;
   return [...new Set(extra.filter((k): k is string => Boolean(k?.trim())))]
     .filter((k) => !retired.test(k))
-    .filter((k) => kind !== "ocr" || !/lite/i.test(k));
+    .filter((k) => !/lite/i.test(k));
 }
 
 type ImageIn = { mime?: string; data?: string };
 
 function voiceKeys() {
-  return [process.env.GEMINI_API_KEY].filter((k): k is string => Boolean(k?.trim()));
+  return ocrKeys();
 }
 
 function ocrKeys() {
